@@ -189,6 +189,7 @@ src/
 supabase/migrations/    # DB 마이그레이션 SQL
 scripts/                # Git 워크플로 쉘 스크립트 (upstream sync 등)
 public/                 # 정적 에셋 (favicon 등)
+CHANGES.md              # 변경 이력 (기능/디자인 변경 시 항상 업데이트)
 ```
 
 **Key Conventions:**
@@ -196,3 +197,5 @@ public/                 # 정적 에셋 (favicon 등)
 - `.tsx` 파일: React island 컴포넌트 (클라이언트 인터랙션)
 - Supabase를 DB 및 이미지 스토리지로 사용
 - `src/lib/supabase.ts`에서 Supabase 클라이언트 초기화
+- 디자인 컨셉: "Editorial Minimal" — 대담한 타이포그래피, 여백, 서브틀 애니메이션
+- 전역 애니메이션 유틸리티: `.animate-fade-in-up`, `.animate-fade-in`, `.stagger-1~5`, `.card-lift` (`global.css`)
