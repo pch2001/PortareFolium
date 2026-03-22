@@ -288,3 +288,47 @@ docs/CHANGES.md                         # 변경 이력 (기능/디자인 변경
 - 에디터 자동저장: `useAutoSave` + `useKeyboardSave` + `useUnsavedWarning` 훅 조합
 - 디자인 컨셉: "Editorial Minimal" — 대담한 타이포그래피, 여백, 서브틀 애니메이션
 - 전역 애니메이션 유틸리티: `.animate-fade-in-up`, `.animate-fade-in`, `.stagger-1~5`, `.card-lift` (`global.css`)
+
+## MCP Agent Guide
+
+**Endpoint:** `https://gvm1229-portfolio.vercel.app/api/mcp`
+
+**인증:** 모든 요청에 `Authorization: Bearer <token>` 헤더 필수. `Bearer ` 접두사 누락 시 `-32001` 오류 반환.
+
+**호출 구조 (JSON-RPC 2.0):**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "<tool_name>",
+    "arguments": { ... }
+  }
+}
+```
+
+- 툴 목록 조회: `method: "tools/list"` — 진입 시 반드시 먼저 호출하여 사용 가능한 툴과 inputSchema 확인
+- 직접 툴 이름을 `method`로 사용하면 `-32601 Method not found` 오류 발생
+
+**주요 툴 요약:**
+
+| 툴                      | 필수 인자       | 설명                                      |
+| ----------------------- | --------------- | ----------------------------------------- | ------ |
+| `get_schema`            | 없음            | 전체 스키마 가이드 반환 (첫 진입 시 권장) |
+| `list_posts`            | 없음            | 포스트 목록                               |
+| `get_post`              | `slug`          | 포스트 단건 조회                          |
+| `create_post`           | `slug`, `title` | 포스트 생성                               |
+| `update_post`           | `slug`          | 포스트 부분 수정 (스냅샷 자동 저장)       |
+| `create_portfolio_item` | `slug`, `title` | 포트폴리오 항목 생성                      |
+| `update_portfolio_item` | `slug`          | 포트폴리오 항목 부분 수정                 |
+| `get_resume`            | 없음            | 이력서 조회 (`lang: 'ko'                  | 'en'`) |
+| `update_resume`         | `data`          | 이력서 섹션별 deep-merge 수정             |
+
+**주의사항:**
+
+- `job_field`는 문자열 `"web"` 또는 `"game"`. 배열로 전달해도 서버가 첫 번째 값으로 자동 정규화함
+- `published: false`가 기본값 — 명시적으로 요청받지 않는 한 `published: true` 설정 금지
+- 긴 `content`(마크다운 본문)는 파일로 작성 후 `fs.readFileSync`로 읽어 전달할 것. JS 템플릿 리터럴 내 백틱·이스케이프 시퀀스(`\033`, `\r\n`) 충돌 방지
+- `update_resume` 호출 전 반드시 `get_resume`으로 현재 데이터 확인 후 전체 섹션 전달 (부분 전달 시 기존 entries 유실)

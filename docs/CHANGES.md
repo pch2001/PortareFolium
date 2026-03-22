@@ -1,5 +1,13 @@
 # CHANGES
 
+## 2026-03-23
+
+### Feat: MCP 엔드포인트 개선 (v0.7.20)
+
+- `src/lib/mcp-tools.ts`: `handleCreatePortfolioItem`, `handleUpdatePortfolioItem`에 `job_field` 배열 → 문자열 자동 정규화 추가
+- `src/app/api/mcp/route.ts`: `-32001 Unauthorized` 에러 메시지에 Bearer 토큰 형식 힌트 추가
+- `AGENTS.md`: MCP Agent Guide 섹션 추가 — 엔드포인트 URL, Bearer 인증 형식, JSON-RPC 호출 구조, 툴 요약, 주의사항
+
 ## 2026-03-22
 
 ### Feat: Phases 이력서 테마 추가 (v0.7.19)

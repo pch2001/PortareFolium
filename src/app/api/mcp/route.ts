@@ -63,7 +63,11 @@ export async function POST(req: NextRequest) {
             {
                 jsonrpc: "2.0",
                 id: null,
-                error: { code: -32001, message: "Unauthorized" },
+                error: {
+                    code: -32001,
+                    message:
+                        "Unauthorized: Authorization 헤더에 'Bearer <token>' 형식 필요",
+                },
             },
             { status: 401 }
         );

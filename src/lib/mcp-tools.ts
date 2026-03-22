@@ -330,6 +330,11 @@ export async function handleCreatePortfolioItem(
         );
     }
 
+    // job_field 배열 → 첫 번째 문자열 정규화
+    if (Array.isArray(args.job_field)) {
+        args = { ...args, job_field: (args.job_field as string[])[0] ?? null };
+    }
+
     const { data, error } = await serverClient
         .from("portfolio_items")
         .insert(args)
@@ -359,7 +364,15 @@ export async function handleUpdatePortfolioItem(args: {
             "[mcp-tools::handleUpdatePortfolioItem] serverClient 없음"
         );
 
-    const { slug, ...fields } = args;
+    const { slug, ...rawFields } = args;
+
+    // job_field 배열 → 첫 번째 문자열 정규화
+    const fields = Array.isArray(rawFields.job_field)
+        ? {
+              ...rawFields,
+              job_field: (rawFields.job_field as string[])[0] ?? null,
+          }
+        : rawFields;
 
     const { data: current } = await serverClient
         .from("portfolio_items")
