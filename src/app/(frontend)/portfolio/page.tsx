@@ -108,7 +108,7 @@ export default async function PortfolioPage() {
     }
 
     return (
-        <div className="max-w-4xl">
+        <div className="mx-auto max-w-4xl">
             <h1 className="mb-2 text-3xl font-bold text-(--color-foreground)">
                 Portfolio
             </h1>

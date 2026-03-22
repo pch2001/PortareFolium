@@ -33,7 +33,7 @@ export default async function FrontendLayout({
     return (
         <>
             <Header siteName={siteName} isDev={isDev} />
-            <main className="container mx-auto px-4 py-8">{children}</main>
+            <main className="mx-auto max-w-[1350px] px-4 py-8">{children}</main>
         </>
     );
 }

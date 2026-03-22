@@ -4,6 +4,7 @@ import type { Resume } from "@/types/resume";
 import ResumeClassic from "@/components/resume/ResumeClassic";
 import ResumeModern from "@/components/resume/ResumeModern";
 import ResumeMinimal from "@/components/resume/ResumeMinimal";
+import ResumePhases from "@/components/resume/ResumePhases";
 import { filterByJobField } from "@/lib/job-field";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ function sortByDateDesc<T extends { startDate?: string }>(items: T[]): T[] {
 
 export default async function ResumePage() {
     let jobField = process.env.NEXT_PUBLIC_JOB_FIELD ?? "game";
-    let resumeLayout: "classic" | "modern" | "minimal" = "modern";
+    let resumeLayout: "classic" | "modern" | "minimal" | "phases" = "modern";
     let resumeDataRaw: Resume = {} as Resume;
 
     if (serverClient) {
@@ -56,7 +57,8 @@ export default async function ResumePage() {
             resumeLayout = layoutRes.data.value as
                 | "classic"
                 | "modern"
-                | "minimal";
+                | "minimal"
+                | "phases";
         }
 
         if (resumeRes.data?.data) {
@@ -87,6 +89,11 @@ export default async function ResumePage() {
               }
             : undefined,
     };
+
+    // phases 레이아웃은 jobField 필터 없이 raw 데이터 전달
+    if (resumeLayout === "phases") {
+        return <ResumePhases resume={resumeDataRaw} />;
+    }
 
     return (
         <>

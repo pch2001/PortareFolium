@@ -2,6 +2,12 @@
 
 ## 2026-03-22
 
+### Feat: Phases 이력서 테마 추가 (v0.7.19)
+
+- `src/components/resume/ResumePhases.tsx`: 신규 생성. 웹→게임 전환 내러티브 구조의 이력서 테마. Phase 1(웹 경력)을 간략히, Phase 2(게임 프로젝트)를 메인으로 배치. 스킬은 `level` 필드로 game/web 그룹 분리.
+- `src/app/(frontend)/resume/page.tsx`: `resumeLayout` 타입에 `"phases"` 추가. phases 선택 시 jobField 필터 없이 raw 데이터 전달.
+- `src/components/admin/panels/ResumePanel.tsx`: `ResumeLayout` 타입 및 레이아웃 선택 버튼에 `"phases"` 추가.
+
 ### Feat: Vercel Analytics 설정 (v0.7.18)
 
 - `src/app/layout.tsx`: Vercel Analytics 연동을 위해 `@vercel/analytics/react`의 `<Analytics />` 컴포넌트 추가

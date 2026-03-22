@@ -83,7 +83,7 @@ function TextAreaField({
     );
 }
 
-type ResumeLayout = "classic" | "modern" | "minimal";
+type ResumeLayout = "classic" | "modern" | "minimal" | "phases";
 
 // 타임스탬프 포맷 (시:분:초)
 function fmtTime(d: Date): string {
@@ -415,24 +415,29 @@ export default function ResumePanel() {
                     레이아웃
                 </h3>
                 <div className="flex gap-3">
-                    {(["classic", "modern", "minimal"] as ResumeLayout[]).map(
-                        (l) => (
-                            <button
-                                key={l}
-                                onClick={() => {
-                                    setResumeLayout(l);
-                                    saveLayout(l);
-                                }}
-                                className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize transition-opacity ${
-                                    resumeLayout === l
-                                        ? "bg-(--color-accent) text-(--color-on-accent)"
-                                        : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"
-                                }`}
-                            >
-                                {l}
-                            </button>
-                        )
-                    )}
+                    {(
+                        [
+                            "classic",
+                            "modern",
+                            "minimal",
+                            "phases",
+                        ] as ResumeLayout[]
+                    ).map((l) => (
+                        <button
+                            key={l}
+                            onClick={() => {
+                                setResumeLayout(l);
+                                saveLayout(l);
+                            }}
+                            className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize transition-opacity ${
+                                resumeLayout === l
+                                    ? "bg-(--color-accent) text-(--color-on-accent)"
+                                    : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"
+                            }`}
+                        >
+                            {l}
+                        </button>
+                    ))}
                 </div>
             </section>
 
