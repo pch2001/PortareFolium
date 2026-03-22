@@ -4,6 +4,7 @@ import "katex/dist/katex.min.css";
 import { serverClient } from "@/lib/supabase";
 import FoliumTableColorSync from "@/components/FoliumTableColorSync";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/react";
 
 export const dynamic = "force-dynamic";
 
@@ -77,6 +78,7 @@ export default async function RootLayout({
                 {children}
                 <FoliumTableColorSync />
                 <SpeedInsights />
+                <Analytics />
             </body>
         </html>
     );

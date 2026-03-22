@@ -2,6 +2,11 @@
 
 ## 2026-03-22
 
+### Feat: Vercel Analytics 설정 (v0.7.18)
+
+- `src/app/layout.tsx`: Vercel Analytics 연동을 위해 `@vercel/analytics/react`의 `<Analytics />` 컴포넌트 추가
+- `package.json`: `@vercel/analytics` 의존성 추가 버전을 `0.7.18`로 업데이트
+
 ### Fix: Admin 포스트 발행일 KST 역변환 버그 수정 (v0.7.17)
 
 - `src/components/admin/panels/PostsPanel.tsx`: Admin 편집기에서 `pub_date`를 로드하거나 저장할 때 발생하는 시간대(Timezone) 오차 문제를 해결. 데이터베이스의 UTC 시간을 로컬 입력폼(datetime-local)에 매핑하기 전 임의로 KST(+09:00) 오프셋을 더하고(`getTime() + 9*60*60*1000`), 저장 시에는 명시적으로 `+09:00`을 문자열에 붙여 `new Date()` 파싱이 클라이언트 브라우저의 시간대 설정과 무관하게 항상 한국 시간으로 처리되도록 수정.
