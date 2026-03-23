@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase";
+import { revalidatePortfolioItem } from "@/app/admin/actions/revalidate";
 import {
     Eye,
     EyeOff,
@@ -289,6 +290,7 @@ export default function PortfolioPanel() {
             if (!err && newItem) {
                 initialFormRef.current = form;
                 setEditTarget(newItem);
+                await revalidatePortfolioItem(newItem.slug);
             }
         } else if (editTarget !== null) {
             const { error: err } = await browserClient
@@ -297,6 +299,9 @@ export default function PortfolioPanel() {
                 .eq("id", (editTarget as PortfolioItem).id);
             if (!err) {
                 initialFormRef.current = form;
+                await revalidatePortfolioItem(
+                    (editTarget as PortfolioItem).slug
+                );
             }
         }
     };
@@ -337,6 +342,7 @@ export default function PortfolioPanel() {
             setSuccess("저장 완료");
             loadItems();
             if (editTarget === "new") setEditTarget(null);
+            await revalidatePortfolioItem(form.slug);
         }
     }, [form, editTarget]);
 
@@ -370,6 +376,7 @@ export default function PortfolioPanel() {
             .update({ published: !item.published })
             .eq("id", item.id);
         loadItems();
+        await revalidatePortfolioItem(item.slug);
     };
 
     const toggleFeatured = async (item: PortfolioItem) => {
@@ -404,6 +411,7 @@ export default function PortfolioPanel() {
         setItems((prev) =>
             prev.map((p) => (p.id === editTarget.id ? { ...p, published } : p))
         );
+        await revalidatePortfolioItem((editTarget as PortfolioItem).slug);
     };
 
     // ── 편집 화면 (Ghost 에디터 레이아웃) ──

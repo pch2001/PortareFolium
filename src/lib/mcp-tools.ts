@@ -264,6 +264,11 @@ export async function handleUpdatePost(args: {
 
     if (error)
         throw new Error(`[mcp-tools::handleUpdatePost] ${error.message}`);
+
+    const { revalidatePath } = await import("next/cache");
+    revalidatePath(`/blog/${slug}`);
+    revalidatePath("/blog");
+
     return data;
 }
 
@@ -398,6 +403,11 @@ export async function handleUpdatePortfolioItem(args: {
         throw new Error(
             `[mcp-tools::handleUpdatePortfolioItem] ${error.message}`
         );
+
+    const { revalidatePath } = await import("next/cache");
+    revalidatePath(`/portfolio/${slug}`);
+    revalidatePath("/portfolio");
+
     return data;
 }
 

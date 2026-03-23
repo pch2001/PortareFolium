@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase";
+import { revalidatePost } from "@/app/admin/actions/revalidate";
 import {
     Eye,
     EyeOff,
@@ -286,6 +287,7 @@ export default function PostsPanel() {
             if (!err && newPost) {
                 initialFormRef.current = form;
                 setEditTarget(newPost);
+                await revalidatePost(newPost.slug);
             }
         } else if (editTarget !== null) {
             const { error: err } = await browserClient
@@ -294,6 +296,7 @@ export default function PostsPanel() {
                 .eq("id", editTarget.id);
             if (!err) {
                 initialFormRef.current = form;
+                await revalidatePost(editTarget.slug);
             }
         }
     };
@@ -334,6 +337,7 @@ export default function PostsPanel() {
             setSuccess("저장 완료");
             loadPosts();
             if (editTarget === "new") setEditTarget(null);
+            await revalidatePost(form.slug);
         }
     }, [form, editTarget]);
 
@@ -375,6 +379,7 @@ export default function PostsPanel() {
             .update({ published: !post.published })
             .eq("id", post.id);
         loadPosts();
+        await revalidatePost(post.slug);
     };
 
     // MetadataSheet onChange 핸들러
@@ -393,6 +398,7 @@ export default function PostsPanel() {
         setPosts((prev) =>
             prev.map((p) => (p.id === editTarget.id ? { ...p, published } : p))
         );
+        await revalidatePost(editTarget.slug);
     };
 
     // ── 편집 화면 ────────────────────────────────────────────
