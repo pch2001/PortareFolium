@@ -431,7 +431,7 @@ export default function PostsPanel() {
                         설정
                     </button>
                 </div>
-                <p className="text-xs text-(--color-muted)">
+                <p className="text-center text-base text-(--color-muted)">
                     저장 후 미리보기를 한 번 방문하면 캐시가 갱신되어 방문자에게
                     즉시 제공됩니다.
                 </p>
@@ -477,7 +477,7 @@ export default function PostsPanel() {
                 {/* Sticky 저장 바 */}
                 <div className="fixed right-0 bottom-0 left-0 z-50 border-t border-(--color-border) bg-(--color-surface)/90 px-6 py-3 backdrop-blur-sm">
                     <div className="mx-auto flex items-center justify-between gap-3">
-                        <span className="text-xs text-(--color-muted)">
+                        <span className="text-base text-(--color-muted)">
                             저장 후 미리보기를 방문하면 캐시가 갱신됩니다.
                         </span>
                         <div className="flex items-center gap-3">
