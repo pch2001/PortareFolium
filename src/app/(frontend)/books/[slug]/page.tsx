@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { serverClient } from "@/lib/supabase";
-import { renderMarkdown } from "@/lib/markdown";
+import { getBook, getBookMeta, getAllBookSlugs } from "@/lib/queries";
+import { getCachedMarkdown } from "@/lib/markdown";
 import { extractTocFromHtml } from "@/lib/toc";
 import TableOfContents from "@/components/TableOfContents";
 import MermaidRenderer from "@/components/MermaidRenderer";
@@ -8,7 +8,12 @@ import { ArrowLeft, Star } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
+export const revalidate = false;
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+    return getAllBookSlugs();
+}
 
 export async function generateMetadata({
     params,
@@ -16,14 +21,7 @@ export async function generateMetadata({
     params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
     const { slug } = await params;
-    if (!serverClient) return {};
-    const { data: book } = await serverClient
-        .from("books")
-        .select(
-            "title, meta_title, meta_description, og_image, description, cover_url"
-        )
-        .eq("slug", slug)
-        .single();
+    const book = await getBookMeta(slug);
     if (!book) return {};
     return {
         title: book.meta_title || `${book.title} - Books`,
@@ -41,17 +39,10 @@ export default async function BookDetailPage({
     params: Promise<{ slug: string }>;
 }) {
     const { slug } = await params;
-    if (!serverClient) redirect("/portfolio");
-
-    const { data: book } = await serverClient
-        .from("books")
-        .select("*")
-        .eq("slug", slug)
-        .single();
-
+    const book = await getBook(slug);
     if (!book) redirect("/portfolio");
 
-    const contentHtml = await renderMarkdown(book.content ?? "");
+    const contentHtml = await getCachedMarkdown(slug, book.content ?? "");
     const tocEntries = extractTocFromHtml(contentHtml);
 
     return (

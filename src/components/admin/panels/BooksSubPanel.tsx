@@ -27,6 +27,7 @@ import {
 } from "@/components/admin/JobFieldSelector";
 import MetadataSheet from "@/components/admin/MetadataSheet";
 import SaveIndicator from "@/components/admin/SaveIndicator";
+import { revalidateBook } from "@/app/admin/actions/revalidate";
 
 interface BookItem {
     id: string;
@@ -230,6 +231,7 @@ export default function BooksSubPanel({
                 setBooks((prev) => [...prev, newBook]);
                 setEditTarget(newBook);
                 initialFormRef.current = form;
+                await revalidateBook(newBook.slug);
             }
         } else if (editTarget) {
             const { error: err } = await browserClient
@@ -243,6 +245,7 @@ export default function BooksSubPanel({
                     )
                 );
                 initialFormRef.current = form;
+                await revalidateBook(editTarget.slug);
             }
         }
     };
@@ -270,6 +273,7 @@ export default function BooksSubPanel({
                 setEditTarget(newBook);
                 initialFormRef.current = form;
                 setSuccess("저장 완료");
+                await revalidateBook(newBook.slug);
             }
         } else if (editTarget) {
             const { error: err } = await browserClient
@@ -285,6 +289,7 @@ export default function BooksSubPanel({
                 );
                 initialFormRef.current = form;
                 setSuccess("저장 완료");
+                await revalidateBook(editTarget.slug);
             }
         }
         setSaving(false);
@@ -323,6 +328,7 @@ export default function BooksSubPanel({
                     b.id === book.id ? { ...b, published: next } : b
                 )
             );
+            await revalidateBook(book.slug);
         }
     };
 
@@ -364,6 +370,7 @@ export default function BooksSubPanel({
         setBooks((prev) =>
             prev.map((b) => (b.id === editTarget.id ? { ...b, published } : b))
         );
+        await revalidateBook(editTarget.slug);
     };
 
     const handleBack = () => {
@@ -428,6 +435,10 @@ export default function BooksSubPanel({
                         설정
                     </button>
                 </div>
+                <p className="text-xs text-(--color-muted)">
+                    저장 후 미리보기를 한 번 방문하면 캐시가 갱신되어 방문자에게
+                    즉시 제공됩니다.
+                </p>
 
                 {/* 제목 입력 */}
                 <input
@@ -468,32 +479,37 @@ export default function BooksSubPanel({
 
                 {/* Sticky 저장 바 */}
                 <div className="fixed right-0 bottom-0 left-0 z-50 border-t border-(--color-border) bg-(--color-surface)/90 px-6 py-3 backdrop-blur-sm">
-                    <div className="mx-auto flex items-center justify-end gap-3">
-                        <SaveIndicator
-                            saving={autoSaving}
-                            savedAt={autoSavedAt}
-                            isDirty={isDirty}
-                        />
+                    <div className="mx-auto flex items-center justify-between gap-3">
+                        <span className="text-xs text-(--color-muted)">
+                            저장 후 미리보기를 방문하면 캐시가 갱신됩니다.
+                        </span>
                         <div className="flex items-center gap-3">
-                            {editTarget !== "new" && (
+                            <SaveIndicator
+                                saving={autoSaving}
+                                savedAt={autoSavedAt}
+                                isDirty={isDirty}
+                            />
+                            <div className="flex items-center gap-3">
+                                {editTarget !== "new" && (
+                                    <button
+                                        onClick={() =>
+                                            handleDelete(
+                                                (editTarget as BookItem).id
+                                            )
+                                        }
+                                        className="rounded-lg bg-red-600 px-5 py-2 text-xl font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                    >
+                                        삭제
+                                    </button>
+                                )}
                                 <button
-                                    onClick={() =>
-                                        handleDelete(
-                                            (editTarget as BookItem).id
-                                        )
-                                    }
-                                    className="rounded-lg bg-red-600 px-5 py-2 text-xl font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                    onClick={handleSave}
+                                    disabled={saving || !isDirty}
+                                    className="rounded-lg bg-(--color-accent) px-5 py-2 text-xl font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
                                 >
-                                    삭제
+                                    {saving ? "저장 중..." : "저장"}
                                 </button>
-                            )}
-                            <button
-                                onClick={handleSave}
-                                disabled={saving || !isDirty}
-                                className="rounded-lg bg-(--color-accent) px-5 py-2 text-xl font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
-                            >
-                                {saving ? "저장 중..." : "저장"}
-                            </button>
+                            </div>
                         </div>
                     </div>
                 </div>

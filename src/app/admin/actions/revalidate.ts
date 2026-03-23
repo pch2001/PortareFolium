@@ -12,3 +12,8 @@ export async function revalidatePortfolioItem(slug: string) {
     revalidatePath(`/portfolio/${slug}`);
     revalidatePath("/portfolio");
 }
+
+// 도서 저장/수정 후 해당 슬러그 페이지 재생성 트리거
+export async function revalidateBook(slug: string) {
+    revalidatePath(`/books/${slug}`);
+}

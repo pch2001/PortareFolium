@@ -77,6 +77,39 @@ export async function getAllPortfolioSlugs() {
     return (data ?? []).map((p) => ({ slug: p.slug }));
 }
 
+// generateMetadata 전용 — content 제외 경량 쿼리
+export const getBookMeta = cache(async (slug: string) => {
+    if (!serverClient) return null;
+    const { data } = await serverClient
+        .from("books")
+        .select(
+            "title, meta_title, meta_description, og_image, cover_url, description, slug"
+        )
+        .eq("slug", slug)
+        .single();
+    return data;
+});
+
+export const getBook = cache(async (slug: string) => {
+    if (!serverClient) return null;
+    const { data } = await serverClient
+        .from("books")
+        .select("*")
+        .eq("slug", slug)
+        .single();
+    return data;
+});
+
+// 빌드 타임 generateStaticParams 전용 (cache 불필요)
+export async function getAllBookSlugs() {
+    if (!serverClient) return [];
+    const { data } = await serverClient
+        .from("books")
+        .select("slug")
+        .eq("published", true);
+    return (data ?? []).map((p) => ({ slug: p.slug }));
+}
+
 // tags 전체 조회 캐싱
 export const getTags = cache(async () => {
     if (!serverClient)
