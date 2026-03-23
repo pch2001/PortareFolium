@@ -90,7 +90,7 @@ export default async function ResumePhases({ resume, activeJobField }: Props) {
     const hasCertificates = certificates.length > 0;
 
     return (
-        <div className="mx-auto max-w-[1350px] text-[0.9375rem] leading-[1.6] text-(--color-foreground)">
+        <div className="mx-auto max-w-[1050px] text-[0.9375rem] leading-[1.6] text-(--color-foreground)">
             {/* Header */}
             <header className="mb-10 border-b-2 border-(--color-border) pb-8">
                 {basics.image && basics.image.trim() ? (
