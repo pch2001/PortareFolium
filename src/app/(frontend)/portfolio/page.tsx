@@ -22,18 +22,6 @@ export const metadata: Metadata = {
 };
 
 export default async function PortfolioPage() {
-    let portfolioViewMode: "list" | "block" | undefined = undefined;
-    if (serverClient) {
-        const { data: vmCfg } = await serverClient
-            .from("site_config")
-            .select("value")
-            .eq("key", "portfolio_view_mode")
-            .single();
-        if (vmCfg?.value === "list" || vmCfg?.value === "block") {
-            portfolioViewMode = vmCfg.value;
-        }
-    }
-
     let jobField = process.env.NEXT_PUBLIC_JOB_FIELD ?? "game";
     if (serverClient) {
         const { data: cfg } = await serverClient
@@ -109,18 +97,10 @@ export default async function PortfolioPage() {
 
     return (
         <div className="mx-auto max-w-4xl">
-            <h1 className="mb-2 text-3xl font-bold text-(--color-foreground)">
+            <h1 className="mb-8 text-3xl font-bold text-(--color-foreground)">
                 Portfolio
             </h1>
-            <p className="mb-8 text-(--color-muted)">
-                프로젝트 목록입니다. List는 상세 정보를 한 화면에, Block은 카드
-                그리드로 보기입니다.
-            </p>
-
-            <PortfolioView
-                projects={publicProjects}
-                forcedViewMode={portfolioViewMode}
-            />
+            <PortfolioView projects={publicProjects} />
 
             {publicBooks.length > 0 && (
                 <>
