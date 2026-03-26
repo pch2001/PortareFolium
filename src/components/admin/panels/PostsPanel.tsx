@@ -17,7 +17,9 @@ import {
     Settings,
     ExternalLink,
 } from "lucide-react";
+import type { Editor } from "@tiptap/react";
 import RichMarkdownEditor from "@/components/admin/RichMarkdownEditor";
+import EditorStatePreservation from "@/components/admin/EditorStatePreservation";
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { useKeyboardSave } from "@/lib/hooks/useKeyboardSave";
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
@@ -103,6 +105,9 @@ export default function PostsPanel() {
     const [editTarget, setEditTarget] = useState<Post | null | "new">(null);
     const [form, setForm] = useState<PostForm>(EMPTY_FORM);
     const [saving, setSaving] = useState(false);
+    const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
+    const [stateModalOpen, setStateModalOpen] = useState(false);
+    const [snapshotCount, setSnapshotCount] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
@@ -132,6 +137,8 @@ export default function PostsPanel() {
     const [batchJobField, setBatchJobField] = useState("");
     const [batchSaving, setBatchSaving] = useState(false);
     const [showSortMenu, setShowSortMenu] = useState(false);
+    // editor_states count (목록 yellow highlight용)
+    const [stateCounts, setStateCounts] = useState<Record<string, number>>({});
     // 토스트 알림
     const [toast, setToast] = useState<string | null>(null);
 
@@ -166,8 +173,28 @@ export default function PostsPanel() {
         setLoading(false);
     };
 
+    // editor_states count 로드 (목록 로드 후 호출)
+    const loadStateCounts = async () => {
+        if (!browserClient) return;
+        try {
+            const { data } = await browserClient
+                .from("editor_states")
+                .select("entity_slug")
+                .eq("entity_type", "post")
+                .neq("label", "Initial");
+            if (!data) return;
+            const counts: Record<string, number> = {};
+            for (const row of data) {
+                counts[row.entity_slug] = (counts[row.entity_slug] ?? 0) + 1;
+            }
+            setStateCounts(counts);
+        } catch {
+            // best-effort
+        }
+    };
+
     useEffect(() => {
-        loadPosts();
+        loadPosts().then(() => loadStateCounts());
         if (browserClient) {
             browserClient
                 .from("site_config")
@@ -348,6 +375,7 @@ export default function PostsPanel() {
         if (confirmLeave()) {
             setEditTarget(null);
             setMetadataOpen(false);
+            loadStateCounts();
         }
     };
 
@@ -459,6 +487,8 @@ export default function PostsPanel() {
                         onChange={(c) => setForm((f) => ({ ...f, content: c }))}
                         placeholder="본문을 작성하세요. ## 제목, **굵게**, [링크](url) 등 마크다운 문법이 즉시 반영됩니다."
                         folderPath={`blog/${form.slug || "untitled"}`}
+                        storageKey={`post_${form.slug || "new"}`}
+                        onEditorReady={setEditorInstance}
                     />
                 </div>
 
@@ -487,6 +517,13 @@ export default function PostsPanel() {
                                 isDirty={isDirty}
                             />
                             <div className="flex items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setStateModalOpen(true)}
+                                    className="rounded-lg bg-yellow-500 px-4 py-2 text-base font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                >
+                                    상태 기록: {snapshotCount}/6
+                                </button>
                                 {editTarget !== "new" && (
                                     <button
                                         onClick={() =>
@@ -533,6 +570,16 @@ export default function PostsPanel() {
                     }}
                     tocDisabled={!form.slug}
                     folderPath={`blog/${form.slug || "untitled"}`}
+                />
+
+                <EditorStatePreservation
+                    editor={editorInstance}
+                    entityType="post"
+                    entitySlug={form.slug || "new"}
+                    currentContent={form.content}
+                    isOpen={stateModalOpen}
+                    onClose={() => setStateModalOpen(false)}
+                    onSnapshotCountChange={(total) => setSnapshotCount(total)}
                 />
             </div>
         );
@@ -816,10 +863,15 @@ export default function PostsPanel() {
                             (Array.isArray(post.job_field)
                                 ? post.job_field.length > 0
                                 : true);
+                        const stateCount = stateCounts[post.slug] ?? 0;
                         return (
                             <div
                                 key={post.id}
                                 className={`group flex items-center gap-3 border-b border-(--color-border) px-2 py-3 transition-colors hover:bg-(--color-surface-subtle) ${
+                                    stateCount > 0
+                                        ? "border-yellow-300 bg-yellow-50 dark:border-yellow-700 dark:bg-yellow-950/20"
+                                        : ""
+                                } ${
                                     selected.has(post.id)
                                         ? "bg-(--color-surface-subtle)"
                                         : ""
@@ -858,6 +910,11 @@ export default function PostsPanel() {
                                                 <AlertTriangle size={10} />
                                                 직무 분야 없음
                                             </Badge>
+                                        )}
+                                        {stateCount > 0 && (
+                                            <span className="rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-yellow-900">
+                                                상태: {stateCount}
+                                            </span>
                                         )}
                                         {post.category && (
                                             <span className="text-xs text-(--color-muted)">

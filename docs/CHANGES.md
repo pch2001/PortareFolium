@@ -1,5 +1,57 @@
 # CHANGES
 
+## v0.8.0 ~ v0.8.4 (2026-03-26)
+
+### Fix: 목록 상태 새로고침 + 버전 업데이트 (v0.8.4)
+
+- `PostsPanel.tsx`, `PortfolioPanel.tsx`, `BooksSubPanel.tsx`: `handleBack()`에 `loadStateCounts()` 추가 — "목록" 버튼 클릭 시 상태 count 즉시 반영.
+- `package.json`: v0.8.4. `AGENTS.md`: Editor 설명 MDX → Tiptap 변경.
+
+### Feat: Supabase `editor_states` 테이블 + 세션 만료 (v0.8.3)
+
+- `src/lib/migrations.ts`: migration 0.8.3 — `editor_states` 테이블 생성 (RLS + index). `entity_type`, `entity_slug`, `label`, `content`, `created_at` 컬럼.
+- `EditorStatePreservation.tsx`: localStorage → Supabase 전환. Initial 매 세션 갱신 (Option A). 24시간 미활동 시 Initial/Auto 만료 삭제 (Manual 보존).
+- 3개 Panel: `entityType`/`entitySlug` prop 변경. 목록에서 Non-Initial state > 0 항목 노란 배경 + "상태: N" badge.
+
+### Feat: 상태 보존 3섹션 분리 + 한국어 badge (v0.8.3)
+
+- `EditorStatePreservation.tsx`: Initial(1개 고정)/Auto-save(max 5 FIFO)/Bookmark(무제한) 3계층 저장 모델. 모달 본문 초기(Initial)/자동(Auto)/수동(Manual) 3섹션 구분선 분리. Badge 한영 병기.
+- 3개 Panel: "상태 기록: X/6" 노란 버튼 + `onSnapshotCountChange` 연결.
+
+### Feat: 상태 보존 Footer 이동 + 모달 리팩토링 (v0.8.2)
+
+- `EditorStatePreservation.tsx`: 모달 기반 리팩토링 — `isOpen`/`onClose` prop. 삭제 확인 dialog 추가.
+- `RichMarkdownEditor.tsx`: `onEditorReady` callback prop 추가. EditorStatePreservation JSX 제거. Draft 배너 (노란 "Unsaved draft") 제거 (5초 autosave는 유지).
+- `PostsPanel.tsx`, `PortfolioPanel.tsx`, `BooksSubPanel.tsx`: Footer에 노란 "상태 기록: X/6" 버튼 추가.
+
+### Feat: Prose accent color + YouTube 빨간 아이콘 (v0.8.2)
+
+- `src/styles/global.css`: `--color-prose-heading`, `--color-prose-link`, `--color-prose-blockquote-border`를 `--color-folium-primary` (고정)에서 `--color-accent` (테마별 가변)로 변경.
+- `src/components/admin/EditorToolbar.tsx`: YouTube 버튼 `▶` → 빨간 YouTube SVG (`#FF0000` 고정).
+
+### Feat: Tiptap 이미지 업로드 + 에디터 상태 보존 (v0.8.1)
+
+- `src/components/admin/TiptapImageUpload.tsx`: 신규 — Tiptap 전용 이미지 업로드 모달. 파일 업로드 (drag & drop) + URL 입력. WebP 변환 + Supabase Storage 업로드. `editor.setImage()` 직접 삽입.
+- `src/components/admin/EditorStatePreservation.tsx`: 신규 — 에디터 상태 보존 모달. Initial/Auto-save/Bookmark 3단계 스냅샷. Preview/Revert/Delete.
+- `src/components/admin/StatePreviewModal.tsx`: 신규 — 스냅샷 미리보기 모달. 렌더링(Render)/소스(Source) 토글.
+
+### Feat: 기존 이미지/YouTube 호환 + Image extension (v0.8.1)
+
+- `RichMarkdownEditor.tsx`: `Markdown.configure({ html: true })` 설정 — 기존 `<img>` HTML 태그 보존. `@tiptap/extension-image` 추가.
+- `src/styles/global.css`: `div[data-youtube-video]` 16:9 CSS + 기존 iframe 기반 YouTube 호환 CSS 추가.
+
+### Major: MDXEditor → Tiptap 에디터 전환 (v0.8.0)
+
+- `src/components/admin/RichMarkdownEditor.tsx`: MDXEditor 기반에서 Tiptap 기반으로 전면 재작성. `@tiptap/react`, `@tiptap/starter-kit`, `tiptap-markdown` 등 12+ 패키지 도입. Markdown I/O 보존 (기존 Supabase 파이프라인 유지). SSR 안전 (`immediatelyRender: false`).
+- `src/components/admin/EditorToolbar.tsx`: 신규 — Tiptap 공식 UI 컴포넌트 기반 toolbar. `Toolbar`/`ToolbarGroup`/`ToolbarSeparator`/`Spacer` + `MarkButton`, `HeadingDropdownMenu`, `ListDropdownMenu`, `BlockquoteButton`, `CodeBlockButton`, `ColorHighlightPopover`, `LinkPopover`, `TextAlignButton`, `UndoRedoButton`.
+- `src/components/admin/EditorFullscreenModal.tsx`: 신규 — `createPortal` 기반 전체화면 모달. Glassmorphism toolbar, Paper canvas 레이아웃.
+- `src/extensions/FoliumTableExtension.ts`: 신규 — Tiptap table extension. `tailwindColor` attribute → `tailwindToHex()` → inline hex style.
+- `src/components/FoliumTable.tsx`: 최소 legacy adapter로 재작성.
+- `src/components/tiptap-ui/`, `tiptap-ui-primitive/`, `tiptap-icons/`, `tiptap-node/`, `tiptap-extension/`: Tiptap CLI로 설치된 UI 컴포넌트 (20+ 컴포넌트).
+- `src/hooks/use-tiptap-editor.ts`, `use-composed-ref.ts`, `use-is-breakpoint.ts`, `use-menu-navigation.ts`: Tiptap UI 컴포넌트 의존 hook.
+- `src/lib/tiptap-utils.ts`, `src/scss.d.ts`, `src/styles/_variables.scss`, `src/styles/_keyframe-animations.scss`: Tiptap 유틸 및 SCSS 지원.
+- `@mdxeditor/editor` 패키지 제거. MDXEditor CSS 블록 삭제.
+
 ## 2026-03-25
 
 ### Design: 포트폴리오 및 이력서 내 GitHub 링크를 솔리드 버튼으로 변경 (v0.7.58)

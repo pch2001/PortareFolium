@@ -17,7 +17,9 @@ import {
     Settings,
     ExternalLink,
 } from "lucide-react";
+import type { Editor } from "@tiptap/react";
 import RichMarkdownEditor from "@/components/admin/RichMarkdownEditor";
+import EditorStatePreservation from "@/components/admin/EditorStatePreservation";
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { useKeyboardSave } from "@/lib/hooks/useKeyboardSave";
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
@@ -125,6 +127,9 @@ export default function BooksSubPanel({
     const [editTarget, setEditTarget] = useState<BookItem | null | "new">(null);
     const [form, setForm] = useState<BookForm>(EMPTY_FORM);
     const [saving, setSaving] = useState(false);
+    const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
+    const [stateModalOpen, setStateModalOpen] = useState(false);
+    const [snapshotCount, setSnapshotCount] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [metadataOpen, setMetadataOpen] = useState(false);
@@ -141,6 +146,8 @@ export default function BooksSubPanel({
         "all" | "published" | "draft"
     >("all");
     const [filterSearch, setFilterSearch] = useState("");
+    // editor_states count (목록 yellow highlight용)
+    const [stateCounts, setStateCounts] = useState<Record<string, number>>({});
     const [toast, setToast] = useState<string | null>(null);
 
     const showToast = (msg: string) => {
@@ -171,8 +178,28 @@ export default function BooksSubPanel({
         setLoading(false);
     };
 
+    // editor_states count 로드 (목록 로드 후 호출)
+    const loadStateCounts = async () => {
+        if (!browserClient) return;
+        try {
+            const { data } = await browserClient
+                .from("editor_states")
+                .select("entity_slug")
+                .eq("entity_type", "book")
+                .neq("label", "Initial");
+            if (!data) return;
+            const counts: Record<string, number> = {};
+            for (const row of data) {
+                counts[row.entity_slug] = (counts[row.entity_slug] ?? 0) + 1;
+            }
+            setStateCounts(counts);
+        } catch {
+            // best-effort
+        }
+    };
+
     useEffect(() => {
-        loadBooks();
+        loadBooks().then(() => loadStateCounts());
     }, []);
 
     const buildPayload = () => ({
@@ -379,6 +406,7 @@ export default function BooksSubPanel({
         setMetadataOpen(false);
         setError(null);
         setSuccess(null);
+        loadStateCounts();
     };
 
     const displayedBooks = books
@@ -462,6 +490,8 @@ export default function BooksSubPanel({
                         value={form.content}
                         onChange={(v) => setForm((f) => ({ ...f, content: v }))}
                         placeholder="리뷰를 작성하세요. ## 제목, **굵게** 등 마크다운 문법이 즉시 반영됩니다."
+                        storageKey={`book_${form.slug || "new"}`}
+                        onEditorReady={setEditorInstance}
                     />
                 </div>
 
@@ -490,6 +520,13 @@ export default function BooksSubPanel({
                                 isDirty={isDirty}
                             />
                             <div className="flex items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setStateModalOpen(true)}
+                                    className="rounded-lg bg-yellow-500 px-4 py-2 text-base font-medium whitespace-nowrap text-white transition-opacity hover:opacity-90"
+                                >
+                                    상태 기록: {snapshotCount}/6
+                                </button>
                                 {editTarget !== "new" && (
                                     <button
                                         onClick={() =>
@@ -523,6 +560,16 @@ export default function BooksSubPanel({
                     onChange={handleMetaChange}
                     onPublishToggle={handlePublishToggle}
                     jobFields={jobFields}
+                />
+
+                <EditorStatePreservation
+                    editor={editorInstance}
+                    entityType="book"
+                    entitySlug={form.slug || "new"}
+                    currentContent={form.content}
+                    isOpen={stateModalOpen}
+                    onClose={() => setStateModalOpen(false)}
+                    onSnapshotCountChange={(total) => setSnapshotCount(total)}
                 />
             </div>
         );
@@ -627,7 +674,11 @@ export default function BooksSubPanel({
                     {displayedBooks.map((book) => (
                         <li
                             key={book.id}
-                            className="group flex items-center gap-3 border-b border-(--color-border) px-2 py-3 transition-colors hover:bg-(--color-surface-subtle)"
+                            className={`group flex items-center gap-3 border-b border-(--color-border) px-2 py-3 transition-colors hover:bg-(--color-surface-subtle) ${
+                                (stateCounts[book.slug] ?? 0) > 0
+                                    ? "border-yellow-300 bg-yellow-50 dark:border-yellow-700 dark:bg-yellow-950/20"
+                                    : ""
+                            }`}
                         >
                             {book.cover_url && (
                                 <img
@@ -662,6 +713,11 @@ export default function BooksSubPanel({
                                         <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-900/40 dark:text-red-400">
                                             <AlertTriangle className="h-2.5 w-2.5" />
                                             직무 분야 없음
+                                        </span>
+                                    )}
+                                    {(stateCounts[book.slug] ?? 0) > 0 && (
+                                        <span className="rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-yellow-900">
+                                            상태: {stateCounts[book.slug]}
                                         </span>
                                     )}
                                 </div>
