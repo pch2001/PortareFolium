@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.8.16 (2026-03-27)
+
+### Fix: Source 모드 textarea 스크롤 리셋 + 모드 전환 시 스크롤 위치 보존 (v0.8.16)
+
+- `src/components/admin/RichMarkdownEditor.tsx`:
+    - **Source 모드 타이핑 시 스크롤 리셋 수정**: 인라인 `ref` 콜백이 매 렌더마다 재호출되어 `height = "auto"`로 textarea를 일시적으로 축소, 부모 스크롤 컨테이너의 스크롤 위치가 리셋되던 버그 수정. `useCallback`으로 ref 콜백 안정화하여 mount 시 1회만 실행. `onChange` 핸들러에서 auto-resize 전후로 스크롤 위치 저장/복원 로직 추가.
+    - **Source ↔ WYSIWYG 모드 전환 시 스크롤 비율 보존**: `scrollAreaRef`로 스크롤 컨테이너 참조. `enterSourceMode`/`exitSourceMode`에서 전환 전 스크롤 비율(`scrollTop / (scrollHeight - clientHeight)`) 저장. 전환 후 `useEffect` + double `requestAnimationFrame`으로 비율 기반 스크롤 위치 복원. fullscreen(`overflow-y-auto`)과 일반 모드(`document.scrollingElement`) 모두 지원.
+
 ## v0.8.15 (2026-03-27)
 
 ### Fix: Source → WYSIWYG 전환 시 flushSync 에러 해결 (v0.8.15)

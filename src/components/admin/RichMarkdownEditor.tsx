@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import type { Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -55,9 +55,43 @@ export default function RichMarkdownEditor({
     // source → WYSIWYG 전환 시 setContent 예약 (flushSync 충돌 방지)
     const pendingContent = useRef<string | null>(null);
 
+    // 모드 전환 시 스크롤 비율 보존
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const pendingScrollRatio = useRef<number | null>(null);
+
+    const getScrollContainer = (): Element | null =>
+        scrollAreaRef.current &&
+        scrollAreaRef.current.scrollHeight > scrollAreaRef.current.clientHeight
+            ? scrollAreaRef.current
+            : document.scrollingElement;
+
+    const saveScrollRatio = () => {
+        const el = getScrollContainer();
+        if (!el || el.scrollHeight <= el.clientHeight) {
+            pendingScrollRatio.current = 0;
+            return;
+        }
+        pendingScrollRatio.current =
+            el.scrollTop / (el.scrollHeight - el.clientHeight);
+    };
+
+    // source 모드 textarea ref (안정적 ref — 매 렌더마다 재호출 방지)
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const textareaRefCallback = useCallback(
+        (el: HTMLTextAreaElement | null) => {
+            textareaRef.current = el;
+            if (el) {
+                el.style.height = "auto";
+                el.style.height = el.scrollHeight + "px";
+            }
+        },
+        []
+    );
+
     // WYSIWYG → Source 전환 (directive → JSX 변환 후 표시)
     const enterSourceMode = () => {
         if (!editor) return;
+        saveScrollRatio();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const md = (editor.storage as any).markdown.getMarkdown() as string;
         setSourceText(directiveToJsx(md));
@@ -67,6 +101,7 @@ export default function RichMarkdownEditor({
     // Source → WYSIWYG 전환 (JSX → directive 변환 후 에디터 로드, DB에는 JSX 저장)
     const exitSourceMode = () => {
         if (!editor) return;
+        saveScrollRatio();
         const jsxContent = directiveToJsx(sourceText);
         // directive → HTML 전처리 (YoutubeEmbed, ColoredTableNode parseHTML 호환)
         const directives = jsxToDirective(jsxContent);
@@ -143,6 +178,28 @@ export default function RichMarkdownEditor({
             pendingContent.current = null;
         }
     }, [sourceMode, editor]);
+
+    // 모드 전환 후 스크롤 비율 복원 (content-set useEffect 이후 실행)
+    useEffect(() => {
+        if (pendingScrollRatio.current === null) return;
+        const ratio = pendingScrollRatio.current;
+        pendingScrollRatio.current = null;
+        // rAF 2회: 첫 번째는 DOM 업데이트 대기, 두 번째는 레이아웃 완료 대기
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                const container = getScrollContainer();
+                if (
+                    container &&
+                    container.scrollHeight > container.clientHeight
+                ) {
+                    container.scrollTop =
+                        ratio *
+                        (container.scrollHeight - container.clientHeight);
+                }
+            });
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sourceMode]);
 
     // --- Autosave (localStorage, 5-second interval) ---
     useEffect(() => {
@@ -233,6 +290,7 @@ export default function RichMarkdownEditor({
 
                     {/* Scrollable content area (source + WYSIWYG share same scroll/paper container) */}
                     <div
+                        ref={scrollAreaRef}
                         className={isFullscreen ? "flex-1 overflow-y-auto" : ""}
                     >
                         {/* Source mode textarea */}
@@ -254,17 +312,21 @@ export default function RichMarkdownEditor({
                                     value={sourceText}
                                     onChange={(e) => {
                                         handleSourceChange(e.target.value);
+                                        // 스크롤 위치 보존: height=auto가 textarea를 일시적으로 축소시켜 스크롤 리셋 유발
+                                        const scrollParent = (e.target.closest(
+                                            ".overflow-y-auto"
+                                        ) ??
+                                            document.scrollingElement) as HTMLElement | null;
+                                        const savedScrollTop =
+                                            scrollParent?.scrollTop ?? 0;
                                         e.target.style.height = "auto";
                                         e.target.style.height =
                                             e.target.scrollHeight + "px";
+                                        if (scrollParent)
+                                            scrollParent.scrollTop =
+                                                savedScrollTop;
                                     }}
-                                    ref={(el) => {
-                                        if (el) {
-                                            el.style.height = "auto";
-                                            el.style.height =
-                                                el.scrollHeight + "px";
-                                        }
-                                    }}
+                                    ref={textareaRefCallback}
                                     className="w-full resize-none overflow-hidden bg-transparent font-mono text-sm leading-relaxed text-zinc-800 outline-none dark:text-zinc-200"
                                     spellCheck={false}
                                 />
