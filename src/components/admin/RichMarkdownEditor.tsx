@@ -267,7 +267,7 @@ export default function RichMarkdownEditor({
                     <div
                         className={
                             isFullscreen
-                                ? "relative sticky top-0 z-50 flex items-center"
+                                ? "relative sticky top-0 z-30 flex items-center"
                                 : ""
                         }
                     >

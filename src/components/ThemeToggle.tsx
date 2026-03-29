@@ -138,7 +138,7 @@ export default function ThemeToggle() {
             {/* 드롭다운 메뉴 - hover 시 표시 */}
             {isOpen && (
                 <div
-                    className="absolute top-full right-0 min-w-[120px] pt-1"
+                    className="absolute top-full right-0 z-35 min-w-[120px] pt-1"
                     role="menu"
                     aria-orientation="vertical"
                 >
