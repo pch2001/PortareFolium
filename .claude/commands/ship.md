@@ -1,3 +1,5 @@
+# ship
+
 Commit the current unstaged changes following these rules strictly:
 
 1. **No Co-Authored-By**: Never include a Co-Authored-By line in the commit message.
@@ -10,7 +12,7 @@ Commit the current unstaged changes following these rules strictly:
 
     Where `<type>` is `feat`, `fix`, `refactor`, etc.
 
-3. **Version bump**: Increment the patch version in `package.json` to match the commit message version only IF there are any code changes. If the commit is purely about docs or deleting files, then the version change must not occur.
+3. **Version bump**: Increment the patch version in `package.json` to match the commit message version only IF there are any code changes. If the commit is purely about docs or deleting files, then the version change must not occur. If the git unstaged changes already includes a `package.json` with its version updated, then the version change must not occur.
 
 4. **Update PR.md**: If the current branch is anything other than the `main` branch, add a concise entry to `PR.md` describing what changed. Match the existing section style.
 
