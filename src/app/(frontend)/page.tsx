@@ -6,11 +6,58 @@ import {
     formatPubDateKST,
 } from "@/lib/blog";
 import type { Metadata } from "next";
+import LandingHero from "@/components/LandingHeroSwitcher";
 
 export const revalidate = false;
 
 const PORTFOLIO_PROJ_MAX_NUM = 4;
 const BLOG_POST_MAX_NUM = 5;
+
+// 히어로 3대 핵심 가치 pillars
+const VALUE_PILLARS = [
+    {
+        label: "갈망",
+        sub: "Fun 설계",
+        description:
+            "편리함(Utility)을 넘어 플레이어를 몰입하게 만드는 즐거움(Fun)을 설계하는 것이 궁극적 목표",
+    },
+    {
+        label: "실행력",
+        sub: "직관 → 논리",
+        description:
+            "게이머로서 느낀 재미 요소를 분석하고, 엔지니어의 논리로 직접 시스템을 구현하는 역량",
+    },
+    {
+        label: "결단력",
+        sub: "위기 → 전환",
+        description:
+            "커리어의 전환점을 수동적 공백이 아닌, 오래 갈망한 게임 개발로의 능동적 도약으로 전환",
+    },
+];
+
+// 핵심 가치 4개 (포트폴리오 기반 추출)
+const CORE_VALUES = [
+    {
+        title: "C++ 게임 로직 설계 & 엔진 아키텍처",
+        description:
+            "콘솔 엔진 프로젝트 2개에서 엔진 DLL 분리, 전투·AI·물리 시스템, ANSI 트루컬러 렌더러, Quadtree 충돌 판정을 직접 구현. 5일 내 프로토타입 2개 완성.",
+    },
+    {
+        title: "게이머 커뮤니티 풀스택 서비스 기획·개발",
+        description:
+            "카트라이더 공략 사이트, 메이플스토리 경매장 사이트 등 게임 유저 대상 웹 서비스를 기획부터 배포까지 독립 수행.",
+    },
+    {
+        title: "게임 모딩 — 상용 엔진 분석 & 커스터마이징",
+        description:
+            "몬스터 헌터 와일즈/라이즈 RE Engine 기반 SFX 커스텀 모드 제작. Nexus Mods에서 고유 다운로드 8,000명 이상.",
+    },
+    {
+        title: "대규모 시스템 리드 개발 & DevOps",
+        description:
+            "시간당 500만 건(일 약 1.2억 건) 데이터가 유입되는 디지털 트윈 API 서버 리드 개발. Docker 원클릭 배포 파이프라인 구축으로 테스트 시간 50~70% 단축.",
+    },
+];
 
 interface AboutData {
     name?: string;
@@ -143,20 +190,33 @@ export default async function HomePage() {
             .order("pub_date", { ascending: false })
             .limit(BLOG_POST_MAX_NUM);
         if (data) {
-            latestPosts = data.map((p) => {
-                const body: string = p.content ?? "";
-                const firstImage = getFirstImageFromContent(body);
-                return {
-                    slug: p.slug,
-                    title: p.title,
-                    displayDescription:
-                        p.description?.trim() ?? getFirstThreeSentences(body),
-                    pubDateFormatted: formatPubDateKST(new Date(p.pub_date)),
-                    pubDateIso: new Date(p.pub_date).toISOString(),
-                    category: p.category?.trim() ?? null,
-                    thumbnailUrl: p.thumbnail || firstImage || null,
-                };
-            });
+            latestPosts = data.map(
+                (p: {
+                    slug: string;
+                    title: string;
+                    description: string | null;
+                    pub_date: string;
+                    category: string | null;
+                    thumbnail: string | null;
+                    content: string | null;
+                }) => {
+                    const body: string = p.content ?? "";
+                    const firstImage = getFirstImageFromContent(body);
+                    return {
+                        slug: p.slug,
+                        title: p.title,
+                        displayDescription:
+                            p.description?.trim() ??
+                            getFirstThreeSentences(body),
+                        pubDateFormatted: formatPubDateKST(
+                            new Date(p.pub_date)
+                        ),
+                        pubDateIso: new Date(p.pub_date).toISOString(),
+                        category: p.category?.trim() ?? null,
+                        thumbnailUrl: p.thumbnail || firstImage || null,
+                    };
+                }
+            );
         }
     }
 
@@ -168,189 +228,48 @@ export default async function HomePage() {
     return (
         <>
             {/* Hero */}
-            <section className="tablet:py-36 relative mx-auto max-w-4xl py-24 text-center">
-                <div
-                    aria-hidden="true"
-                    className="tablet:w-[36rem] tablet:h-[36rem] pointer-events-none absolute top-1/3 left-1/2 -z-10 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-(--color-accent) opacity-[0.12] blur-3xl"
-                />
-                <p className="animate-fade-in mb-6 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
-                    포트폴리오 &amp; 기술 블로그
-                </p>
-                <h1 className="tablet:text-7xl animate-fade-in-up stagger-1 mb-6 text-5xl leading-[1.05] font-black tracking-tight text-(--color-foreground)">
-                    {heroName}
-                </h1>
-                <p className="animate-fade-in-up stagger-2 mx-auto mb-10 max-w-xl text-lg leading-relaxed text-(--color-muted)">
-                    {heroDesc}
-                </p>
-                <div className="animate-fade-in-up stagger-3 flex flex-wrap justify-center gap-4">
-                    <Link
-                        href="/portfolio"
-                        className="rounded-full bg-(--color-accent) px-7 py-3.5 text-sm font-semibold text-(--color-on-accent) transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90"
-                    >
-                        Portfolio 보기
-                    </Link>
-                    <Link
-                        href="/resume"
-                        className="rounded-full border-2 border-(--color-border) px-7 py-3.5 text-sm font-semibold text-(--color-foreground) transition-all duration-200 hover:-translate-y-0.5 hover:border-(--color-accent) hover:text-(--color-accent)"
-                    >
-                        Resume 보기
-                    </Link>
+            <LandingHero
+                heroName={heroName}
+                heroDesc={heroDesc}
+                descriptionSub={about.descriptionSub}
+                profileImage={profileImage}
+                valuePillars={VALUE_PILLARS}
+                coreCompetencies={CORE_VALUES}
+            />
+
+            {/* 핵심 가치 */}
+            <section className="mx-auto max-w-5xl border-t border-(--color-border) py-16">
+                <div className="mb-10">
+                    <p className="mb-1 text-sm font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
+                        Core Values
+                    </p>
+                    <h2 className="text-4xl font-black tracking-tight text-(--color-foreground)">
+                        핵심 가치
+                    </h2>
                 </div>
-                <div className="animate-fade-in stagger-5 mt-20 flex justify-center">
-                    <div className="flex flex-col items-center gap-1.5 text-(--color-muted)">
-                        <span className="text-[10px] font-semibold tracking-[0.2em] uppercase">
-                            Scroll
-                        </span>
-                        <svg
-                            className="h-4 w-4 animate-bounce"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
+                <div className="tablet:grid-cols-2 grid grid-cols-1 gap-5">
+                    {CORE_VALUES.map((comp, idx) => (
+                        <div
+                            key={idx}
+                            className="rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-7"
                         >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M19 9l-7 7-7-7"
-                            />
-                        </svg>
-                    </div>
+                            <span className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-(--color-accent) text-base font-bold text-(--color-on-accent)">
+                                {idx + 1}
+                            </span>
+                            <h3 className="mb-2 text-xl font-bold text-(--color-foreground)">
+                                {comp.title}
+                            </h3>
+                            <p className="text-base leading-relaxed text-(--color-muted)">
+                                {comp.description}
+                            </p>
+                        </div>
+                    ))}
                 </div>
             </section>
 
-            {/* About 미리보기 */}
-            {about.name && (
-                <section className="mx-auto max-w-4xl border-t border-(--color-border) py-14">
-                    <p className="mb-6 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
-                        About me
-                    </p>
-                    <div className="tablet:flex-row flex flex-col items-start gap-6">
-                        {profileImage && (
-                            <div className="shrink-0">
-                                <img
-                                    src={profileImage}
-                                    alt=""
-                                    width={80}
-                                    height={80}
-                                    className="h-20 w-20 rounded-full object-cover ring-2 ring-(--color-accent)/30"
-                                    loading="lazy"
-                                />
-                            </div>
-                        )}
-                        <div className="min-w-0 flex-1">
-                            <h2 className="mb-2 text-xl font-black tracking-tight text-(--color-foreground)">
-                                {about.name}
-                            </h2>
-                            {about.description && (
-                                <p className="mb-2 leading-relaxed text-(--color-foreground)">
-                                    {about.description}
-                                </p>
-                            )}
-                            {about.descriptionSub && (
-                                <p className="mb-4 text-sm leading-relaxed text-(--color-muted)">
-                                    {about.descriptionSub}
-                                </p>
-                            )}
-                            <Link
-                                href="/about"
-                                className="inline-flex items-center gap-1.5 rounded-full border border-(--color-border) px-5 py-2.5 text-sm font-medium text-(--color-foreground) transition-all duration-200 hover:border-(--color-accent) hover:text-(--color-accent)"
-                            >
-                                소개 전체 보기
-                                <svg
-                                    className="h-4 w-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M9 5l7 7-7 7"
-                                    />
-                                </svg>
-                            </Link>
-                        </div>
-                    </div>
-                </section>
-            )}
-
-            {/* Work Experience */}
-            {workItems.length > 0 && (
-                <section className="mx-auto max-w-4xl border-t border-(--color-border) py-14">
-                    <div className="mb-8 flex items-end justify-between">
-                        <div>
-                            <p className="mb-1 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
-                                Experience
-                            </p>
-                            <h2 className="text-3xl font-black tracking-tight text-(--color-foreground)">
-                                Work
-                            </h2>
-                        </div>
-                        <Link
-                            href="/resume"
-                            className="inline-flex items-center gap-1.5 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
-                        >
-                            전체 이력서 보기
-                            <svg
-                                className="h-4 w-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M9 5l7 7-7 7"
-                                />
-                            </svg>
-                        </Link>
-                    </div>
-                    <div className="relative border-l-[3px] border-(--color-border) pl-8">
-                        {workItems.map((w, idx) => (
-                            <div key={idx} className="relative pb-10 last:pb-0">
-                                <div
-                                    className="absolute top-1 h-4 w-4 rounded-full border-2 border-(--color-accent) bg-(--color-surface)"
-                                    style={{ left: "calc(-2rem - 9.5px)" }}
-                                />
-                                {(w.startDate || w.endDate) && (
-                                    <p className="mb-1 text-[0.8rem] font-bold tracking-widest text-(--color-muted) uppercase">
-                                        {w.startDate ?? ""} ~{" "}
-                                        {w.endDate ?? "Present"}
-                                    </p>
-                                )}
-                                {w.name && (
-                                    <h3 className="text-2xl leading-tight font-black text-(--color-foreground)">
-                                        {w.url ? (
-                                            <a
-                                                href={w.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="transition-colors hover:underline"
-                                            >
-                                                {w.name}
-                                            </a>
-                                        ) : (
-                                            w.name
-                                        )}
-                                    </h3>
-                                )}
-                                {w.position && (
-                                    <p className="mt-0.5 text-base font-bold text-(--color-accent)">
-                                        {w.position}
-                                    </p>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </section>
-            )}
-
             {/* Portfolio Featured */}
             {featuredItems.length > 0 && (
-                <section className="mx-auto max-w-4xl border-t border-(--color-border) py-14">
+                <section className="mx-auto max-w-5xl border-t border-(--color-border) py-14">
                     <div className="mb-8 flex items-end justify-between">
                         <div>
                             <p className="mb-1 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
@@ -482,9 +401,81 @@ export default async function HomePage() {
                 </section>
             )}
 
+            {/* Work Experience */}
+            {workItems.length > 0 && (
+                <section className="mx-auto max-w-5xl border-t border-(--color-border) py-14">
+                    <div className="mb-8 flex items-end justify-between">
+                        <div>
+                            <p className="mb-1 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
+                                Experience
+                            </p>
+                            <h2 className="text-3xl font-black tracking-tight text-(--color-foreground)">
+                                Work
+                            </h2>
+                        </div>
+                        <Link
+                            href="/resume"
+                            className="inline-flex items-center gap-1.5 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
+                        >
+                            전체 이력서 보기
+                            <svg
+                                className="h-4 w-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M9 5l7 7-7 7"
+                                />
+                            </svg>
+                        </Link>
+                    </div>
+                    <div className="relative border-l-[3px] border-(--color-border) pl-8">
+                        {workItems.map((w, idx) => (
+                            <div key={idx} className="relative pb-10 last:pb-0">
+                                <div
+                                    className="absolute top-1 h-4 w-4 rounded-full border-2 border-(--color-accent) bg-(--color-surface)"
+                                    style={{ left: "calc(-2rem - 9.5px)" }}
+                                />
+                                {(w.startDate || w.endDate) && (
+                                    <p className="mb-1 text-[0.8rem] font-bold tracking-widest text-(--color-muted) uppercase">
+                                        {w.startDate ?? ""} ~{" "}
+                                        {w.endDate ?? "Present"}
+                                    </p>
+                                )}
+                                {w.name && (
+                                    <h3 className="text-2xl leading-tight font-black text-(--color-foreground)">
+                                        {w.url ? (
+                                            <a
+                                                href={w.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="transition-colors hover:underline"
+                                            >
+                                                {w.name}
+                                            </a>
+                                        ) : (
+                                            w.name
+                                        )}
+                                    </h3>
+                                )}
+                                {w.position && (
+                                    <p className="mt-0.5 text-base font-bold text-(--color-accent)">
+                                        {w.position}
+                                    </p>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
+
             {/* Blog 최신 글 */}
             {latestPosts.length > 0 && (
-                <section className="mx-auto max-w-4xl border-t border-(--color-border) py-14">
+                <section className="mx-auto max-w-5xl border-t border-(--color-border) py-14">
                     <div className="mb-8 flex items-end justify-between">
                         <div>
                             <p className="mb-1 text-xs font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
@@ -592,7 +583,7 @@ export default async function HomePage() {
 
             {/* Dev 도구 */}
             {isDev && (
-                <section className="mx-auto mt-4 mb-8 max-w-4xl rounded-xl border border-dashed border-(--color-border) bg-(--color-surface-subtle) p-4">
+                <section className="mx-auto mt-4 mb-8 max-w-5xl rounded-xl border border-dashed border-(--color-border) bg-(--color-surface-subtle) p-4">
                     <p className="mb-3 text-xs font-medium tracking-wider text-(--color-muted) uppercase">
                         개발 도구
                     </p>

@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.9.11 (2026-03-31)
+
+### Feat: 랜딩 페이지 & 이력서 리디자인 — 페르소나 선언형 Hero + 핵심역량 (v0.9.11)
+
+- `src/app/(frontend)/page.tsx`: Hero 섹션을 페르소나 선언형으로 리디자인 (프로필 이미지 + 한 줄 카피 + 3대 핵심 가치 pillars). About 미리보기 제거, 핵심역량 섹션 추가 (4개 역량 카드). 섹션 순서 변경: Hero → 핵심역량 → Portfolio → Work → Blog.
+- `src/components/resume/ResumePhases.tsx`: 핵심역량 섹션 추가 (경험→액션→결과 포맷, summary 아래 배치).
+- DB (MCP): `basics.label` 게임 개발자 전환 반영, `basics.summary` 스토리텔링 기반 문구 교체, Global Bridge work highlights "일 5억 건" → "시간당 500만 건(일 약 1.2억 건)" 정정.
+
 ## Feat: /ship 커스텀 커맨드 스킬 추가
 
 - `.claude/commands/ship.md`: `/ship` 슬래시 커맨드 추가. 커밋 메시지 한국어 포맷, 버전 범프, PR.md/CHANGES.md 업데이트, 테스트 실행 등 커밋 워크플로우 자동화 규칙 정의.
