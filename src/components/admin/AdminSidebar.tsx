@@ -65,6 +65,7 @@ interface AdminSidebarProps {
     onTabClick: (tabId: TabId) => void;
     open: boolean;
     onClose: () => void;
+    visible?: boolean;
 }
 
 // 어드민 사이드바 네비게이션
@@ -73,6 +74,7 @@ export default function AdminSidebar({
     onTabClick,
     open,
     onClose,
+    visible = true,
 }: AdminSidebarProps) {
     return (
         <>
@@ -86,10 +88,13 @@ export default function AdminSidebar({
             {/* 사이드바 본체 */}
             <nav
                 className={[
-                    "flex w-48 shrink-0 flex-col border-r border-(--color-border) bg-(--color-surface) py-4",
-                    "fixed inset-y-0 left-0 z-40 transition-transform duration-200",
-                    "tablet:relative tablet:translate-x-0 tablet:z-auto tablet:transition-none",
-                    open ? "translate-x-0" : "-translate-x-full",
+                    "flex shrink-0 flex-col overflow-hidden border-r border-(--color-border) bg-(--color-surface) py-4 transition-all duration-200",
+                    "fixed inset-y-0 left-0 z-40 w-48",
+                    "tablet:relative tablet:z-auto",
+                    visible ? "tablet:w-48" : "tablet:w-0 tablet:border-r-0",
+                    open
+                        ? "translate-x-0"
+                        : "tablet:translate-x-0 -translate-x-full",
                 ].join(" ")}
             >
                 {SECTIONS.map((section, sectionIdx) => (
