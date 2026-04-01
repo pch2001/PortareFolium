@@ -484,7 +484,7 @@ export default function SiteConfigPanel() {
 
     return (
         <div className="space-y-8">
-            <h2 className="text-2xl font-bold text-(--color-foreground)">
+            <h2 className="text-3xl font-bold text-(--color-foreground)">
                 사이트 설정
             </h2>
 
