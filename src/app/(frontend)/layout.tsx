@@ -36,11 +36,9 @@ export default async function FrontendLayout({
         if (typeof v === "string") githubUrl = v;
     }
 
-    const isDev = process.env.NODE_ENV === "development";
-
     return (
         <>
-            <Header siteName={siteName} githubUrl={githubUrl} isDev={isDev} />
+            <Header siteName={siteName} githubUrl={githubUrl} />
             <main className="mx-auto max-w-[1350px] px-4 py-8">{children}</main>
         </>
     );

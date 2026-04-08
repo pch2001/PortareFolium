@@ -2,16 +2,15 @@
 
 import { useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
+import UserMenu from "@/components/UserMenu";
 import Link from "next/link";
 
 export default function Header({
     siteName,
     githubUrl,
-    isDev,
 }: {
     siteName: string;
     githubUrl: string;
-    isDev: boolean;
 }) {
     const [open, setOpen] = useState(false);
 
@@ -112,15 +111,6 @@ export default function Header({
                             {label}
                         </Link>
                     ))}
-                    {isDev && (
-                        <Link
-                            href="/admin"
-                            className="nav-link px-3 py-2 text-sm font-medium text-(--color-muted) transition-colors hover:text-(--color-foreground)"
-                            onClick={() => setOpen(false)}
-                        >
-                            Admin
-                        </Link>
-                    )}
                     {/* 구분선 */}
                     <span
                         className="tablet:block tablet:h-5 tablet:w-px tablet:mx-2 hidden bg-(--color-border)"
@@ -147,6 +137,7 @@ export default function Header({
                         </svg>
                     </a>
                     <ThemeToggle />
+                    <UserMenu />
                 </div>
             </nav>
         </header>

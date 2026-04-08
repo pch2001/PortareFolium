@@ -22,7 +22,7 @@ export default async function RootLayout({
 }: {
     children: React.ReactNode;
 }) {
-    let colorScheme: string = process.env.NEXT_PUBLIC_COLOR_SCHEME ?? "slate";
+    let colorScheme: string = process.env.NEXT_PUBLIC_COLOR_SCHEME ?? "blue";
     let plainMode = false;
 
     const configRows = await getSiteConfig();
@@ -36,7 +36,7 @@ export default async function RootLayout({
 
     const validScheme = VALID_SCHEMES.includes(colorScheme)
         ? colorScheme
-        : "slate";
+        : "blue";
 
     return (
         <html

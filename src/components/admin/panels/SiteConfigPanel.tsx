@@ -29,7 +29,7 @@ export default function SiteConfigPanel() {
                 document.documentElement.getAttribute("data-color-scheme");
             if (attr) return attr as ColorScheme;
         }
-        return "slate";
+        return "blue";
     });
     const [plainMode, setPlainMode] = useState<boolean>(() => {
         if (typeof document !== "undefined") {

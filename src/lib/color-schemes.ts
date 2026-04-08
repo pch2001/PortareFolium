@@ -1,8 +1,6 @@
 // 컬러 스킴 정의 — global.css와 동기화
 
-const CUSTOM_SCHEMES = ["slate", "ember", "circuit", "phantom"] as const;
-
-const TAILWIND_SCHEMES = [
+export const ALL_SCHEME_IDS = [
     "red",
     "orange",
     "amber",
@@ -22,8 +20,6 @@ const TAILWIND_SCHEMES = [
     "rose",
 ] as const;
 
-export const ALL_SCHEME_IDS = [...CUSTOM_SCHEMES, ...TAILWIND_SCHEMES] as const;
-
 export type ColorScheme = (typeof ALL_SCHEME_IDS)[number];
 
 export interface ColorSchemeOption {
@@ -35,32 +31,6 @@ export interface ColorSchemeOption {
 
 // 스킴별 메타데이터 (UI 드롭다운용)
 export const COLOR_SCHEMES: ColorSchemeOption[] = [
-    // 커스텀 스킴
-    {
-        value: "slate",
-        label: "Slate",
-        desc: "UE5 다크 슬레이트 + Unreal Blue",
-        swatch: "#2563eb",
-    },
-    {
-        value: "ember",
-        label: "Ember",
-        desc: "고에너지 오렌지/파이어",
-        swatch: "#ea580c",
-    },
-    {
-        value: "circuit",
-        label: "Circuit",
-        desc: "매트릭스 그린",
-        swatch: "#16a34a",
-    },
-    {
-        value: "phantom",
-        label: "Phantom",
-        desc: "바이올렛/퍼플",
-        swatch: "#7c3aed",
-    },
-    // Tailwind named colors
     { value: "red", label: "Red", desc: "레드", swatch: "#ef4444" },
     { value: "orange", label: "Orange", desc: "오렌지", swatch: "#f97316" },
     { value: "amber", label: "Amber", desc: "앰버", swatch: "#f59e0b" },

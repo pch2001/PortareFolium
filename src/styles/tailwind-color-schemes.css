@@ -360,8 +360,9 @@
     --color-link: #38bdf8;
 }
 
-/* ── blue ── */
-[data-color-scheme="blue"] {
+/* ── blue (기본 스킴) ── */
+[data-color-scheme="blue"],
+:root:not([data-color-scheme]) {
     --color-code-block-bg: #0a1028;
     --color-code-block-fg: #c8d8f0;
     --color-surface: #eff6ff;
@@ -378,7 +379,8 @@
     --color-code-fg: #0a1028;
     --color-link: #2563eb;
 }
-[data-color-scheme="blue"].dark {
+[data-color-scheme="blue"].dark,
+:root:not([data-color-scheme]).dark {
     --color-code-block-bg: #080c1a;
     --color-code-block-fg: #c8d8f0;
     --color-surface: #0c1020;
