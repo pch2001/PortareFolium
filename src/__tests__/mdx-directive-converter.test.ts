@@ -1,0 +1,152 @@
+import { describe, it, expect } from "vitest";
+import {
+    jsxToDirective,
+    directiveToJsx,
+    transformOutsideCodeBlocks,
+} from "@/lib/mdx-directive-converter";
+
+// ─────────────────────────────────────────────────────────
+// jsxToDirective (에디터 로드 시: JSX → MDX Directive)
+// ─────────────────────────────────────────────────────────
+
+describe("jsxToDirective", () => {
+    describe("YouTube 변환", () => {
+        it('<YouTube id="abc" /> → ::youtube[]{id="abc"}', () => {
+            const input = '<YouTube id="abc" />';
+            expect(jsxToDirective(input)).toContain('::youtube[]{id="abc"}');
+        });
+
+        it("공백이 다양한 형태여도 변환", () => {
+            const input = '<YouTube  id="xyz"  />';
+            expect(jsxToDirective(input)).toContain('::youtube[]{id="xyz"}');
+        });
+    });
+
+    describe("ColoredTable 변환", () => {
+        it('<ColoredTable columns="A" rows="B" /> → ::colored-table[]{...}', () => {
+            const input = '<ColoredTable columns="A" rows="B" />';
+            const result = jsxToDirective(input);
+            expect(result).toContain("::colored-table[]");
+            expect(result).toContain('columns="A"');
+            expect(result).toContain('rows="B"');
+        });
+
+        it("<FoliumTable /> 도 colored-table로 변환", () => {
+            const input = '<FoliumTable columns="X" rows="Y" />';
+            const result = jsxToDirective(input);
+            expect(result).toContain("::colored-table[]");
+        });
+    });
+
+    describe("LaTeX 변환", () => {
+        it("$$수식$$ → ::latex{src=...}", () => {
+            const input = "$$E = mc^2$$";
+            const result = jsxToDirective(input);
+            expect(result).toContain("::latex{src=");
+            expect(result).toContain("E = mc^2");
+        });
+    });
+
+    describe("코드 블록 보호", () => {
+        it("코드 블록 내부 LaTeX($$...$$)는 변환하지 않음", () => {
+            const input = "```\n$$E=mc^2$$\n```\nOutside $$x+y$$";
+            const result = jsxToDirective(input);
+            // 코드 블록 내부 $$ 는 그대로
+            expect(result).toContain("$$E=mc^2$$");
+            // 코드 블록 외부는 변환
+            expect(result).toContain("::latex{src=");
+        });
+    });
+});
+
+// ─────────────────────────────────────────────────────────
+// directiveToJsx (저장 시: MDX Directive → JSX)
+// ─────────────────────────────────────────────────────────
+
+describe("directiveToJsx", () => {
+    describe("YouTube 변환", () => {
+        it('::youtube[]{id="abc"} → <YouTube id="abc" />', () => {
+            const input = '::youtube[]{id="abc"}';
+            expect(directiveToJsx(input)).toContain('<YouTube id="abc" />');
+        });
+
+        it('::youtube{#abc} shorthand → <YouTube id="abc" />', () => {
+            const input = "::youtube{#abc}";
+            expect(directiveToJsx(input)).toContain('<YouTube id="abc" />');
+        });
+
+        it("quoted 없는 id 처리: ::youtube[]{id=abc}", () => {
+            const input = "::youtube[]{id=abc}";
+            expect(directiveToJsx(input)).toContain('<YouTube id="abc" />');
+        });
+    });
+
+    describe("colored-table 변환", () => {
+        it('::colored-table[]{columns="A" rows="B"} → <ColoredTable .../>', () => {
+            const input = '::colored-table[]{columns="A" rows="B"}';
+            const result = directiveToJsx(input);
+            expect(result).toContain("<ColoredTable");
+            expect(result).toContain("columns=");
+            expect(result).toContain("rows=");
+        });
+    });
+
+    describe("LaTeX 변환", () => {
+        it('::latex{src="E = mc^2"} → $$E = mc^2$$', () => {
+            const input = '::latex{src="E = mc^2"}';
+            const result = directiveToJsx(input);
+            expect(result).toContain("$$E = mc^2$$");
+        });
+    });
+
+    describe("이스케이프 제거", () => {
+        it("directive 라인의 백슬래시 이스케이프 제거", () => {
+            // MDXEditor가 삽입하는 이스케이프 처리
+            const input = '\\::youtube[]{id="abc"}';
+            const result = directiveToJsx(input);
+            expect(result).toContain('<YouTube id="abc" />');
+        });
+    });
+});
+
+// ─────────────────────────────────────────────────────────
+// 왕복 일관성 (roundtrip)
+// ─────────────────────────────────────────────────────────
+
+describe("왕복 변환 일관성", () => {
+    it("YouTube: jsxToDirective → directiveToJsx 왕복", () => {
+        const original = '<YouTube id="dQw4w9WgXcQ" />';
+        const directive = jsxToDirective(original);
+        const restored = directiveToJsx(directive);
+        expect(restored.trim()).toContain('<YouTube id="dQw4w9WgXcQ" />');
+    });
+});
+
+// ─────────────────────────────────────────────────────────
+// transformOutsideCodeBlocks
+// ─────────────────────────────────────────────────────────
+
+describe("transformOutsideCodeBlocks", () => {
+    it("코드 블록 밖 텍스트에만 변환 적용", () => {
+        const input = "hello ```code block``` world";
+        const result = transformOutsideCodeBlocks(input, (t) =>
+            t.toUpperCase()
+        );
+        expect(result).toContain("HELLO");
+        expect(result).toContain("```code block```");
+        expect(result).toContain("WORLD");
+    });
+
+    it("코드 블록이 없으면 전체에 변환 적용", () => {
+        const input = "hello world";
+        const result = transformOutsideCodeBlocks(input, (t) =>
+            t.toUpperCase()
+        );
+        expect(result).toBe("HELLO WORLD");
+    });
+
+    it("빈 문자열에도 안전하게 작동", () => {
+        const result = transformOutsideCodeBlocks("", (t) => t.toUpperCase());
+        expect(result).toBe("");
+    });
+});

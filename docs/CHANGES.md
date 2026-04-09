@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.10.26 (2026-04-09)
+
+### Test: 유틸리티 라이브러리 테스트 추가
+
+- `src/__tests__/color-schemes.test.ts`: ALL_SCHEME_IDS/COLOR_SCHEMES/NEUTRAL_SCHEME/PDF_COLOR_SCHEMES 구조 무결성 검증 (17개 케이스)
+- `src/__tests__/mdx-directive-converter.test.ts`: jsxToDirective/directiveToJsx/transformOutsideCodeBlocks 양방향 변환 및 왕복 일관성 검증
+- 전체 테스트 40개 → 66개
+
 ## v0.10.25 (2026-04-09)
 
 ### Feat: 직무 분야 이모지에 스쿼클 배경 추가
