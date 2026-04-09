@@ -82,7 +82,7 @@ export default async function BlogPostPage({
     const pubDate = new Date(post.pub_date);
 
     return (
-        <div className="mx-auto flex max-w-5xl gap-12">
+        <div className="flex gap-12">
             <article className="max-w-3xl min-w-0 flex-1">
                 <Link
                     href="/blog"

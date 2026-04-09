@@ -25,6 +25,11 @@ export async function revalidateHome() {
     revalidatePath("/");
 }
 
+// 루트 레이아웃 재생성 트리거 (컬러 스킴 등 전역 설정 변경 시)
+export async function revalidateLayout() {
+    revalidatePath("/", "layout");
+}
+
 // 이력서 페이지 재생성 트리거
 export async function revalidateResume() {
     revalidatePath("/resume");

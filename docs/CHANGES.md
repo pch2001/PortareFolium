@@ -1,5 +1,17 @@
 # CHANGES
 
+## v0.10.21 (2026-04-09)
+
+### Refactor: 프론트엔드 max-width 통합 + 컬러 스킴 revalidation 수정
+
+- `src/components/ContentWrapper.tsx`: CVA 기반 콘텐츠 너비 통합 컴포넌트 (default: `max-w-4xl desktop:max-w-6xl`)
+- `src/app/(frontend)/layout.tsx`: ContentWrapper 적용 (개별 max-width → 통합)
+- `src/components/Header.tsx`: contentVariants 적용
+- 프론트엔드 페이지/컴포넌트 개별 max-width 제거 (page.tsx, blog, portfolio, books, AboutView, LandingHeroSwitcher)
+- `src/app/admin/actions/revalidate.ts`: `revalidateLayout()` 추가
+- `src/components/admin/panels/SiteConfigPanel.tsx`: 저장 시 `revalidateLayout()` 호출 추가 — 컬러 스킴 변경 즉시 반영
+- 어드민 패널 5개 (PostsPanel, PortfolioPanel, BooksSubPanel, AboutPanel, SiteConfigPanel): sticky 저장 바에 `-mb-4 tablet:-mb-6 laptop:-mb-8` 추가 — `<main>` 하단 패딩으로 인한 바닥 간격 제거
+
 ## v0.10.20 (2026-04-09)
 
 ### Fix: 로그인 페이지 인증 리다이렉트

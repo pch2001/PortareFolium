@@ -31,7 +31,7 @@ export default function LandingHero({
     const { first, rest } = splitFirstWord(heroName);
 
     return (
-        <section className="tablet:py-32 relative mx-auto max-w-5xl py-24">
+        <section className="tablet:py-32 relative py-24">
             {/* 히어로 레이아웃 */}
             <div className="tablet:flex-row tablet:items-start tablet:gap-16 flex flex-col gap-12">
                 {/* 왼쪽: 텍스트 + CTA */}

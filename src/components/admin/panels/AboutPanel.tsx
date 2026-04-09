@@ -812,7 +812,7 @@ export default function AboutPanel() {
             </section>
 
             {/* Sticky 저장 바 */}
-            <div className="tablet:-mx-6 laptop:-mx-8 sticky bottom-0 z-50 -mx-4 border-t border-(--color-border) bg-(--color-surface)/90 px-6 py-3 backdrop-blur-sm">
+            <div className="tablet:-mx-6 tablet:-mb-6 laptop:-mx-8 laptop:-mb-8 sticky bottom-0 z-50 -mx-4 -mb-4 border-t border-(--color-border) bg-(--color-surface)/90 px-6 py-3 backdrop-blur-sm">
                 <div className="mx-auto flex items-center justify-between gap-3">
                     {status && (
                         <span
