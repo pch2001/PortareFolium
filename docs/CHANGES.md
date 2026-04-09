@@ -1,5 +1,19 @@
 # CHANGES
 
+## v0.10.27 (2026-04-09)
+
+### Feat/Fix: 어드민 헤더 단축키 상시 표시 + 커맨드 팔레트 outline 제거
+
+- `src/components/admin/AdminHeader.tsx`: ⌘K 단축키를 Tooltip 대신 kbd 배지로 검색 아이콘 우측에 상시 표시
+- `src/components/ui/command.tsx`: CommandInput에 `style={{ outline: "none" }}` 추가 — globals.css `:focus-visible` 전역 규칙에 의한 outline 제거
+
+### Test: 유틸리티 라이브러리 테스트 추가
+
+- `src/__tests__/tiptap-utils.test.ts`: formatShortcutKey/isValidPosition/clamp/isAllowedUri/sanitizeUrl 검증 (27개 케이스)
+- `src/__tests__/tailwind-colors.test.ts`: tailwindToHex/isLightBackground 검증 (20개 케이스)
+- `src/__tests__/mermaid-themes.test.ts`: MERMAID_THEMES 구조 무결성 + getMermaidConfig 검증 (14개 케이스)
+- 전체 테스트 66개 → 142개
+
 ## v0.10.26 (2026-04-09)
 
 ### Test: 유틸리티 라이브러리 테스트 추가

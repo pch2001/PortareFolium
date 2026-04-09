@@ -2,12 +2,6 @@
 
 import { Search } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface AdminHeaderProps {
     timeLeft: number;
@@ -117,21 +111,15 @@ export default function AdminHeader({
                     {formatRemaining(timeLeft)}
                 </span>
                 {onCommandOpen && (
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <button
-                                    onClick={onCommandOpen}
-                                    className="rounded-md p-1.5 text-(--color-muted) transition-colors hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
-                                >
-                                    <Search className="h-4 w-4" />
-                                </button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>⌘K</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                    <button
+                        onClick={onCommandOpen}
+                        className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-(--color-muted) transition-colors hover:bg-(--color-surface-subtle) hover:text-(--color-foreground)"
+                    >
+                        <Search className="h-4 w-4" />
+                        <kbd className="tablet:inline-flex hidden rounded border border-(--color-border) px-1.5 py-0.5 font-mono text-[10px]">
+                            ⌘K
+                        </kbd>
+                    </button>
                 )}
                 <ThemeToggle />
                 {/* 로그아웃 버튼 */}
