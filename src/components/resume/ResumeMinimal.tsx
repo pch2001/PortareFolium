@@ -52,7 +52,10 @@ export default async function ResumeMinimal({ resume }: Props) {
     return (
         <div className="mx-auto max-w-[1050px] text-[0.9375rem] leading-[1.6] text-(--color-foreground)">
             {/* Header */}
-            <header className="mb-5 border-b-2 border-(--color-foreground) pb-4">
+            <header
+                className="mb-5 border-b-2 border-(--color-foreground) pb-4"
+                data-pdf-block
+            >
                 {basics.image && basics.image.trim() ? (
                     <div className="mb-4">
                         <img
@@ -142,7 +145,7 @@ export default async function ResumeMinimal({ resume }: Props) {
 
             {/* Summary */}
             {basics.summary ? (
-                <section className="mb-6">
+                <section className="mb-6" data-pdf-block>
                     <p className="m-0 text-[0.9375rem] leading-[1.65] whitespace-pre-line text-(--color-foreground)">
                         {basics.summary}
                     </p>
@@ -164,7 +167,11 @@ export default async function ResumeMinimal({ resume }: Props) {
 
                     if (sectionKey === "work" && Array.isArray(sectionValue)) {
                         return (
-                            <section key={sectionKey} className="mb-10">
+                            <section
+                                key={sectionKey}
+                                className="mb-10"
+                                data-pdf-block
+                            >
                                 <h2 className="mb-3 border-b border-(--color-border) pb-2 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {getLabel("work")}
                                 </h2>
@@ -274,7 +281,11 @@ export default async function ResumeMinimal({ resume }: Props) {
                         Array.isArray(sectionValue)
                     ) {
                         return (
-                            <section key={sectionKey} className="mb-10">
+                            <section
+                                key={sectionKey}
+                                className="mb-10"
+                                data-pdf-block
+                            >
                                 <h2 className="mb-3 border-b border-(--color-border) pb-2 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {getLabel("skills")}
                                 </h2>
@@ -367,7 +378,11 @@ export default async function ResumeMinimal({ resume }: Props) {
                         Array.isArray(sectionValue)
                     ) {
                         return (
-                            <section key={sectionKey} className="mb-10">
+                            <section
+                                key={sectionKey}
+                                className="mb-10"
+                                data-pdf-block
+                            >
                                 <h2 className="mb-3 border-b border-(--color-border) pb-2 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {getLabel("education")}
                                 </h2>
@@ -449,7 +464,11 @@ export default async function ResumeMinimal({ resume }: Props) {
                     ) {
                         const sectionTitle = getLabel(sectionKey);
                         return (
-                            <section key={sectionKey} className="mb-10">
+                            <section
+                                key={sectionKey}
+                                className="mb-10"
+                                data-pdf-block
+                            >
                                 <h2 className="mb-3 border-b border-(--color-border) pb-2 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {sectionTitle}
                                 </h2>

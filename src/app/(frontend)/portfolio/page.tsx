@@ -107,7 +107,7 @@ export default async function PortfolioPage() {
                 {publicBooks.length > 0 && (
                     <>
                         <div className="my-12 h-px bg-(--color-border)" />
-                        <section>
+                        <section data-pdf-block>
                             <h2 className="mb-6 flex items-center gap-2 text-sm font-bold tracking-[0.12em] text-(--color-muted) uppercase">
                                 <BookOpen
                                     className="h-4 w-4"
@@ -120,6 +120,7 @@ export default async function PortfolioPage() {
                                     <Link
                                         key={book.slug}
                                         href={`/books/${book.slug}`}
+                                        data-pdf-block
                                         className="card-lift group flex items-start gap-4 overflow-hidden rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-5"
                                     >
                                         {book.cover_url ? (

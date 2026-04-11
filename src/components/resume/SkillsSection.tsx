@@ -195,7 +195,7 @@ export default function SkillsSection({
     );
 
     return (
-        <section className="mb-10">
+        <section className="mb-10" data-pdf-block>
             <div className="mb-5 flex items-center justify-between border-b border-(--color-border) pb-1.5">
                 <h2 className="text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                     {label}

@@ -300,6 +300,15 @@ docs/CHANGES.md                         # 변경 이력 (기능/디자인 변경
 - 쿼리 중복 제거: 동일 request 내 `generateMetadata` + page 컴포넌트가 같은 데이터를 fetch할 때 `lib/queries.ts`의 React `cache()` 함수를 사용
 - On-Demand revalidation: admin 패널 저장·발행 시 `src/app/admin/actions/revalidate.ts` Server Action 호출 → 해당 slug 페이지 + 목록 + 홈 페이지 즉시 재생성. MCP 에이전트(`mcp-tools.ts`)도 동일 경로 커버.
 
+**PDF Export (`data-pdf-block`) Convention:**
+
+PDF 내보내기는 `PdfPreviewModal.tsx`의 `paginateBlocks()`가 `data-pdf-block` / `data-pdf-block-item` attribute를 기준으로 페이지 분할을 처리한다. Resume·Portfolio 컴포넌트를 수정하거나 새로 추가할 때 반드시 아래 규칙을 따를 것.
+
+- **모든 시맨틱 블록**(`<section>`, `<header>`, `<article>`, 개별 entry `<div>`)에 `data-pdf-block` attribute를 추가해야 PDF 페이지 경계에서 잘리지 않음. 누락 시 해당 블록은 pagination 대상에서 빠져 기존처럼 중간에서 잘림.
+- **grid 카드**(프로젝트 카드 등 개별 아이템 단위로 분할 가능한 grid 자식)에는 `data-pdf-block-item` 사용. `paginateBlocks()`가 같은 `offsetTop`의 아이템을 행(row)으로 그룹화하고, spacer에 `grid-column: 1 / -1`을 적용하여 grid 레이아웃을 보존하면서 행 단위로 다음 페이지로 이동시킴.
+- **부모-자식 중첩 규칙**: 부모에 `data-pdf-block`, 자식에도 `data-pdf-block` 또는 `data-pdf-block-item`이 있으면 부모는 자동으로 pagination 대상에서 제외됨 (자식이 개별 처리). 이 동작은 `paginateBlocks()` 내부 filter에서 처리되므로 부모·자식 모두에 attribute를 부여해도 안전함.
+- **프리뷰 overlay 규칙**: 페이지 구분선 등 시각적 요소는 반드시 `previewRef` DOM 외부에 absolute-positioned overlay로 렌더링해야 함. `previewRef` 내부에 넣으면 `html2canvas` 캡처에 포함되어 PDF에 나타남. overlay의 시각적 간격(`h-4 bg-zinc-800` 등)은 반드시 dashed line **위쪽**(이전 페이지 spacer 영역)에 배치해야 함. 아래쪽에 배치하면 다음 페이지 콘텐츠 상단을 가림.
+
 **Known Pitfalls:**
 
 - **`unstable_cache` 클로저 패턴 금지**: `unstable_cache(() => fn(arg), [key])()` 형태로 매 호출마다 새 클로저를 생성하면 `arg`가 cache key에 포함되지 않음. 동일 key라면 `arg` 변경·코드 수정 후에도 stale 결과(에러 포함)를 계속 서빙. **올바른 패턴**: 모듈 레벨에서 `const cached = unstable_cache(async (a, b) => fn(b), ['key'])` 선언 후 `cached(a, b)` 호출 — 인자가 실제 cache key의 일부가 됨.

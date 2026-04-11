@@ -25,6 +25,7 @@ export default function PortfolioView({ projects }: Props) {
                 <article
                     key={project.slug}
                     className="relative pb-10 pl-8 last:pb-0"
+                    data-pdf-block
                 >
                     {/* 타임라인 닷 */}
                     <div

@@ -85,7 +85,10 @@ export default async function ResumeModern({ resume }: Props) {
     return (
         <div className="mx-auto max-w-[1050px] text-[0.9375rem] leading-[1.6] text-(--color-foreground)">
             {/* Header */}
-            <header className="mb-8 border-b-2 border-(--color-border) pb-7">
+            <header
+                className="mb-8 border-b-2 border-(--color-border) pb-7"
+                data-pdf-block
+            >
                 {basics.image && basics.image.trim() ? (
                     <div className="mb-4 flex justify-center">
                         <img
@@ -194,7 +197,11 @@ export default async function ResumeModern({ resume }: Props) {
 
                     if (sectionKey === "work" && Array.isArray(sectionValue)) {
                         return (
-                            <section key={sectionKey} className="mb-10">
+                            <section
+                                key={sectionKey}
+                                className="mb-10"
+                                data-pdf-block
+                            >
                                 <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {getLabel("work")}
                                 </h2>
@@ -204,6 +211,7 @@ export default async function ResumeModern({ resume }: Props) {
                                             <div
                                                 key={wIdx}
                                                 className="relative"
+                                                data-pdf-block
                                             >
                                                 <div
                                                     className="absolute h-2.5 w-2.5 rounded-full border-2 border-(--color-surface) bg-(--color-accent)"
@@ -360,7 +368,11 @@ export default async function ResumeModern({ resume }: Props) {
                         Array.isArray(sectionValue)
                     ) {
                         return (
-                            <section key={sectionKey} className="mb-10">
+                            <section
+                                key={sectionKey}
+                                className="mb-10"
+                                data-pdf-block
+                            >
                                 <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {getLabel("education")}
                                 </h2>
@@ -369,6 +381,7 @@ export default async function ResumeModern({ resume }: Props) {
                                         <div
                                             key={idx}
                                             className="mb-3 rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-4.5 py-3.5 last:mb-0"
+                                            data-pdf-block
                                         >
                                             {education.institution ? (
                                                 <h3 className="m-0 mb-0.5 text-lg font-bold text-(--color-foreground)">
@@ -453,7 +466,11 @@ export default async function ResumeModern({ resume }: Props) {
                     ) {
                         const sectionTitle = getLabel(sectionKey);
                         return (
-                            <section key={sectionKey} className="mb-10">
+                            <section
+                                key={sectionKey}
+                                className="mb-10"
+                                data-pdf-block
+                            >
                                 <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {sectionTitle}
                                 </h2>

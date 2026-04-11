@@ -5,11 +5,136 @@ import { createPortal } from "react-dom";
 import { Download, X, ChevronDown, Loader2 } from "lucide-react";
 import { PDF_COLOR_SCHEMES, type PdfColorScheme } from "@/lib/color-schemes";
 
+// A4 비율 (297mm / 210mm)
+const A4_RATIO = 297 / 210;
+
 interface Props {
     open: boolean;
     onClose: () => void;
     contentRef: React.RefObject<HTMLElement | null>;
     fileName?: string;
+}
+
+// spacer 생성 헬퍼
+function createSpacer(height: number, isGridItem: boolean): HTMLElement {
+    const spacer = document.createElement("div");
+    spacer.setAttribute("data-pdf-spacer", "true");
+    spacer.style.height = `${height}px`;
+    spacer.style.background = "transparent";
+    spacer.style.pointerEvents = "none";
+    // grid item spacer는 전체 열 span
+    if (isGridItem) spacer.style.gridColumn = "1 / -1";
+    return spacer;
+}
+
+// 블록 높이 측정 후 페이지 경계에서 잘리는 블록 앞에 spacer 삽입
+function paginateBlocks(container: HTMLElement): number[] {
+    const pageWidth = container.offsetWidth;
+    if (pageWidth === 0) return [];
+    const pageHeight = pageWidth * A4_RATIO;
+
+    // 기존 spacer 제거
+    container
+        .querySelectorAll("[data-pdf-spacer]")
+        .forEach((el) => el.remove());
+
+    const allBlocks = container.querySelectorAll<HTMLElement>(
+        "[data-pdf-block], [data-pdf-block-item]"
+    );
+    // container block이 block-type 자식을 가진 경우 container 제외 (자식이 개별 처리)
+    const blocks = Array.from(allBlocks).filter((block) => {
+        if (block.hasAttribute("data-pdf-block-item")) return true;
+        return !block.querySelector("[data-pdf-block], [data-pdf-block-item]");
+    });
+    if (blocks.length === 0) return [];
+
+    const containerRect = container.getBoundingClientRect();
+    const pageBreaks: number[] = [];
+    let currentPageBottom = pageHeight;
+    // grid row 중복 처리 방지용
+    let lastGridRowTop = -Infinity;
+
+    for (const block of blocks) {
+        const isGridItem = block.hasAttribute("data-pdf-block-item");
+        const blockRect = block.getBoundingClientRect();
+        let blockTop = blockRect.top - containerRect.top;
+
+        // grid item: 같은 행 아이템은 skip (첫 번째 아이템만 처리)
+        if (isGridItem) {
+            if (Math.abs(blockTop - lastGridRowTop) < 2) continue;
+            lastGridRowTop = blockTop;
+        }
+
+        // grid item: 같은 행의 가장 높은 아이템 기준으로 row bottom 계산
+        let blockBottom = blockTop + blockRect.height;
+        if (isGridItem && block.parentElement) {
+            const siblings = block.parentElement.querySelectorAll<HTMLElement>(
+                "[data-pdf-block-item]"
+            );
+            for (const sib of siblings) {
+                const sibRect = sib.getBoundingClientRect();
+                const sibTop = sibRect.top - containerRect.top;
+                if (Math.abs(sibTop - blockTop) < 2) {
+                    blockBottom = Math.max(
+                        blockBottom,
+                        sibTop + sibRect.height
+                    );
+                }
+            }
+        }
+
+        const blockHeight = blockBottom - blockTop;
+
+        // 블록이 현재 페이지에 맞으면 skip
+        if (blockBottom <= currentPageBottom + 1) continue;
+
+        // 블록이 A4 한 페이지보다 큰 경우 → graceful degradation
+        if (blockHeight > pageHeight) {
+            while (currentPageBottom < blockBottom) {
+                pageBreaks.push(currentPageBottom);
+                currentPageBottom += pageHeight;
+            }
+            continue;
+        }
+
+        // 블록이 페이지 경계를 넘지만 한 페이지에 들어가는 크기 → spacer 삽입
+        const spacerHeight = currentPageBottom - blockTop;
+        if (spacerHeight > 0 && spacerHeight < pageHeight) {
+            block.parentElement?.insertBefore(
+                createSpacer(spacerHeight, isGridItem),
+                block
+            );
+            pageBreaks.push(currentPageBottom);
+            currentPageBottom += pageHeight;
+        } else {
+            while (currentPageBottom < blockTop) {
+                pageBreaks.push(currentPageBottom);
+                currentPageBottom += pageHeight;
+            }
+            if (
+                blockBottom > currentPageBottom + 1 &&
+                blockHeight <= pageHeight
+            ) {
+                const gap = currentPageBottom - blockTop;
+                if (gap > 0 && gap < pageHeight) {
+                    block.parentElement?.insertBefore(
+                        createSpacer(gap, isGridItem),
+                        block
+                    );
+                }
+                pageBreaks.push(currentPageBottom);
+                currentPageBottom += pageHeight;
+            }
+        }
+
+        // 보정: 블록이 삽입 후에도 다중 페이지를 넘을 수 있음
+        while (currentPageBottom < blockBottom) {
+            pageBreaks.push(currentPageBottom);
+            currentPageBottom += pageHeight;
+        }
+    }
+
+    return pageBreaks;
 }
 
 export default function PdfPreviewModal({
@@ -23,41 +148,48 @@ export default function PdfPreviewModal({
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [generating, setGenerating] = useState(false);
+    const [pageBreaks, setPageBreaks] = useState<number[]>([]);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // 콘텐츠 복제
-    const cloneContent = useCallback(() => {
-        if (!contentRef.current || !previewRef.current) return;
+    // 총 페이지 수
+    const totalPages = pageBreaks.length + 1;
+
+    // 모달 열림 / 스킴 변경 시: 원본에서 새로 클론 + 페이지네이션
+    // 기존 클론 재사용 시 grid-column: 1/-1 spacer의 grid reflow 영향으로 측정값이 달라지므로
+    // 항상 깨끗한 DOM에서 pagination 실행
+    useEffect(() => {
+        if (!open || !contentRef.current || !previewRef.current) return;
         setLoading(true);
+        document.body.style.overflow = "hidden";
+
         const clone = contentRef.current.cloneNode(true) as HTMLElement;
         // 링크 비활성화
         clone.querySelectorAll("a").forEach((a) => {
             a.removeAttribute("href");
             a.style.pointerEvents = "none";
         });
+        // interactive 요소 숨김
+        clone.querySelectorAll("select").forEach((el) => {
+            (el as HTMLElement).style.display = "none";
+        });
         previewRef.current.innerHTML = "";
         previewRef.current.appendChild(clone);
-        requestAnimationFrame(() => setLoading(false));
-    }, [contentRef]);
+        previewRef.current.setAttribute("data-color-scheme", scheme);
 
-    useEffect(() => {
-        if (open) {
-            cloneContent();
-            document.body.style.overflow = "hidden";
-        }
+        // 레이아웃 안정화 후 페이지네이션
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                if (!previewRef.current) return;
+                const breaks = paginateBlocks(previewRef.current);
+                setPageBreaks(breaks);
+                setLoading(false);
+            });
+        });
+
         return () => {
             document.body.style.overflow = "";
         };
-    }, [open, cloneContent]);
-
-    // 스킴 변경 시 로딩 표시
-    useEffect(() => {
-        if (!open || !previewRef.current) return;
-        setLoading(true);
-        previewRef.current.setAttribute("data-color-scheme", scheme);
-        const timer = setTimeout(() => setLoading(false), 150);
-        return () => clearTimeout(timer);
-    }, [scheme, open]);
+    }, [open, scheme, contentRef]);
 
     // 드롭다운 외부 클릭
     useEffect(() => {
@@ -116,7 +248,10 @@ export default function PdfPreviewModal({
 
             pdf.save(`${fileName}.pdf`);
         } catch (err) {
-            console.error("PDF generation failed:", err);
+            console.error(
+                "[PdfPreviewModal::handleDownload] PDF generation failed:",
+                err
+            );
         } finally {
             setGenerating(false);
         }
@@ -193,6 +328,16 @@ export default function PdfPreviewModal({
                             )}
                         </div>
                     </div>
+
+                    {/* 페이지 정보 */}
+                    <div className="space-y-1">
+                        <label className="text-xs font-medium text-zinc-400">
+                            Pages
+                        </label>
+                        <p className="text-sm text-zinc-300">
+                            {totalPages} {totalPages === 1 ? "page" : "pages"}
+                        </p>
+                    </div>
                 </div>
 
                 {/* 다운로드 버튼 */}
@@ -219,8 +364,28 @@ export default function PdfPreviewModal({
                         <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
                     </div>
                 )}
-                <div className="mx-auto max-w-4xl rounded-lg bg-white p-8 shadow-2xl">
-                    <div ref={previewRef} data-color-scheme="neutral" />
+                <div className="relative mx-auto max-w-4xl">
+                    {/* 콘텐츠 영역 (html2canvas 캡처 대상) */}
+                    <div className="rounded-lg bg-white p-8 shadow-2xl">
+                        <div ref={previewRef} data-color-scheme="neutral" />
+                    </div>
+
+                    {/* 페이지 구분선 overlay (캡처 대상 밖) */}
+                    {pageBreaks.map((pos, i) => (
+                        <div
+                            key={i}
+                            className="pointer-events-none absolute right-0 left-0"
+                            // p-8 (32px) 오프셋 보정, 간격(16px)은 경계선 위쪽(이전 페이지 spacer 영역)
+                            style={{ top: `${pos + 32 - 16}px` }}
+                        >
+                            <div className="h-4 bg-zinc-800" />
+                            <div className="relative border-t-2 border-dashed border-red-400/60">
+                                <span className="absolute -top-5 right-3 rounded bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300">
+                                    {i + 1} / {i + 2}
+                                </span>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
         </div>,

@@ -115,7 +115,10 @@ export default async function ResumePhases({ resume, activeJobField }: Props) {
     return (
         <div className="mx-auto max-w-[1050px] text-[0.9375rem] leading-[1.6] text-(--color-foreground)">
             {/* Header */}
-            <header className="mb-10 border-b-2 border-(--color-border) pb-8">
+            <header
+                className="mb-10 border-b-2 border-(--color-border) pb-8"
+                data-pdf-block
+            >
                 {basics.image && basics.image.trim() ? (
                     <div className="mb-4 flex justify-center">
                         <img
@@ -190,7 +193,7 @@ export default async function ResumePhases({ resume, activeJobField }: Props) {
             </header>
 
             {/* 핵심역량 */}
-            <section className="mb-10">
+            <section className="mb-10" data-pdf-block>
                 <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                     핵심역량
                 </h2>
@@ -245,7 +248,7 @@ export default async function ResumePhases({ resume, activeJobField }: Props) {
 
             {/* 웹 경력 */}
             {hasWebWork && (
-                <section className="mb-10">
+                <section className="mb-10" data-pdf-block>
                     <div className="grid grid-cols-1 divide-y divide-(--color-border)">
                         <div className="pt-8">
                             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
@@ -374,7 +377,7 @@ export default async function ResumePhases({ resume, activeJobField }: Props) {
 
             {/* 학력 — ResumeModern 카드 스타일 */}
             {hasEducation ? (
-                <section className="mb-10">
+                <section className="mb-10" data-pdf-block>
                     <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                         {getLabel("education")}
                     </h2>
@@ -448,7 +451,7 @@ export default async function ResumePhases({ resume, activeJobField }: Props) {
 
             {/* 언어 — ResumeModern 제네릭 그리드 스타일 */}
             {hasLanguages ? (
-                <section className="mb-10">
+                <section className="mb-10" data-pdf-block>
                     <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                         {getLabel("languages")}
                     </h2>
@@ -476,7 +479,7 @@ export default async function ResumePhases({ resume, activeJobField }: Props) {
 
             {/* 수상 — ResumeModern 제네릭 그리드 스타일 */}
             {hasAwards ? (
-                <section className="mb-10">
+                <section className="mb-10" data-pdf-block>
                     <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                         {getLabel("awards")}
                     </h2>
@@ -519,7 +522,7 @@ export default async function ResumePhases({ resume, activeJobField }: Props) {
 
             {/* 자격증 — ResumeModern 제네릭 그리드 스타일 */}
             {hasCertificates ? (
-                <section className="mb-10">
+                <section className="mb-10" data-pdf-block>
                     <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                         {getLabel("certificates")}
                     </h2>

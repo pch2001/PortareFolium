@@ -214,7 +214,11 @@ export default async function ResumeClassic({ resume }: Props) {
                         Array.isArray(sectionValue)
                     ) {
                         return (
-                            <section key={sectionKey} className="mb-10">
+                            <section
+                                key={sectionKey}
+                                className="mb-10"
+                                data-pdf-block
+                            >
                                 <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {getLabel("skills")}
                                 </h2>
@@ -296,7 +300,11 @@ export default async function ResumeClassic({ resume }: Props) {
 
                     if (sectionKey === "work" && Array.isArray(sectionValue)) {
                         return (
-                            <section key={sectionKey} className="mb-10">
+                            <section
+                                key={sectionKey}
+                                className="mb-10"
+                                data-pdf-block
+                            >
                                 <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {getLabel("work")}
                                 </h2>
@@ -406,7 +414,11 @@ export default async function ResumeClassic({ resume }: Props) {
                         Array.isArray(sectionValue)
                     ) {
                         return (
-                            <section key={sectionKey} className="mb-10">
+                            <section
+                                key={sectionKey}
+                                className="mb-10"
+                                data-pdf-block
+                            >
                                 <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {getLabel("education")}
                                 </h2>
@@ -497,7 +509,11 @@ export default async function ResumeClassic({ resume }: Props) {
                     ) {
                         const sectionTitle = getLabel(sectionKey);
                         return (
-                            <section key={sectionKey} className="mb-10">
+                            <section
+                                key={sectionKey}
+                                className="mb-10"
+                                data-pdf-block
+                            >
                                 <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                                     {sectionTitle}
                                 </h2>

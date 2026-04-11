@@ -16,7 +16,7 @@ export default function CareerPhasesSection({
     const sorted = [...phases].sort((a, b) => (a.phase ?? 0) - (b.phase ?? 0));
 
     return (
-        <section className="mb-10">
+        <section className="mb-10" data-pdf-block>
             <h2 className="mb-4 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
                 {label}
             </h2>

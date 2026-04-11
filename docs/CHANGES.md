@@ -1,5 +1,44 @@
 # CHANGES
 
+## v0.10.28 (2026-04-11)
+
+### Feat: PDF export 페이지 분할 개선 — block-aware pagination
+
+**배경**: 기존 PDF 내보내기는 `html2canvas`로 전체 콘텐츠를 하나의 이미지로 캡처한 뒤 A4 고정 높이로 슬라이싱했음. DOM 구조를 전혀 인식하지 못해서 섹션·카드·항목이 페이지 경계에서 중간에 잘리는 문제 발생.
+
+**해결 — Block-Aware Spacing Injection**:
+
+1. 모든 Resume 레이아웃(4종) + Portfolio 컴포넌트에 `data-pdf-block` / `data-pdf-block-item` attribute 부여
+2. `PdfPreviewModal.tsx`에 `paginateBlocks()` 함수 추가:
+    - 클론된 DOM에서 `[data-pdf-block]` / `[data-pdf-block-item]` 요소의 높이 측정
+    - 페이지 경계를 넘는 블록 앞에 투명 spacer div 삽입 → 블록이 다음 페이지로 통째로 이동
+    - A4 한 페이지보다 큰 블록은 graceful degradation (슬라이싱 허용)
+    - `data-pdf-block-item` (grid 카드)은 행(row) 단위로 처리: 같은 `offsetTop`의 아이템을 그룹화하고, spacer에 `grid-column: 1 / -1`을 적용하여 전체 행을 다음 페이지로 이동 → grid 레이아웃 보존
+    - 부모 블록이 자식 블록을 포함하면 자동 제외 (자식이 개별 pagination 처리)
+3. 프리뷰에 페이지 구분선 overlay 추가 (dashed line + 페이지 번호, `previewRef` 외부에 absolute-positioned → html2canvas에 캡처되지 않음)
+4. 사이드바에 총 페이지 수 표시
+
+**주요 버그 수정 3건**:
+
+1. **부모-자식 블록 충돌**: 부모 `data-pdf-block`이 A4보다 크면 graceful degradation으로 `currentPageBottom`을 섹션 끝까지 밀어버려 자식 블록에 spacer가 삽입되지 않음 → **수정**: 자식에 `[data-pdf-block]` 또는 `[data-pdf-block-item]`이 있는 부모는 pagination 대상에서 자동 제외
+
+2. **grid 단일 열 강제 과잉 적용**: 모든 multi-column grid를 `1fr`로 강제하여 전체 프리뷰가 모바일 뷰로 렌더링 → **수정**: grid 강제를 완전 제거하고 `data-pdf-block-item` 행(row) 단위 pagination으로 대체. spacer에 `grid-column: 1 / -1` 적용하여 grid 레이아웃 보존
+
+3. **페이지 구분선 overlay 콘텐츠 가림**: `h-4 bg-zinc-800` 간격이 dashed line 아래에 위치하여 다음 페이지 콘텐츠 상단 16px을 가림 → **수정**: 간격을 dashed line 위쪽(이전 페이지 spacer 영역)으로 이동, overlay top 위치를 `-16px` 보정
+
+**변경 파일**:
+
+- `src/components/PdfPreviewModal.tsx`: 전면 재작성 — `paginateBlocks()`, `createSpacer()`, overlay UI, 페이지 수 표시
+- `src/components/resume/ResumeModern.tsx`: header, work section, work entries, education section, education entries, generic sections에 `data-pdf-block`
+- `src/components/resume/ResumeClassic.tsx`: skills, work, education, generic sections에 `data-pdf-block`
+- `src/components/resume/ResumeMinimal.tsx`: header, summary, work, skills, education, generic sections에 `data-pdf-block`
+- `src/components/resume/ResumePhases.tsx`: header, 핵심역량, 웹 경력, 학력, 언어, 수상, 자격증에 `data-pdf-block`
+- `src/components/resume/CareerPhasesSection.tsx`: 외부 section에 `data-pdf-block` (atomic)
+- `src/components/resume/SkillsSection.tsx`: 외부 section에 `data-pdf-block` (atomic)
+- `src/components/resume/ProjectsSection.tsx`: section에 `data-pdf-block`, 개별 카드에 `data-pdf-block-item`
+- `src/components/PortfolioView.tsx`: 각 article에 `data-pdf-block`
+- `src/app/(frontend)/portfolio/page.tsx`: Books section + 개별 book 카드에 `data-pdf-block`
+
 ## v0.10.27 (2026-04-09)
 
 ### Feat/Fix: 어드민 헤더 단축키 상시 표시 + 커맨드 팔레트 outline 제거

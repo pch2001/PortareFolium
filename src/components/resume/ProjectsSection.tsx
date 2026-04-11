@@ -46,7 +46,7 @@ export default async function ProjectsSection({
         );
 
     return (
-        <section className="mb-10">
+        <section className="mb-10" data-pdf-block>
             <h2
                 className={`mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase ${badge ? "flex items-center gap-3" : ""}`}
             >
@@ -74,6 +74,7 @@ export default async function ProjectsSection({
                         <div
                             key={pIdx}
                             className="group relative flex flex-col overflow-hidden rounded-lg border border-(--color-border) bg-(--color-surface-subtle) transition-colors hover:border-(--color-accent)"
+                            data-pdf-block-item
                         >
                             {project.portfolioSlug ? (
                                 <a
