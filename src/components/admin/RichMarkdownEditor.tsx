@@ -261,7 +261,7 @@ export default function RichMarkdownEditor({
                 <div
                     className={
                         isFullscreen
-                            ? "visible fixed inset-0 z-[100] flex flex-col bg-zinc-100 dark:bg-zinc-950"
+                            ? "visible fixed inset-0 z-100 flex flex-col bg-zinc-100 dark:bg-zinc-950"
                             : "relative overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900"
                     }
                 >
@@ -296,7 +296,7 @@ export default function RichMarkdownEditor({
                     <div
                         className={
                             isFullscreen
-                                ? "relative sticky top-0 z-30 flex items-center"
+                                ? "sticky top-0 z-30 flex items-center"
                                 : ""
                         }
                     >

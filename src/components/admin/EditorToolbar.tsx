@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Editor } from "@tiptap/react";
 import katex from "katex";
+import { Maximize2, Minimize2 } from "lucide-react";
 
 // --- Tiptap UI Primitives ---
 import {
@@ -993,7 +994,11 @@ export default function EditorToolbar({
                     title="전체화면 토글"
                     className="rounded p-1.5 text-sm transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-700"
                 >
-                    {isFullscreen ? "⤡" : "⤢"}
+                    {isFullscreen ? (
+                        <Minimize2 size={16} />
+                    ) : (
+                        <Maximize2 size={16} />
+                    )}
                 </button>
             </ToolbarGroup>
         </Toolbar>
