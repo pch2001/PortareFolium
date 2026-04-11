@@ -1,132 +1,150 @@
 # TEST
 
-## 현재 테스트 인프라
+## 테스트 인프라
 
-- **Unit/Integration**: Vitest + Testing Library (happy-dom)
-- **대상**: 유틸리티 함수, 데이터 변환, 순수 로직
-- **한계**: DOM 레이아웃 API (`getBoundingClientRect`, `offsetWidth`, `getComputedStyle`) 미지원 — 레이아웃 의존 기능은 단위 테스트 불가
+| 도구                     | 용도                                         | 실행 명령어                 |
+| ------------------------ | -------------------------------------------- | --------------------------- |
+| Vitest + Testing Library | 단위 테스트 (유틸 함수, 데이터 변환)         | `pnpm test`                 |
+| Playwright               | E2E 테스트 (크로스 브라우저 + 반응형 + 인증) | `pnpm test:e2e`             |
+| GitHub Actions           | CI — push/PR 시 자동 실행                    | `.github/workflows/e2e.yml` |
 
-## 수동 테스트 체크리스트
-
-코드 변경 후 배포 전 수동으로 확인해야 하는 항목. 해당 영역을 수정했을 때만 실행.
-
-### PDF Export (Resume)
-
-> 변경 대상: `PdfPreviewModal.tsx`, `Resume*.tsx`, `ProjectsSection.tsx`, `SkillsSection.tsx`, `CareerPhasesSection.tsx`
-
-1. Resume 페이지 → PDF 내보내기 버튼 클릭
-2. 프리뷰 확인:
-    - [ ] 모든 섹션이 페이지 경계에서 잘리지 않음 (dashed line 아래로 콘텐츠가 시작)
-    - [ ] 프로젝트 카드가 grid 레이아웃 유지 (2열)
-    - [ ] 프로젝트 카드가 행 단위로 페이지 이동 (개별 카드 잘림 없음)
-    - [ ] 페이지 구분선이 콘텐츠를 가리지 않음 (간격이 경계선 위쪽에 위치)
-    - [ ] 사이드바에 총 페이지 수 표시
-3. 컬러 스킴 변경:
-    - [ ] neutral → 컬러: 블록 위치 동일 (밀림 없음)
-    - [ ] 컬러 → neutral: 블록 위치 동일
-    - [ ] 페이지 수 변화 없음
-4. PDF 다운로드:
-    - [ ] 파일 정상 생성 (`resume.pdf`)
-    - [ ] 각 페이지에서 콘텐츠 잘림 없음
-5. 4종 레이아웃 확인 (DB `resume_layout` 값 변경):
-    - [ ] Modern: header + timeline 경력 + 카드 교육
-    - [ ] Classic: 2열 사이드바 레이아웃
-    - [ ] Minimal: 단일 열 간결 레이아웃
-    - [ ] Phases: 핵심역량 + 커리어 타임라인 + 프로젝트
-
-### PDF Export (Portfolio)
-
-> 변경 대상: `PdfPreviewModal.tsx`, `PortfolioView.tsx`, `portfolio/page.tsx`
-
-1. Portfolio 페이지 → PDF 내보내기 버튼 클릭
-2. 프리뷰 확인:
-    - [ ] 각 프로젝트 article이 페이지 경계에서 잘리지 않음
-    - [ ] Books 섹션 카드가 잘리지 않음
-    - [ ] 타임라인 레이아웃 유지
-3. PDF 다운로드 → 페이지 확인
-
-### 컬러 스킴
-
-> 변경 대상: `color-schemes.ts`, `tailwind-color-schemes.css`, `ThemeToggle.tsx`
-
-1. 헤더 토글로 light/dark 전환
-    - [ ] 모든 페이지에서 색상 정상 적용
-    - [ ] 새로고침 후에도 선택한 스킴 유지 (DB 기반)
-2. PDF 내보내기에서 컬러 스킴 선택
-    - [ ] 18종 스킴 모두 프리뷰에 정상 반영
-
-### Admin 대시보드
-
-> 변경 대상: `admin/` 하위 파일, `panels/`, Server Actions
-
-1. 로그인 → 대시보드 접근
-    - [ ] 사이드바 네비게이션 동작
-    - [ ] Cmd+K 커맨드 팔레트 동작
-2. 포스트 CRUD:
-    - [ ] 생성 → 편집 → 발행 → 삭제
-    - [ ] 자동저장 동작 (SaveIndicator 상태 변화)
-    - [ ] 발행 후 프론트엔드 페이지 반영 (ISR revalidation)
-3. Portfolio/Books CRUD: 동일 흐름
-
-### 콘텐츠 렌더링
-
-> 변경 대상: `markdown.tsx`, `MermaidRenderer.tsx`, `ColoredTable.tsx`
-
-1. MDX 콘텐츠 포함 블로그 글 확인:
-    - [ ] 코드 블록 (Shiki) 하이라이팅
-    - [ ] Mermaid 다이어그램 렌더링
-    - [ ] KaTeX 수식 렌더링
-    - [ ] 이미지 lazy loading
-    - [ ] 목차 생성 (TableOfContents / GithubToc)
-
-## Playwright E2E 테스트 (도입 완료)
+## Playwright 구조
 
 ### 실행 방법
 
 ```bash
-pnpm test:e2e              # 전체 (Chromium + Firefox + WebKit + mobile)
+pnpm test:e2e              # 전체 (5 공개 + 3 인증 프로젝트)
 pnpm test:e2e:chromium     # Chromium만 (빠른 확인)
 pnpm test:e2e:ui           # Playwright UI 모드 (디버깅)
 ```
 
-### 테스트 구조
+### 브라우저 프로젝트
 
-| 파일                     | 내용                                | 테스트 수 |
-| ------------------------ | ----------------------------------- | --------- |
-| `e2e/smoke.spec.ts`      | 주요 페이지 로딩 + 404              | 6         |
-| `e2e/navigation.spec.ts` | 헤더 네비게이션, 페이지 이동        | 3         |
-| `e2e/theme.spec.ts`      | 다크/라이트 모드 토글               | 1         |
-| `e2e/responsive.spec.ts` | mobile/tablet/desktop overflow 검증 | 9         |
-| `e2e/seo.spec.ts`        | 메타데이터, 접근성 기본             | 9         |
+`playwright.config.ts`에 정의된 프로젝트:
 
-### 새 E2E 테스트 추가 시 원칙
+| 프로젝트                 | 브라우저        | 인증   | 설명                       |
+| ------------------------ | --------------- | ------ | -------------------------- |
+| `chromium`               | Desktop Chrome  | 불필요 | 공개 페이지 테스트         |
+| `firefox`                | Desktop Firefox | 불필요 | 공개 페이지 테스트         |
+| `webkit`                 | Desktop Safari  | 불필요 | 공개 페이지 테스트         |
+| `mobile-chrome`          | Pixel 5         | 불필요 | 모바일 반응형 테스트       |
+| `mobile-safari`          | iPhone 12       | 불필요 | 모바일 반응형 테스트       |
+| `authenticated-chromium` | Desktop Chrome  | 필요   | 인증 필요 기능 테스트      |
+| `authenticated-firefox`  | Desktop Firefox | 필요   | 인증 필요 기능 테스트      |
+| `authenticated-webkit`   | Desktop Safari  | 필요   | 인증 필요 기능 테스트      |
+| `setup`                  | Chromium (기본) | —      | 로그인 + storageState 저장 |
 
-- `e2e/` 디렉토리에 `*.spec.ts` 파일 생성
-- 데이터 비의존적 테스트 우선 (DB 없이도 실행 가능)
-- 인증 필요 시 `storageState` 패턴 사용 (`playwright.config.ts`에 setup project 추가)
+### 인증 흐름
 
-## Playwright 확장 시점
+`e2e/auth.setup.ts`가 Supabase 로그인을 수행하고 `.auth/user.json`에 `storageState`를 저장. `authenticated-*` 프로젝트는 이 파일을 브라우저 세션에 로드하여 로그인 상태로 테스트 실행.
 
-아래 조건 해당 시 E2E 테스트 확장 고려:
+필요 환경 변수 (`.env.local`):
 
-| 조건                                         | 근거                                            |
-| -------------------------------------------- | ----------------------------------------------- |
-| 사용자 대면 기능 추가 (회원가입, 댓글, 검색) | 인증 흐름 + 사용자 인터랙션 E2E 검증 필요       |
-| 2인 이상 협업 시작                           | 수동 테스트 누락 위험 증가, CI 자동화 가치 상승 |
-| 배포 빈도 주 3회 이상                        | 수동 테스트 비용이 자동화 비용 초과             |
-| 프론트엔드 회귀 버그 3회 이상 발생           | 수동 테스트로 잡지 못한 패턴 존재 증명          |
-| 크로스 브라우저 지원 필요                    | Playwright의 multi-browser 기능 활용            |
+- `E2E_EMAIL` — Supabase에 등록된 Admin 이메일
+- `E2E_PASSWORD` — 해당 계정 패스워드
 
-### Playwright 도입 시 우선순위
+### 서버 기동
 
-1. **인증 흐름 자동화**: Supabase auth → `storageState` 저장 → 테스트 재사용
-2. **콘텐츠 페이지 스모크 테스트**: 주요 페이지 로딩 + 404 없음 확인
-3. **Admin CRUD E2E**: 포스트 생성 → 발행 → 프론트엔드 확인
-4. **PDF Export visual regression**: 스크린샷 비교 (데이터 고정 필요)
+| 환경 | 명령어       | 이유                                  |
+| ---- | ------------ | ------------------------------------- |
+| 로컬 | `pnpm dev`   | 빠른 HMR, `reuseExistingServer: true` |
+| CI   | `pnpm start` | 빌드 결과물 서빙 (빠르고 안정적)      |
 
-### Playwright 도입 시 주의사항
+`playwright.config.ts`의 `webServer` 설정이 환경(`process.env.CI`)에 따라 자동 선택.
 
-- 테스트 데이터는 **시딩 스크립트**로 고정 (실제 DB 데이터에 의존하면 flaky)
-- `webServer` 설정으로 dev 서버 자동 기동
-- CI에서는 `--project=chromium`만 (속도 우선)
-- Visual regression은 **별도 CI job**으로 분리 (느리고 flaky)
+## E2E 테스트 목록
+
+### 공개 페이지 (인증 불필요)
+
+#### `e2e/smoke.spec.ts` — 페이지 로딩 (6 테스트)
+
+- 홈, Resume, Portfolio, Blog, About 페이지가 HTTP 400 미만 상태로 로딩
+- 존재하지 않는 경로 → 404 반환
+
+#### `e2e/navigation.spec.ts` — 네비게이션 (3 테스트)
+
+- 헤더가 모든 페이지에 표시
+- Resume 링크 클릭 → `/resume` 이동
+- 로고/홈 링크 → `/` 복귀
+
+#### `e2e/theme.spec.ts` — 테마 전환 (1 테스트)
+
+- 다크/라이트 모드 토글 버튼 클릭 시 `<html>` class 변경
+
+#### `e2e/responsive.spec.ts` — 반응형 레이아웃 (9 테스트)
+
+- mobile (375px), tablet (768px), desktop (1440px) 3개 viewport
+- 홈, Resume, Portfolio 각 페이지에서 수평 스크롤바(overflow) 없음 확인
+
+#### `e2e/seo.spec.ts` — SEO + 접근성 (9 테스트)
+
+- 5개 주요 페이지에 `<title>` 존재
+- 홈 페이지 `<meta name="description">` 존재
+- `<meta name="viewport">` 존재
+- Resume 페이지의 모든 `<img>`에 `alt` 속성 존재
+- `<html lang>` 속성 존재
+
+### 인증 필요 (Admin 로그인 후)
+
+#### `e2e/authenticated/pdf-export.spec.ts` — PDF Export (6 테스트)
+
+**Resume:**
+
+- PDF 내보내기 버튼이 인증 상태에서 표시
+- 프리뷰 모달 열림 — 사이드바 (Color Scheme 드롭다운, 페이지 수, 다운로드 버튼) 확인
+- 페이지 구분선 (dashed red line) 존재 확인
+- 컬러 스킴 변경 (Black & White → Blue) 시 페이지 수 동일 유지
+- ESC 키로 모달 닫기
+
+**Portfolio:**
+
+- PDF 내보내기 버튼 표시 + 모달 열림 + 페이지 수 표시
+
+## CI (GitHub Actions)
+
+`.github/workflows/e2e.yml` — `main`/`test` 브랜치 push, `main` PR 시 자동 실행.
+
+```
+Install → Build → Vitest 단위 테스트 → Playwright E2E
+```
+
+브라우저 3개 (Chromium/Firefox/WebKit) 병렬 매트릭스. 각 job에서 공개 + 인증 테스트 모두 실행. 실패 시 `playwright-report` artifact 7일 보존.
+
+필요 GitHub Secrets:
+
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — 빌드 + 런타임
+- `E2E_EMAIL`, `E2E_PASSWORD` — 인증 E2E 테스트
+
+## 수동 테스트 체크리스트
+
+E2E로 커버하기 어려운 항목. 해당 영역을 수정했을 때만 수동 확인.
+
+### PDF Export
+
+- [ ] 모든 섹션이 페이지 경계에서 잘리지 않음
+- [ ] 프로젝트 카드가 grid 레이아웃 유지 (2열)
+- [ ] 프로젝트 카드가 행 단위로 페이지 이동
+- [ ] 컬러 스킴 변경 시 블록 위치 동일
+- [ ] PDF 다운로드 후 각 페이지 콘텐츠 잘림 없음
+- [ ] 4종 Resume 레이아웃 모두 확인
+
+### Admin CRUD
+
+- [ ] 포스트 생성 → 편집 → 발행 → 삭제
+- [ ] 자동저장 동작 (SaveIndicator 상태 변화)
+- [ ] 발행 후 프론트엔드 반영 (ISR revalidation)
+
+### 콘텐츠 렌더링
+
+- [ ] 코드 블록 (Shiki) 하이라이팅
+- [ ] Mermaid 다이어그램
+- [ ] KaTeX 수식
+- [ ] 이미지 lazy loading
+- [ ] 목차 생성
+
+## 새 E2E 테스트 추가 시
+
+1. `e2e/` 디렉토리에 `*.spec.ts` 파일 생성 (공개 페이지)
+2. 인증 필요 시 `e2e/authenticated/` 디렉토리에 생성 — `storageState` 자동 적용
+3. 데이터 비의존적 테스트 우선 (DB 상태에 관계없이 통과)
+4. 셀렉터는 `id`, `role`, `getByText({ exact: true })` 우선 — `text=` 셀렉터는 strict mode 위반 주의
