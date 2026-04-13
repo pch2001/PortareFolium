@@ -4,15 +4,18 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import UserMenu from "@/components/UserMenu";
+import GlobalSearch from "@/components/GlobalSearch";
 import { contentVariants } from "@/components/ContentWrapper";
 import Link from "next/link";
 
 export default function Header({
     siteName,
     githubUrl,
+    jobField = "",
 }: {
     siteName: string;
     githubUrl: string;
+    jobField?: string;
 }) {
     const [open, setOpen] = useState(false);
     const pathname = usePathname();
@@ -124,6 +127,7 @@ export default function Header({
                         className="tablet:block tablet:h-5 tablet:w-px tablet:mx-2 hidden bg-(--color-border)"
                         aria-hidden="true"
                     />
+                    <GlobalSearch jobField={jobField} />
                     <a
                         href={githubUrl || "https://github.com/"}
                         target="_blank"

@@ -38,9 +38,27 @@ export default async function FrontendLayout({
         if (typeof v === "string") githubUrl = v;
     }
 
+    let jobField = "";
+    const jfRow = configRows.find((r) => r.key === "job_field");
+    if (jfRow?.value) {
+        let v = jfRow.value;
+        if (typeof v === "string" && v.startsWith('"')) {
+            try {
+                v = JSON.parse(v);
+            } catch {
+                // invalid JSON
+            }
+        }
+        if (typeof v === "string") jobField = v;
+    }
+
     return (
         <div className="flex min-h-screen flex-col">
-            <Header siteName={siteName} githubUrl={githubUrl} />
+            <Header
+                siteName={siteName}
+                githubUrl={githubUrl}
+                jobField={jobField}
+            />
             <ContentWrapper as="main" className="flex-1 px-4 py-8">
                 {children}
             </ContentWrapper>

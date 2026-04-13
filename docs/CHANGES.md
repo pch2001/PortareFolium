@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.11.11 (2026-04-14)
+
+### Feat: Header global search — posts + portfolio title 검색
+
+- `src/components/GlobalSearch.tsx`: 신규 — header 내 global search 컴포넌트 (debounce 200ms, ESC/외부 클릭 닫기, Posts/Portfolio 카테고리별 결과)
+- `src/components/Header.tsx`: GlobalSearch 추가 + `jobField` prop
+- `src/app/(frontend)/layout.tsx`: `site_config.job_field` fetch → Header prop 전달
+
 ## v0.11.10 (2026-04-14)
 
 ### Feat: Blog pagination
