@@ -5,9 +5,9 @@ import { cn } from "@/lib/utils";
 const contentVariants = cva("mx-auto", {
     variants: {
         width: {
-            default: "max-w-4xl desktop:max-w-6xl",
-            narrow: "max-w-3xl desktop:max-w-4xl",
-            wide: "max-w-5xl desktop:max-w-7xl",
+            default: "max-w-4xl laptop:max-w-6xl",
+            narrow: "max-w-3xl laptop:max-w-4xl",
+            wide: "max-w-5xl laptop:max-w-7xl",
             full: "max-w-full",
         },
     },

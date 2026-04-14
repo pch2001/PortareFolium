@@ -488,7 +488,7 @@ export default function BlogPage({ posts, categories, tags }: Props) {
                     </p>
                 ) : viewMode === "block" ? (
                     // Block view: grid 카드
-                    <div className="tablet:grid-cols-2 desktop:grid-cols-3 grid grid-cols-1 gap-6">
+                    <div className="tablet:grid-cols-2 laptop:grid-cols-3 grid grid-cols-1 gap-6">
                         {paginatedPosts.map((post) => (
                             <a
                                 key={post.slug}
