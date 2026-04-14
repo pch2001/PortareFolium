@@ -8,11 +8,18 @@ import { PDF_COLOR_SCHEMES, type PdfColorScheme } from "@/lib/color-schemes";
 // A4 비율 (297mm / 210mm)
 const A4_RATIO = 297 / 210;
 
+export interface PdfSection {
+    key: string;
+    label: string;
+    defaultIncluded?: boolean;
+}
+
 interface Props {
     open: boolean;
     onClose: () => void;
     contentRef: React.RefObject<HTMLElement | null>;
     fileName?: string;
+    sections?: PdfSection[];
 }
 
 // spacer 생성 헬퍼
@@ -142,6 +149,7 @@ export default function PdfPreviewModal({
     onClose,
     contentRef,
     fileName = "document",
+    sections,
 }: Props) {
     const previewRef = useRef<HTMLDivElement>(null);
     const [scheme, setScheme] = useState<PdfColorScheme>("neutral");
@@ -150,6 +158,15 @@ export default function PdfPreviewModal({
     const [generating, setGenerating] = useState(false);
     const [pageBreaks, setPageBreaks] = useState<number[]>([]);
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // 섹션 포함 여부 (defaultIncluded 기본값 false)
+    const [included, setIncluded] = useState<Record<string, boolean>>(() => {
+        const init: Record<string, boolean> = {};
+        (sections ?? []).forEach((s) => {
+            init[s.key] = s.defaultIncluded ?? false;
+        });
+        return init;
+    });
 
     // 총 페이지 수
     const totalPages = pageBreaks.length + 1;
@@ -172,6 +189,14 @@ export default function PdfPreviewModal({
         clone.querySelectorAll("select").forEach((el) => {
             (el as HTMLElement).style.display = "none";
         });
+        // 제외된 섹션 제거
+        (sections ?? []).forEach((s) => {
+            if (!included[s.key]) {
+                clone
+                    .querySelectorAll(`[data-pdf-section="${s.key}"]`)
+                    .forEach((el) => el.remove());
+            }
+        });
         previewRef.current.innerHTML = "";
         previewRef.current.appendChild(clone);
         previewRef.current.setAttribute("data-color-scheme", scheme);
@@ -189,7 +214,7 @@ export default function PdfPreviewModal({
         return () => {
             document.body.style.overflow = "";
         };
-    }, [open, scheme, contentRef]);
+    }, [open, scheme, contentRef, included, sections]);
 
     // 드롭다운 외부 클릭
     useEffect(() => {
@@ -328,6 +353,36 @@ export default function PdfPreviewModal({
                             )}
                         </div>
                     </div>
+
+                    {/* 섹션 포함 토글 */}
+                    {sections && sections.length > 0 && (
+                        <div className="space-y-2">
+                            <label className="text-xs font-medium text-zinc-400">
+                                Sections
+                            </label>
+                            <div className="space-y-1.5">
+                                {sections.map((s) => (
+                                    <label
+                                        key={s.key}
+                                        className="flex cursor-pointer items-center gap-2 text-sm text-zinc-300 hover:text-white"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={included[s.key] ?? false}
+                                            onChange={(e) =>
+                                                setIncluded((prev) => ({
+                                                    ...prev,
+                                                    [s.key]: e.target.checked,
+                                                }))
+                                            }
+                                            className="h-3.5 w-3.5 shrink-0 cursor-pointer accent-white"
+                                        />
+                                        <span>{s.label}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* 페이지 정보 */}
                     <div className="space-y-1">

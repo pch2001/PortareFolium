@@ -97,7 +97,16 @@ export default async function PortfolioPage() {
     }
 
     return (
-        <PdfExportButton fileName="portfolio">
+        <PdfExportButton
+            fileName="portfolio"
+            sections={[
+                {
+                    key: "books",
+                    label: "Books 섹션 포함",
+                    defaultIncluded: false,
+                },
+            ]}
+        >
             <div>
                 <h1 className="mb-8 text-3xl font-bold text-(--color-foreground)">
                     Portfolio
@@ -105,7 +114,7 @@ export default async function PortfolioPage() {
                 <PortfolioView projects={publicProjects} />
 
                 {publicBooks.length > 0 && (
-                    <>
+                    <div data-pdf-section="books">
                         <div className="my-12 h-px bg-(--color-border)" />
                         <section data-pdf-block>
                             <h2 className="mb-6 flex items-center gap-2 text-sm font-bold tracking-[0.12em] text-(--color-muted) uppercase">
@@ -171,7 +180,7 @@ export default async function PortfolioPage() {
                                 ))}
                             </div>
                         </section>
-                    </>
+                    </div>
                 )}
             </div>
         </PdfExportButton>

@@ -3,14 +3,19 @@
 import { useEffect, useRef, useState } from "react";
 import { Download } from "lucide-react";
 import { browserClient } from "@/lib/supabase";
-import PdfPreviewModal from "@/components/PdfPreviewModal";
+import PdfPreviewModal, { type PdfSection } from "@/components/PdfPreviewModal";
 
 interface Props {
     children: React.ReactNode;
     fileName?: string;
+    sections?: PdfSection[];
 }
 
-export default function PdfExportButton({ children, fileName }: Props) {
+export default function PdfExportButton({
+    children,
+    fileName,
+    sections,
+}: Props) {
     const contentRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
     const [authed, setAuthed] = useState(false);
@@ -47,6 +52,7 @@ export default function PdfExportButton({ children, fileName }: Props) {
                     onClose={() => setOpen(false)}
                     contentRef={contentRef}
                     fileName={fileName}
+                    sections={sections}
                 />
             )}
         </>

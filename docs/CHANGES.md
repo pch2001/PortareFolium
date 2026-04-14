@@ -1,5 +1,14 @@
 # CHANGES
 
+## v0.11.29 (2026-04-15)
+
+### feat: Portfolio PDF export에 Books 섹션 포함 여부 toggle 추가
+
+- `src/components/PdfPreviewModal.tsx`: `sections` prop 추가 — key/label/defaultIncluded 구조. 사이드바에 체크박스 toggle 렌더링, 제외 시 `[data-pdf-section="<key>"]` 요소 clone에서 제거. toggle 변경 시 pagination 재실행
+- `src/components/PdfExportButton.tsx`: `sections` prop pass-through 추가
+- `src/app/(frontend)/portfolio/page.tsx`: Books divider + section을 `<div data-pdf-section="books">`로 wrap, `PdfExportButton`에 `sections=[{ key: "books", label: "Books 섹션 포함", defaultIncluded: false }]` 전달
+- **기본값**: Books 섹션은 PDF에서 기본 제외 (toggle로 포함 가능)
+
 ## v0.11.28 (2026-04-15)
 
 ### feat: GithubToc 아코디언 icon animation + portfolio slug 페이지 적용
