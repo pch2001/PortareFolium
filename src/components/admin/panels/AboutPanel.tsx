@@ -56,7 +56,7 @@ export default function AboutPanel() {
 
     // 랜딩 페이지 히어로 섹션
     const [valuePillars, setValuePillars] = useState<ValuePillar[]>([]);
-    const [coreValues, setCoreValues] = useState<CoreValue[]>([]);
+    const [coreCompetencies, setCoreCompetencies] = useState<CoreValue[]>([]);
 
     // Job Field별 소개
     const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
@@ -125,7 +125,7 @@ export default function AboutPanel() {
                     });
                     setIntroductions(d.introductions ?? {});
                     setValuePillars(d.valuePillars ?? []);
-                    setCoreValues(d.coreValues ?? []);
+                    setCoreCompetencies(d.coreCompetencies ?? []);
                 }
                 // resume_data.basics.image를 프로필 이미지 단일 출처로 사용
                 if (resumeRow) {
@@ -227,7 +227,8 @@ export default function AboutPanel() {
                     ? introductions
                     : undefined,
             valuePillars: valuePillars.length > 0 ? valuePillars : undefined,
-            coreValues: coreValues.length > 0 ? coreValues : undefined,
+            coreCompetencies:
+                coreCompetencies.length > 0 ? coreCompetencies : undefined,
             sections: Object.fromEntries(
                 ABOUT_SECTION_KEYS.map((k) => [
                     k,
@@ -652,109 +653,6 @@ export default function AboutPanel() {
                                 setValuePillars((prev) => [
                                     ...prev,
                                     { label: "", sub: "", description: "" },
-                                ])
-                            }
-                            className="rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-medium whitespace-nowrap text-(--color-on-accent)"
-                        >
-                            추가
-                        </Button>
-                    )}
-                </div>
-
-                {/* Core Values */}
-                <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <h4 className="text-base font-semibold text-(--color-foreground)">
-                            Core Values (핵심 역량)
-                        </h4>
-                        <span className="text-sm text-(--color-muted)">
-                            {coreValues.length} / 4
-                        </span>
-                    </div>
-                    {coreValues.map((val, idx) => (
-                        <div
-                            key={idx}
-                            className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) p-4"
-                        >
-                            <div className="mb-2 flex items-center justify-between">
-                                <span className="text-sm font-bold text-(--color-accent)">
-                                    Value {idx + 1}
-                                </span>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        if (
-                                            !confirm(
-                                                `Value ${idx + 1}을 삭제하시겠습니까?`
-                                            )
-                                        )
-                                            return;
-                                        setCoreValues((prev) =>
-                                            prev.filter((_, i) => i !== idx)
-                                        );
-                                    }}
-                                    className="shrink-0 cursor-pointer rounded-lg bg-red-600 p-1.5 text-white"
-                                >
-                                    <Trash2 size={12} />
-                                </button>
-                            </div>
-                            <div className="flex flex-col gap-3">
-                                <div>
-                                    <label className="mb-1 block text-xs font-medium text-(--color-muted)">
-                                        Title
-                                    </label>
-                                    <input
-                                        value={val.title}
-                                        onChange={(e) =>
-                                            setCoreValues((prev) =>
-                                                prev.map((v, i) =>
-                                                    i === idx
-                                                        ? {
-                                                              ...v,
-                                                              title: e.target
-                                                                  .value,
-                                                          }
-                                                        : v
-                                                )
-                                            )
-                                        }
-                                        placeholder="제목"
-                                        className={inputCls}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="mb-1 block text-xs font-medium text-(--color-muted)">
-                                        Description
-                                    </label>
-                                    <input
-                                        value={val.description}
-                                        onChange={(e) =>
-                                            setCoreValues((prev) =>
-                                                prev.map((v, i) =>
-                                                    i === idx
-                                                        ? {
-                                                              ...v,
-                                                              description:
-                                                                  e.target
-                                                                      .value,
-                                                          }
-                                                        : v
-                                                )
-                                            )
-                                        }
-                                        placeholder="설명"
-                                        className={inputCls}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                    {coreValues.length < 4 && (
-                        <Button
-                            onClick={() =>
-                                setCoreValues((prev) => [
-                                    ...prev,
-                                    { title: "", description: "" },
                                 ])
                             }
                             className="rounded-lg bg-(--color-accent) px-4 py-2 text-sm font-medium whitespace-nowrap text-(--color-on-accent)"

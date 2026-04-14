@@ -3,7 +3,7 @@
 -- PortareFolium DB 스키마 전체 동기화
 --
 -- 대상: 모든 사용자 (최초 설치 또는 구버전 DB 보유)
--- 효과: 실행 후 db_schema_version = "0.10.19" 로 설정됨
+-- 효과: 실행 후 db_schema_version = "0.11.20" 로 설정됨
 -- 실행: Supabase 대시보드 → SQL Editor → 전체 내용 붙여넣기 후 실행
 -- 안전: idempotent — 이미 최신 DB에 재실행해도 에러 없음
 -- ============================================================
@@ -250,10 +250,10 @@ SET data = data || '{
     {"label": "Pillar 2", "sub": "Sub 2", "description": "Admin에서 Value Pillar를 입력하세요"},
     {"label": "Pillar 3", "sub": "Sub 3", "description": "Admin에서 Value Pillar를 입력하세요"}
   ],
-  "coreValues": [
-    {"title": "Value 1", "description": "Admin에서 Core Value를 입력하세요"},
-    {"title": "Value 2", "description": "Admin에서 Core Value를 입력하세요"},
-    {"title": "Value 3", "description": "Admin에서 Core Value를 입력하세요"}
+  "coreCompetencies": [
+    {"title": "역량 1", "description": "Admin에서 Core Competency를 입력하세요"},
+    {"title": "역량 2", "description": "Admin에서 Core Competency를 입력하세요"},
+    {"title": "역량 3", "description": "Admin에서 Core Competency를 입력하세요"}
   ]
 }'::jsonb
 WHERE NOT (data ? 'valuePillars');
@@ -288,9 +288,19 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+-- ── about_data coreValues → coreCompetencies 키 이름 변경 (v0.11.20) ────────
+
+UPDATE about_data
+SET data = jsonb_set(
+    data - 'coreValues',
+    '{coreCompetencies}',
+    COALESCE(data->'coreValues', '[]'::jsonb)
+)
+WHERE data ? 'coreValues';
+
 -- ── DB 스키마 버전 설정 ───────────────────────────────────────
 -- 항상 최신 버전으로 덮어씀 (migration-whole.sql은 전체 재동기화 목적)
 
 INSERT INTO site_config (key, value)
-VALUES ('db_schema_version', '"0.10.19"')
-ON CONFLICT (key) DO UPDATE SET value = '"0.10.19"';
+VALUES ('db_schema_version', '"0.11.20"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.11.20"';

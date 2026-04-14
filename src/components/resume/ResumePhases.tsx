@@ -1,5 +1,6 @@
 import type { Resume } from "@/types/resume";
 import { defaultSectionLabels } from "@/types/resume";
+import type { CoreValue } from "@/types/about";
 import { renderMarkdown } from "@/lib/markdown";
 import SkillsSection from "@/components/resume/SkillsSection";
 import CareerPhasesSection from "@/components/resume/CareerPhasesSection";
@@ -8,35 +9,8 @@ import ProjectsSection from "@/components/resume/ProjectsSection";
 interface Props {
     resume: Resume;
     activeJobField?: string;
+    coreCompetencies?: CoreValue[];
 }
-
-// 핵심역량 placeholder (Admin에서 입력 유도)
-const PLACEHOLDER_CORE_COMPETENCIES = [
-    {
-        title: "Competency 1",
-        situation: "Admin에서 핵심역량을 입력하세요",
-        action: "Admin에서 핵심역량을 입력하세요",
-        result: "Admin에서 핵심역량을 입력하세요",
-    },
-    {
-        title: "Competency 2",
-        situation: "Admin에서 핵심역량을 입력하세요",
-        action: "Admin에서 핵심역량을 입력하세요",
-        result: "Admin에서 핵심역량을 입력하세요",
-    },
-    {
-        title: "Competency 3",
-        situation: "Admin에서 핵심역량을 입력하세요",
-        action: "Admin에서 핵심역량을 입력하세요",
-        result: "Admin에서 핵심역량을 입력하세요",
-    },
-    {
-        title: "Competency 4",
-        situation: "Admin에서 핵심역량을 입력하세요",
-        action: "Admin에서 핵심역량을 입력하세요",
-        result: "Admin에서 핵심역량을 입력하세요",
-    },
-];
 
 // 날짜 포맷
 const formatDateRange = (
@@ -58,7 +32,11 @@ function matchesPhase(
     return fields.includes(phase);
 }
 
-export default async function ResumePhases({ resume, activeJobField }: Props) {
+export default async function ResumePhases({
+    resume,
+    activeJobField,
+    coreCompetencies = [],
+}: Props) {
     const basics = resume.basics ?? {};
     const getLabel = (key: string) => {
         const sec = (resume as any)[key];
@@ -191,46 +169,35 @@ export default async function ResumePhases({ resume, activeJobField }: Props) {
             </header>
 
             {/* 핵심역량 */}
-            <section className="mb-10" data-pdf-block>
-                <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                    핵심역량
-                </h2>
-                <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
-                    {PLACEHOLDER_CORE_COMPETENCIES.map((comp, idx) => (
-                        <div
-                            key={idx}
-                            className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-5 py-4"
-                        >
-                            <div className="mb-2 flex items-center gap-2.5">
-                                <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-(--color-accent) text-xs font-bold text-(--color-on-accent)">
-                                    {idx + 1}
-                                </span>
-                                <h3 className="m-0 text-base font-bold text-(--color-foreground)">
-                                    {comp.title}
-                                </h3>
+            {coreCompetencies.length > 0 && (
+                <section className="mb-10" data-pdf-block>
+                    <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
+                        핵심역량
+                    </h2>
+                    <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
+                        {coreCompetencies.map((comp, idx) => (
+                            <div
+                                key={idx}
+                                className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-5 py-4"
+                            >
+                                <div className="mb-2 flex items-center gap-2.5">
+                                    <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-(--color-accent) text-xs font-bold text-(--color-on-accent)">
+                                        {idx + 1}
+                                    </span>
+                                    <h3 className="m-0 text-base font-bold text-(--color-foreground)">
+                                        {comp.title}
+                                    </h3>
+                                </div>
+                                {comp.description && (
+                                    <p className="m-0 text-sm text-(--color-muted)">
+                                        {comp.description}
+                                    </p>
+                                )}
                             </div>
-                            <p className="m-0 mb-1 text-sm text-(--color-muted)">
-                                <span className="font-semibold text-(--color-foreground)">
-                                    경험:
-                                </span>{" "}
-                                {comp.situation}
-                            </p>
-                            <p className="m-0 mb-1 text-sm text-(--color-muted)">
-                                <span className="font-semibold text-(--color-foreground)">
-                                    액션:
-                                </span>{" "}
-                                {comp.action}
-                            </p>
-                            <p className="m-0 text-sm text-(--color-muted)">
-                                <span className="font-semibold text-(--color-foreground)">
-                                    결과:
-                                </span>{" "}
-                                {comp.result}
-                            </p>
-                        </div>
-                    ))}
-                </div>
-            </section>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             <CareerPhasesSection
                 phases={resume.careerPhases?.entries ?? []}

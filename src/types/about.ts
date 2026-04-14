@@ -68,7 +68,7 @@ export interface AboutData {
     introductions?: Record<string, FieldIntroduction>;
     // 랜딩 페이지 히어로 데이터
     valuePillars?: ValuePillar[];
-    coreValues?: CoreValue[];
+    coreCompetencies?: CoreValue[];
     /** 경험 유형별 리스트 (테이블 1) */
     sections?: AboutSections;
     /** 역량 키워드별 리스트 (테이블 2) */

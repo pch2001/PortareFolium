@@ -1,5 +1,26 @@
 # CHANGES
 
+## v0.11.20 (2026-04-14)
+
+### refactor: 핵심역량 편집 UI — AboutPanel → ResumePanel 이동 + DB 키 마이그레이션
+
+- `src/components/admin/panels/ResumePanel.tsx`: Core Competencies 편집 UI 추가 — `about_data` 독립 저장
+- `src/components/admin/panels/AboutPanel.tsx`: Core Competencies UI 섹션 제거 (데이터 pass-through 저장 유지)
+- `src/lib/migrations.ts`: v0.11.20 마이그레이션 추가 — `about_data.data.coreValues` → `coreCompetencies` 키 이름 변경
+- `supabase/setup.sql`: `db_schema_version` → `"0.11.20"` 업데이트
+- `supabase/migration-whole.sql`: `coreValues` → `coreCompetencies` 시드 키 변경 + JSONB 키 이름 변경 마이그레이션 추가 + 버전 업데이트
+
+## v0.11.19 (2026-04-14)
+
+### feat: 이력서 핵심역량 section — Admin `coreCompetencies` 데이터 연동
+
+- `src/app/(frontend)/resume/page.tsx`: `about_data` 조회 추가, `coreCompetencies` 추출 후 4개 resume 컴포넌트에 prop으로 전달
+- `src/components/resume/ResumePhases.tsx`: 하드코딩 placeholder 제거, `coreCompetencies` prop 받아 실제 데이터 렌더링 (비어있으면 section 숨김)
+- `src/components/resume/ResumeClassic.tsx`: 핵심역량 section 추가
+- `src/components/resume/ResumeModern.tsx`: 핵심역량 section 추가
+- `src/components/resume/ResumeMinimal.tsx`: 핵심역량 section 추가
+- `src/components/admin/panels/AboutPanel.tsx`: "Core Values" → "Core Competencies", 각 항목 "Value N" → "역량 N" 으로 변경
+
 ## v0.11.18 (2026-04-14)
 
 ### Fix: 일반 table overflow 방지
@@ -347,7 +368,7 @@
 
 ### Feat: 랜딩 히어로 데이터 DB 이관 (v0.10.6)
 
-- `valuePillars`/`coreValues` hardcoded → `about_data` JSONB 동적 관리
+- `valuePillars`/`coreCompetencies` hardcoded → `about_data` JSONB 동적 관리
 - AboutPanel에 "Landing Page Hero Section" 편집 UI 추가
 - DB 마이그레이션 v0.10.6: generic placeholder 데이터 시딩
 

@@ -281,7 +281,7 @@ ON CONFLICT (key) DO UPDATE SET value = '"0.8.3"';`,
     {
         version: "0.10.6",
         title: "랜딩 히어로 데이터 DB 시딩",
-        feature: "about_data에 valuePillars + coreValues 시딩",
+        feature: "about_data에 valuePillars + coreCompetencies 시딩",
         sql: `
 UPDATE about_data
 SET data = data || '{
@@ -290,10 +290,10 @@ SET data = data || '{
     {"label": "Pillar 2", "sub": "Sub 2", "description": "Admin에서 Value Pillar를 입력하세요"},
     {"label": "Pillar 3", "sub": "Sub 3", "description": "Admin에서 Value Pillar를 입력하세요"}
   ],
-  "coreValues": [
-    {"title": "Value 1", "description": "Admin에서 Core Value를 입력하세요"},
-    {"title": "Value 2", "description": "Admin에서 Core Value를 입력하세요"},
-    {"title": "Value 3", "description": "Admin에서 Core Value를 입력하세요"}
+  "coreCompetencies": [
+    {"title": "Value 1", "description": "Admin에서 Core Compentency를 입력하세요"},
+    {"title": "Value 2", "description": "Admin에서 Core Compentency를 입력하세요"},
+    {"title": "Value 3", "description": "Admin에서 Core Compentency를 입력하세요"}
   ]
 }'::jsonb
 WHERE NOT (data ? 'valuePillars');
@@ -338,5 +338,22 @@ CREATE POLICY images_authenticated_delete ON storage.objects
 INSERT INTO site_config (key, value)
 VALUES ('db_schema_version', '"0.10.19"')
 ON CONFLICT (key) DO UPDATE SET value = '"0.10.19"';`,
+    },
+    {
+        version: "0.11.20",
+        title: "about_data JSONB 키 이름 변경: coreValues → coreCompetencies",
+        feature: "핵심역량 편집 UI를 ResumePanel로 이동, DB JSONB 키 일치",
+        sql: `
+UPDATE about_data
+SET data = jsonb_set(
+    data - 'coreValues',
+    '{coreCompetencies}',
+    COALESCE(data->'coreValues', '[]'::jsonb)
+)
+WHERE data ? 'coreValues';
+
+INSERT INTO site_config (key, value)
+VALUES ('db_schema_version', '"0.11.20"')
+ON CONFLICT (key) DO UPDATE SET value = '"0.11.20"';`,
     },
 ];

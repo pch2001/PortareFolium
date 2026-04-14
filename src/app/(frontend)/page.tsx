@@ -33,9 +33,18 @@ const PLACEHOLDER_VALUE_PILLARS = [
 ];
 
 const PLACEHOLDER_CORE_VALUES = [
-    { title: "Value 1", description: "Admin에서 Core Value를 입력하세요" },
-    { title: "Value 2", description: "Admin에서 Core Value를 입력하세요" },
-    { title: "Value 3", description: "Admin에서 Core Value를 입력하세요" },
+    {
+        title: "Value 1",
+        description: "Admin에서 Core Compentency를 입력하세요",
+    },
+    {
+        title: "Value 2",
+        description: "Admin에서 Core Compentency를 입력하세요",
+    },
+    {
+        title: "Value 3",
+        description: "Admin에서 Core Compentency를 입력하세요",
+    },
 ];
 
 interface AboutData {
@@ -43,7 +52,7 @@ interface AboutData {
     description?: string;
     descriptionSub?: string;
     valuePillars?: { label: string; sub: string; description: string }[];
-    coreValues?: { title: string; description: string }[];
+    coreCompetencies?: { title: string; description: string }[];
 }
 interface WorkItem {
     name?: string;
@@ -208,9 +217,9 @@ export default async function HomePage() {
         about.valuePillars && about.valuePillars.length > 0
             ? about.valuePillars
             : PLACEHOLDER_VALUE_PILLARS;
-    const coreValues =
-        about.coreValues && about.coreValues.length > 0
-            ? about.coreValues
+    const coreCompetencies =
+        about.coreCompetencies && about.coreCompetencies.length > 0
+            ? about.coreCompetencies
             : PLACEHOLDER_CORE_VALUES;
 
     return (
@@ -362,14 +371,14 @@ export default async function HomePage() {
             <section className="border-t border-(--color-border) py-16">
                 <div className="mb-10">
                     <p className="mb-1 text-sm font-semibold tracking-[0.2em] text-(--color-accent) uppercase">
-                        Technical Strengths
+                        Core Competencies
                     </p>
                     <h2 className="text-4xl font-(--font-display) font-black tracking-tight text-(--color-foreground)">
                         핵심 역량
                     </h2>
                 </div>
                 <div className="tablet:grid-cols-2 grid grid-cols-1 gap-5">
-                    {coreValues.map((comp, idx) => (
+                    {coreCompetencies.map((comp, idx) => (
                         <div
                             key={idx}
                             className="rounded-xl border border-(--color-border) bg-(--color-surface-subtle) p-6"

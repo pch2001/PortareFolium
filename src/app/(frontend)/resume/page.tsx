@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { serverClient } from "@/lib/supabase";
 import type { Resume } from "@/types/resume";
+import type { CoreValue } from "@/types/about";
 import ResumeClassic from "@/components/resume/ResumeClassic";
 import ResumeModern from "@/components/resume/ResumeModern";
 import ResumeMinimal from "@/components/resume/ResumeMinimal";
@@ -25,9 +26,10 @@ export default async function ResumePage() {
     let jobField = process.env.NEXT_PUBLIC_JOB_FIELD ?? "game";
     let resumeLayout: "classic" | "modern" | "minimal" | "phases" = "modern";
     let resumeDataRaw: Resume = {} as Resume;
+    let coreCompetencies: CoreValue[] = [];
 
     if (serverClient) {
-        const [cfgRes, layoutRes, resumeRes] = await Promise.all([
+        const [cfgRes, layoutRes, resumeRes, aboutRes] = await Promise.all([
             serverClient
                 .from("site_config")
                 .select("value")
@@ -43,6 +45,7 @@ export default async function ResumePage() {
                 .select("data")
                 .eq("lang", "ko")
                 .single(),
+            serverClient.from("about_data").select("data").limit(1).single(),
         ]);
 
         if (cfgRes.data?.value) {
@@ -64,6 +67,11 @@ export default async function ResumePage() {
 
         if (resumeRes.data?.data) {
             resumeDataRaw = resumeRes.data.data as unknown as Resume;
+        }
+
+        if (aboutRes.data?.data) {
+            coreCompetencies =
+                (aboutRes.data.data as any).coreCompetencies ?? [];
         }
     }
 
@@ -94,17 +102,29 @@ export default async function ResumePage() {
     return (
         <PdfExportButton fileName="resume">
             {resumeLayout === "classic" && (
-                <ResumeClassic resume={resumeData} />
+                <ResumeClassic
+                    resume={resumeData}
+                    coreCompetencies={coreCompetencies}
+                />
             )}
-            {resumeLayout === "modern" && <ResumeModern resume={resumeData} />}
+            {resumeLayout === "modern" && (
+                <ResumeModern
+                    resume={resumeData}
+                    coreCompetencies={coreCompetencies}
+                />
+            )}
             {resumeLayout === "minimal" && (
-                <ResumeMinimal resume={resumeData} />
+                <ResumeMinimal
+                    resume={resumeData}
+                    coreCompetencies={coreCompetencies}
+                />
             )}
             {/* phases 레이아웃은 jobField 필터 없이 raw 데이터 전달 */}
             {resumeLayout === "phases" && (
                 <ResumePhases
                     resume={resumeDataRaw}
                     activeJobField={jobField}
+                    coreCompetencies={coreCompetencies}
                 />
             )}
         </PdfExportButton>

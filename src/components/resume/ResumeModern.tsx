@@ -1,4 +1,5 @@
 import type { Resume } from "@/types/resume";
+import type { CoreValue } from "@/types/about";
 import { renderMarkdown } from "@/lib/markdown";
 import SkillsSection from "@/components/resume/SkillsSection";
 import CareerPhasesSection from "@/components/resume/CareerPhasesSection";
@@ -6,6 +7,7 @@ import ProjectsSection from "@/components/resume/ProjectsSection";
 
 interface Props {
     resume: Resume;
+    coreCompetencies?: CoreValue[];
 }
 
 const defaultSectionLabels: Record<string, string> = {
@@ -31,7 +33,10 @@ const formatDateRange = (
     return `${fmt(startDate)} ~ ${fmt(endDate) || "Present"}`;
 };
 
-export default async function ResumeModern({ resume }: Props) {
+export default async function ResumeModern({
+    resume,
+    coreCompetencies = [],
+}: Props) {
     const basics = resume.basics ?? {};
     const sectionOrder = [
         "work",
@@ -187,6 +192,35 @@ export default async function ResumeModern({ resume }: Props) {
                 <CareerPhasesSection
                     phases={resume.careerPhases?.entries ?? []}
                 />
+                {coreCompetencies.length > 0 && (
+                    <section className="mb-10" data-pdf-block>
+                        <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
+                            핵심역량
+                        </h2>
+                        <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
+                            {coreCompetencies.map((comp, idx) => (
+                                <div
+                                    key={idx}
+                                    className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-5 py-4"
+                                >
+                                    <div className="mb-1.5 flex items-center gap-2.5">
+                                        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-(--color-accent) text-xs font-bold text-(--color-on-accent)">
+                                            {idx + 1}
+                                        </span>
+                                        <h3 className="m-0 text-base font-bold text-(--color-foreground)">
+                                            {comp.title}
+                                        </h3>
+                                    </div>
+                                    {comp.description && (
+                                        <p className="m-0 text-sm text-(--color-muted)">
+                                            {comp.description}
+                                        </p>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
                 {sections.map(([sectionKey, sectionValue]) => {
                     if (
                         !sectionValue ||
