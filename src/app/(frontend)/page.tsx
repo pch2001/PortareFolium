@@ -212,7 +212,6 @@ export default async function HomePage() {
         about.coreValues && about.coreValues.length > 0
             ? about.coreValues
             : PLACEHOLDER_CORE_VALUES;
-    const isDev = process.env.NODE_ENV === "development";
 
     return (
         <>
@@ -568,23 +567,6 @@ export default async function HomePage() {
                             ))}
                         </ul>
                     )}
-                </section>
-            )}
-
-            {/* Dev 도구 */}
-            {isDev && (
-                <section className="mt-4 mb-8 rounded-xl border border-dashed border-(--color-border) bg-(--color-surface-subtle) p-4">
-                    <p className="mb-3 text-xs font-medium tracking-wider text-(--color-muted) uppercase">
-                        개발 도구
-                    </p>
-                    <div className="flex flex-wrap gap-3">
-                        <Link
-                            href="/admin"
-                            className="inline-flex items-center gap-2 rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm font-medium text-(--color-foreground) transition-opacity hover:opacity-90"
-                        >
-                            Admin
-                        </Link>
-                    </div>
                 </section>
             )}
         </>

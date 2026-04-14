@@ -112,7 +112,6 @@ export default async function BlogListPage() {
                     posts={postItems}
                     categories={categories}
                     tags={tags}
-                    showWritePost={process.env.NODE_ENV === "development"}
                 />
             )}
         </article>

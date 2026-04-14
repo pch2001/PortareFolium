@@ -1,5 +1,14 @@
 # CHANGES
 
+## v0.11.16 (2026-04-14)
+
+### UI: Blog 디자인 개선 + sticky header + loading spinner
+
+- `src/components/BlogPage.tsx`: dev-only `showWritePost` prop → 클라이언트 인증 기반 `showManagePost`로 전환, block/list view 카드 레이아웃 재구성, category badge 스타일 개선, grid `desktop:grid-cols-3`, loading spinner 추가, mobile/desktop header `sticky top-20` 고정 + `before:` pseudo-element gap 배경 채움
+- `src/app/(frontend)/blog/page.tsx`: `showWritePost` prop 제거
+- `src/app/(frontend)/page.tsx`: dev 전용 도구 섹션 제거
+- `src/components/ContentWrapper.tsx`: `w-full` 추가
+
 ## v0.11.14 (2026-04-14)
 
 ### UI: GlobalSearch loading spinner 추가

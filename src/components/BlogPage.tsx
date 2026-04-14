@@ -6,6 +6,7 @@
  * URL 쿼리 ?category=...&tag=... 로 필터 공유 가능.
  */
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { browserClient } from "@/lib/supabase";
 
 /** 태그 색상으로 사용해도 안전한 CSS 값인지 검사 (hex 3/6/8자리, rgb, rgba만 허용) */
 function isSafeCssColor(value: string): boolean {
@@ -94,8 +95,6 @@ interface Props {
     posts: PostItem[];
     categories: FilterMeta[];
     tags: FilterMeta[];
-    /** dev 모드에서만 true, Admin 포스트 작성 버튼 표시 */
-    showWritePost?: boolean;
 }
 
 const ALL_CATEGORY = "all";
@@ -148,12 +147,21 @@ function GridIcon({ className }: { className?: string }) {
     );
 }
 
-export default function BlogPage({
-    posts,
-    categories,
-    tags,
-    showWritePost = false,
-}: Props) {
+export default function BlogPage({ posts, categories, tags }: Props) {
+    // 로그인 상태 확인 → 관리 버튼 표시 (auth 완료까지 렌더 지연)
+    const [authChecked, setAuthChecked] = useState(false);
+    const [showManagePost, setShowManagePost] = useState(false);
+    useEffect(() => {
+        if (!browserClient) {
+            setAuthChecked(true);
+            return;
+        }
+        browserClient.auth.getUser().then(({ data }) => {
+            if (data.user) setShowManagePost(true);
+            setAuthChecked(true);
+        });
+    }, []);
+
     const categoryNames = useMemo(
         () => categories.map((c) => c.name),
         [categories]
@@ -256,10 +264,36 @@ export default function BlogPage({
         return searchedPosts.slice(start, start + POSTS_PER_PAGE);
     }, [searchedPosts, currentPage]);
 
+    if (!authChecked) {
+        return (
+            <div className="flex min-h-[40vh] items-center justify-center">
+                <svg
+                    className="h-6 w-6 animate-spin text-(--color-muted)"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                >
+                    <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                    />
+                    <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    />
+                </svg>
+            </div>
+        );
+    }
+
     return (
-        <div className="tablet:flex-row flex flex-col gap-8">
+        <div className="tablet:flex-row flex w-full flex-col gap-8">
             {/* Hamburger + title + view toggle: mobile top row */}
-            <div className="tablet:hidden flex flex-wrap items-center gap-3">
+            <div className="tablet:hidden sticky top-20 z-10 flex flex-wrap items-center gap-3 bg-(--color-surface) pb-4 before:absolute before:inset-x-0 before:-top-20 before:h-20 before:bg-(--color-surface) before:content-['']">
                 <button
                     type="button"
                     onClick={() => setSidebarOpen((o) => !o)}
@@ -301,14 +335,14 @@ export default function BlogPage({
                         <GridIcon className="h-4 w-4" />
                     </button>
                 </div>
-                {showWritePost && (
+                {showManagePost && (
                     <a
-                        href="/keystatic"
+                        href="/admin#posts"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="shrink-0 rounded-xl bg-(--color-accent) px-4 py-2 text-sm font-medium text-(--color-on-accent) transition-opacity hover:opacity-90"
                     >
-                        Write post
+                        포스트 관리
                     </a>
                 )}
                 {/* Mobile search */}
@@ -405,8 +439,8 @@ export default function BlogPage({
             </aside>
 
             {/* Main: post list / block grid */}
-            <div className="min-w-0 flex-1">
-                <div className="tablet:flex tablet:items-end tablet:justify-between tablet:gap-4 mb-8 hidden">
+            <div className="w-full">
+                <div className="tablet:flex tablet:items-end tablet:justify-between tablet:gap-4 sticky top-20 z-10 mb-8 hidden bg-(--color-surface) pb-4 before:absolute before:inset-x-0 before:-top-20 before:h-20 before:bg-(--color-surface) before:content-['']">
                     <h1 className="text-3xl font-black tracking-tight text-(--color-foreground)">
                         Blog
                     </h1>
@@ -436,14 +470,14 @@ export default function BlogPage({
                                 <GridIcon className="h-4 w-4" />
                             </button>
                         </div>
-                        {showWritePost && (
+                        {showManagePost && (
                             <a
-                                href="/admin"
+                                href="/admin#posts"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="shrink-0 rounded-xl bg-(--color-accent) px-4 py-2 text-sm font-medium text-(--color-on-accent) transition-opacity hover:opacity-90"
                             >
-                                Write post
+                                포스트 관리
                             </a>
                         )}
                     </div>
@@ -454,7 +488,7 @@ export default function BlogPage({
                     </p>
                 ) : viewMode === "block" ? (
                     // Block view: grid 카드
-                    <div className="tablet:grid-cols-2 laptop:grid-cols-3 grid grid-cols-1 gap-6">
+                    <div className="tablet:grid-cols-2 desktop:grid-cols-3 grid grid-cols-1 gap-6">
                         {paginatedPosts.map((post) => (
                             <a
                                 key={post.slug}
@@ -479,25 +513,71 @@ export default function BlogPage({
                                 </div>
                                 {/* Content */}
                                 <div className="flex flex-1 flex-col p-5">
-                                    <div className="mb-2 flex flex-wrap items-center gap-2">
-                                        <time
-                                            className="text-xs text-(--color-muted)"
-                                            dateTime={post.pubDateIso}
-                                        >
-                                            {post.pubDateFormatted}
-                                        </time>
+                                    <div>
                                         {post.category && (
                                             <span className="rounded-md bg-(--color-accent) px-2 py-0.5 text-[10px] font-bold tracking-wider text-(--color-on-accent) uppercase">
                                                 {post.category}
                                             </span>
                                         )}
                                     </div>
-                                    <h2 className="mb-2 text-lg leading-snug font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
+                                    <h2 className="mt-2 text-lg leading-snug font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
                                         {post.title}
                                     </h2>
-                                    <p className="line-clamp-3 text-sm text-(--color-muted)">
+                                    <p className="mt-2 line-clamp-3 text-sm text-(--color-muted)">
                                         {post.displayDescription}
                                     </p>
+                                    <div className="mt-2">
+                                        <time
+                                            className="text-xs text-(--color-muted)"
+                                            dateTime={post.pubDateIso}
+                                        >
+                                            {post.pubDateFormatted}
+                                        </time>
+                                    </div>
+                                    <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                                        {post.tagsDisplay &&
+                                            post.tagsDisplay.length > 0 &&
+                                            post.tagsDisplay.map((tag) => {
+                                                const safeColor =
+                                                    tag.color &&
+                                                    isSafeCssColor(tag.color)
+                                                        ? tag.color
+                                                        : undefined;
+                                                const bgColor = safeColor
+                                                    ? /^#[0-9A-Fa-f]{6}$/.test(
+                                                          safeColor
+                                                      )
+                                                        ? safeColor
+                                                        : /^#[0-9A-Fa-f]{8}$/.test(
+                                                                safeColor
+                                                            )
+                                                          ? `#${safeColor.slice(1, 7)}`
+                                                          : safeColor
+                                                    : undefined;
+                                                const textColor = bgColor
+                                                    ? getContrastTextColor(
+                                                          bgColor
+                                                      )
+                                                    : "#ffffff";
+                                                return (
+                                                    <span
+                                                        key={tag.name}
+                                                        className={`rounded-lg px-2.5 py-0.5 text-xs font-medium ${!bgColor ? "bg-(--color-accent) text-(--color-on-accent)" : ""}`}
+                                                        style={
+                                                            bgColor
+                                                                ? {
+                                                                      backgroundColor:
+                                                                          bgColor,
+                                                                      color: textColor,
+                                                                  }
+                                                                : undefined
+                                                        }
+                                                    >
+                                                        {tag.name}
+                                                    </span>
+                                                );
+                                            })}
+                                    </div>
                                 </div>
                             </a>
                         ))}
@@ -513,17 +593,25 @@ export default function BlogPage({
                                 >
                                     <div className="tablet:order-1 order-2 min-w-0 flex-1">
                                         {post.category && (
-                                            <p className="mb-1.5 text-xs font-semibold tracking-wider text-(--color-accent) uppercase">
+                                            <span className="rounded-md bg-(--color-accent) px-2 py-0.5 text-xs font-bold tracking-wider text-(--color-on-accent) uppercase">
                                                 {post.category}
-                                            </p>
+                                            </span>
                                         )}
-                                        <h2 className="mb-1.5 text-base leading-snug font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
+                                        <h2 className="mt-3 text-lg leading-snug font-bold text-(--color-foreground) transition-colors group-hover:text-(--color-accent)">
                                             {post.title}
                                         </h2>
-                                        <p className="mb-3 line-clamp-2 text-sm text-(--color-muted)">
+                                        <p className="mt-1.5 line-clamp-2 text-sm text-(--color-muted)">
                                             {post.displayDescription}
                                         </p>
-                                        <div className="flex flex-wrap items-center gap-1.5">
+                                        <div className="mt-2">
+                                            <time
+                                                className="text-xs text-(--color-muted)"
+                                                dateTime={post.pubDateIso}
+                                            >
+                                                {post.pubDateFormatted}
+                                            </time>
+                                        </div>
+                                        <div className="mt-3 flex flex-wrap items-center gap-1.5">
                                             {post.tagsDisplay &&
                                                 post.tagsDisplay.length > 0 &&
                                                 post.tagsDisplay.map((tag) => {
@@ -568,16 +656,10 @@ export default function BlogPage({
                                                         </span>
                                                     );
                                                 })}
-                                            <time
-                                                className="ml-auto text-xs text-(--color-muted)"
-                                                dateTime={post.pubDateIso}
-                                            >
-                                                {post.pubDateFormatted}
-                                            </time>
                                         </div>
                                     </div>
                                     {post.thumbnailUrl && (
-                                        <div className="tablet:w-36 tablet:h-24 tablet:order-2 tablet:shrink-0 order-1 aspect-video w-full overflow-hidden rounded-xl bg-(--color-surface)">
+                                        <div className="tablet:max-w-48 tablet:self-center tablet:order-2 tablet:shrink-0 order-1 aspect-video w-full overflow-hidden rounded-xl bg-(--color-surface)">
                                             <img
                                                 src={post.thumbnailUrl}
                                                 alt=""

@@ -32,7 +32,7 @@ export default function ContentWrapper({
 }: ContentWrapperProps) {
     return (
         <Component
-            className={cn(contentVariants({ width }), className)}
+            className={cn(contentVariants({ width }), className, "w-full")}
             {...props}
         >
             {children}
