@@ -1,5 +1,23 @@
 # CHANGES
 
+## v0.11.22 (2026-04-14)
+
+### fix: ColoredTable 프론트엔드 색상 렌더링 복구 — CSS custom property → data attribute 방식
+
+**문제**: ColoredTable 헤더/바디 색상이 프론트엔드에서 표시되지 않음
+
+**원인**:
+
+1. 중간 리팩터링에서 `backgroundColor` 직접 인라인 스타일을 CSS custom property (`--pt-head-bg`) 방식으로 교체했으나, cascade 우선순위 문제로 색상이 적용되지 않음
+2. `deriveColorHex` 제거 시 shade 접미사 정규화(`.replace(/-\d+$/, "")`)가 누락되어, 기존 저장된 `"green-400"` 같은 값이 CSS 규칙의 `"green"`과 불일치
+
+**수정**:
+
+- `src/lib/markdown.tsx`: CSS variable 인라인 스타일 → `data-ct-color={colorName}` HTML attribute로 교체. `deriveColorHex` 함수 및 `tailwindToHex` import 제거. `resolvedColors`에 shade 접미사 제거 로직 추가
+- `src/styles/global.css`: `var(--pt-head-bg)` 기반 4개 규칙 → `[data-ct-color="X"]` attribute selector 기반 32개 정적 규칙으로 교체 (8색 × light/dark × header/body). fallback selector도 `.pt-head-col`/`.pt-body-col` 클래스 → `[data-ct-color]` attribute로 변경
+
+**결과**: SSR(`renderToString`) 호환, dark mode는 `html.dark` CSS로 처리 (client-side `ColoredTableColorSync` 불필요)
+
 ## v0.11.21 (2026-04-14)
 
 ### refactor: coreCompetencies DB 저장 위치 변경 — about_data → resume_data

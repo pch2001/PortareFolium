@@ -339,27 +339,139 @@ html.dark .prose :where(td) {
     font-size: 1.25rem;
 }
 /* 헤더 색상 — 라이트 모드 (shade 300) */
-.colored-table th.pt-head-col {
-    background: var(--pt-head-bg);
+.colored-table th[data-ct-color="slate"] {
+    background: #cbd5e1;
+    color: oklch(0.1 0 0);
+}
+.colored-table th[data-ct-color="red"] {
+    background: #fca5a5;
+    color: oklch(0.1 0 0);
+}
+.colored-table th[data-ct-color="orange"] {
+    background: #fdba74;
+    color: oklch(0.1 0 0);
+}
+.colored-table th[data-ct-color="yellow"] {
+    background: #fde047;
+    color: oklch(0.1 0 0);
+}
+.colored-table th[data-ct-color="green"] {
+    background: #86efac;
+    color: oklch(0.1 0 0);
+}
+.colored-table th[data-ct-color="blue"] {
+    background: #93c5fd;
+    color: oklch(0.1 0 0);
+}
+.colored-table th[data-ct-color="purple"] {
+    background: #d8b4fe;
+    color: oklch(0.1 0 0);
+}
+.colored-table th[data-ct-color="pink"] {
+    background: #f9a8d4;
     color: oklch(0.1 0 0);
 }
 /* 헤더 색상 — 다크 모드 (shade 700) */
-html.dark .colored-table th.pt-head-col {
-    background: var(--pt-head-bg-dark);
+html.dark .colored-table th[data-ct-color="slate"] {
+    background: #334155;
     color: oklch(0.95 0 0);
 }
-/* 파생 바디 색상 — 라이트 모드 (shade 100) */
-.colored-table td.pt-body-col {
-    background: var(--pt-body-bg);
+html.dark .colored-table th[data-ct-color="red"] {
+    background: #b91c1c;
+    color: oklch(0.95 0 0);
+}
+html.dark .colored-table th[data-ct-color="orange"] {
+    background: #c2410c;
+    color: oklch(0.95 0 0);
+}
+html.dark .colored-table th[data-ct-color="yellow"] {
+    background: #a16207;
+    color: oklch(0.95 0 0);
+}
+html.dark .colored-table th[data-ct-color="green"] {
+    background: #15803d;
+    color: oklch(0.95 0 0);
+}
+html.dark .colored-table th[data-ct-color="blue"] {
+    background: #1d4ed8;
+    color: oklch(0.95 0 0);
+}
+html.dark .colored-table th[data-ct-color="purple"] {
+    background: #7e22ce;
+    color: oklch(0.95 0 0);
+}
+html.dark .colored-table th[data-ct-color="pink"] {
+    background: #be185d;
+    color: oklch(0.95 0 0);
+}
+/* 바디 색상 — 라이트 모드 (shade 100) */
+.colored-table td[data-ct-color="slate"] {
+    background: #f1f5f9;
     color: oklch(0.15 0 0);
 }
-/* 파생 바디 색상 — 다크 모드 */
-html.dark .colored-table td.pt-body-col {
-    background: var(--pt-body-bg-dark);
+.colored-table td[data-ct-color="red"] {
+    background: #fee2e2;
+    color: oklch(0.15 0 0);
+}
+.colored-table td[data-ct-color="orange"] {
+    background: #ffedd5;
+    color: oklch(0.15 0 0);
+}
+.colored-table td[data-ct-color="yellow"] {
+    background: #fef9c3;
+    color: oklch(0.15 0 0);
+}
+.colored-table td[data-ct-color="green"] {
+    background: #dcfce7;
+    color: oklch(0.15 0 0);
+}
+.colored-table td[data-ct-color="blue"] {
+    background: #dbeafe;
+    color: oklch(0.15 0 0);
+}
+.colored-table td[data-ct-color="purple"] {
+    background: #f3e8ff;
+    color: oklch(0.15 0 0);
+}
+.colored-table td[data-ct-color="pink"] {
+    background: #fce7f3;
+    color: oklch(0.15 0 0);
+}
+/* 바디 색상 — 다크 모드 (shade 800) */
+html.dark .colored-table td[data-ct-color="slate"] {
+    background: #1e293b;
+    color: oklch(0.88 0 0);
+}
+html.dark .colored-table td[data-ct-color="red"] {
+    background: #991b1b;
+    color: oklch(0.88 0 0);
+}
+html.dark .colored-table td[data-ct-color="orange"] {
+    background: #9a3412;
+    color: oklch(0.88 0 0);
+}
+html.dark .colored-table td[data-ct-color="yellow"] {
+    background: #854d0e;
+    color: oklch(0.88 0 0);
+}
+html.dark .colored-table td[data-ct-color="green"] {
+    background: #166534;
+    color: oklch(0.88 0 0);
+}
+html.dark .colored-table td[data-ct-color="blue"] {
+    background: #1e40af;
+    color: oklch(0.88 0 0);
+}
+html.dark .colored-table td[data-ct-color="purple"] {
+    background: #6b21a8;
+    color: oklch(0.88 0 0);
+}
+html.dark .colored-table td[data-ct-color="pink"] {
+    background: #9d174d;
     color: oklch(0.88 0 0);
 }
 /* 색상 미지정 바디 셀 */
-.colored-table td:not(.pt-body-col) {
+.colored-table td:not([data-ct-color]) {
     background: var(--color-surface-subtle);
     color: var(--color-foreground);
 }
@@ -369,7 +481,7 @@ html.dark .colored-table td.pt-body-col {
 .colored-table.has-col-colors tbody tr:hover td {
     filter: brightness(0.97);
 }
-.colored-table th:not(.pt-head-col) {
+.colored-table th:not([data-ct-color]) {
     color: var(--color-foreground);
 }
 

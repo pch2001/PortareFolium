@@ -291,9 +291,9 @@ function LatexInput({ editor }: { editor: Editor }) {
 }
 
 // 색상 프리셋 — base name만 사용 (shade는 렌더링 시 고정: header 300/700, body 100/800)
-// picker 미리보기 hex는 라이트 모드 header shade(*-300) 기준
+// slate는 기본값이므로 프리셋에서 제외. picker 미리보기 hex는 *-300 기준.
+const SLATE_HEX = "#cbd5e1"; // slate-300 — 기본값 표시용
 const COLOR_PRESETS = [
-    { name: "slate", label: "Slate", hex: "#cbd5e1" },
     { name: "red", label: "Red", hex: "#fca5a5" },
     { name: "orange", label: "Orange", hex: "#fdba74" },
     { name: "yellow", label: "Yellow", hex: "#fde047" },
@@ -332,27 +332,24 @@ function MiniColorPicker({
                 onClick={() => setOpen((v) => !v)}
                 className="h-4 w-4 rounded border border-zinc-300 dark:border-zinc-600"
                 style={{
-                    backgroundColor: activeColor?.hex ?? "transparent",
+                    backgroundColor: activeColor?.hex ?? SLATE_HEX,
                 }}
                 title="헤더 색상"
             />
             {open && (
                 <div className="absolute top-full left-0 z-50 mt-1 rounded border border-zinc-200 bg-white p-1.5 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
                     <div className="flex gap-1">
-                        {/* 색상 제거 */}
+                        {/* 기본값 (Slate) */}
                         <button
                             type="button"
-                            className="h-4 w-4 rounded border border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-900"
-                            title="색상 제거"
+                            className="h-4 w-4 rounded border border-zinc-300 transition-transform hover:scale-110 dark:border-zinc-600"
+                            style={{ backgroundColor: SLATE_HEX }}
+                            title="기본 (Slate)"
                             onClick={() => {
                                 onChange(null);
                                 setOpen(false);
                             }}
-                        >
-                            <span className="text-[8px] leading-none text-zinc-400">
-                                ✕
-                            </span>
-                        </button>
+                        />
                         {COLOR_PRESETS.map((c) => (
                             <button
                                 key={c.name}
@@ -551,18 +548,12 @@ function ColoredTableInsert({ editor }: { editor: Editor }) {
                                     }
                                     placeholder={`Col ${ci + 1}`}
                                     className={`${inputCls} font-semibold`}
-                                    style={
-                                        col.color
-                                            ? {
-                                                  backgroundColor:
-                                                      COLOR_PRESETS.find(
-                                                          (p) =>
-                                                              p.name ===
-                                                              col.color
-                                                      )?.hex,
-                                              }
-                                            : undefined
-                                    }
+                                    style={{
+                                        backgroundColor:
+                                            COLOR_PRESETS.find(
+                                                (p) => p.name === col.color
+                                            )?.hex ?? SLATE_HEX,
+                                    }}
                                 />
                             </div>
                         ))}

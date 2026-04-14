@@ -9,7 +9,6 @@ import remarkMath from "remark-math";
 import remarkGfm from "remark-gfm";
 import React from "react";
 import { visit } from "unist-util-visit";
-import { tailwindToHex } from "@/lib/tailwind-colors";
 import {
     directiveToJsx,
     transformOutsideCodeBlocks,
@@ -29,13 +28,6 @@ function YouTube({ id }: { id?: string }) {
             />
         </div>
     );
-}
-
-// 색상 shade 고정: 라이트 header=300, body=100 / 다크 header=700, body=800
-// base name("green") 또는 full name("green-400") 모두 허용 — shade 부분은 무시됨
-function deriveColorHex(colorName: string, shade: number): string {
-    const base = colorName.replace(/-\d+$/, "");
-    return tailwindToHex(`${base}-${shade}`);
 }
 
 function ColoredTable({
@@ -59,25 +51,20 @@ function ColoredTable({
         : undefined;
 
     const NOWRAP = 15;
-    const hasColors = !!headColors?.some(Boolean);
+    // 색상 미지정 컬럼은 기본값 "slate"로 처리 — shade 접미사 제거 (e.g. "green-400" → "green")
+    const resolvedColors = headers.map((_, i) =>
+        (headColors?.[i] || "slate").replace(/-\d+$/, "")
+    );
 
     return (
         <div className="colored-table-wrapper">
-            <table
-                className={`colored-table${hasColors ? "has-col-colors" : ""}`}
-            >
+            <table className="colored-table has-col-colors">
                 <thead>
                     <tr>
                         {headers.map((h, i) => {
-                            const colorName = headColors?.[i];
-                            const lightHex = colorName
-                                ? deriveColorHex(colorName, 300)
-                                : "";
-                            const darkHex = colorName
-                                ? deriveColorHex(colorName, 700)
-                                : "";
+                            const colorName = resolvedColors[i];
                             const cls = [
-                                lightHex ? "pt-head-col" : "",
+                                "pt-head-col",
                                 h.length <= NOWRAP ? "ft-nowrap" : "",
                             ]
                                 .filter(Boolean)
@@ -87,14 +74,7 @@ function ColoredTable({
                                 <th
                                     key={i}
                                     className={cls || undefined}
-                                    style={
-                                        lightHex
-                                            ? ({
-                                                  "--pt-head-bg": lightHex,
-                                                  "--pt-head-bg-dark": darkHex,
-                                              } as any)
-                                            : undefined
-                                    }
+                                    data-ct-color={colorName}
                                 >
                                     {h}
                                 </th>
@@ -106,16 +86,10 @@ function ColoredTable({
                     {dataRows.map((row, rIdx) => (
                         <tr key={rIdx}>
                             {row.map((cell, i) => {
-                                const colorName = headColors?.[i];
-                                const lightHex = colorName
-                                    ? deriveColorHex(colorName, 100)
-                                    : "";
-                                const darkHex = colorName
-                                    ? deriveColorHex(colorName, 800)
-                                    : "";
+                                const colorName = resolvedColors[i];
                                 const text = cell || "—";
                                 const cls = [
-                                    lightHex ? "pt-body-col" : "",
+                                    "pt-body-col",
                                     text.length <= NOWRAP ? "ft-nowrap" : "",
                                 ]
                                     .filter(Boolean)
@@ -125,15 +99,7 @@ function ColoredTable({
                                     <td
                                         key={i}
                                         className={cls || undefined}
-                                        style={
-                                            lightHex
-                                                ? ({
-                                                      "--pt-body-bg": lightHex,
-                                                      "--pt-body-bg-dark":
-                                                          darkHex,
-                                                  } as any)
-                                                : undefined
-                                        }
+                                        data-ct-color={colorName}
                                     >
                                         {text}
                                     </td>
