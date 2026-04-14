@@ -351,7 +351,7 @@ export default function BlogPage({ posts, categories, tags }: Props) {
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search posts..."
+                        placeholder="블로그 포스트 검색..."
                         className="w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm text-(--color-foreground) placeholder:text-(--color-muted) focus:border-(--color-accent) focus:outline-none"
                     />
                 </div>
@@ -440,16 +440,16 @@ export default function BlogPage({ posts, categories, tags }: Props) {
 
             {/* Main: post list / block grid */}
             <div className="w-full">
-                <div className="tablet:flex tablet:items-end tablet:justify-between tablet:gap-4 sticky top-20 z-10 mb-8 hidden bg-(--color-surface) pb-4 before:absolute before:inset-x-0 before:-top-20 before:h-20 before:bg-(--color-surface) before:content-['']">
-                    <h1 className="text-3xl font-black tracking-tight text-(--color-foreground)">
+                <div className="tablet:flex tablet:items-end tablet:justify-between tablet:gap-4 sticky top-20 z-10 mb-8 hidden bg-(--color-surface) pb-4 before:absolute before:inset-x-0 before:-top-20 before:z-0 before:h-20 before:bg-(--color-surface) before:content-['']">
+                    <h1 className="z-10 text-3xl font-black tracking-tight text-(--color-foreground)">
                         Blog
                     </h1>
-                    <div className="flex items-center gap-3">
+                    <div className="z-10 flex items-center gap-3">
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search posts..."
+                            placeholder="블로그 포스트 검색..."
                             className="w-56 rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm text-(--color-foreground) placeholder:text-(--color-muted) focus:border-(--color-accent) focus:outline-none"
                         />
                         <div className="flex items-center gap-1">
