@@ -1,5 +1,14 @@
 # CHANGES
 
+## v0.11.17 (2026-04-14)
+
+### Feat: SEO — robots.txt + sitemap.xml + 검색 엔진 인증
+
+- `src/app/robots.ts`: 신규 — robots.txt 생성 (`/admin`, `/api` 차단)
+- `src/app/sitemap.ts`: 신규 — 동적 sitemap (정적 페이지 + published blog/portfolio)
+- `src/app/layout.tsx`: Google/NAVER 검색 엔진 인증 메타태그 추가 (env var 기반 — `NEXT_PUBLIC_GOOGLE_VERIFICATION`, `NEXT_PUBLIC_NAVER_VERIFICATION`)
+- 모든 URL은 `NEXT_PUBLIC_SITE_URL` env var 기반 (fallback: `VERCEL_URL` → `localhost:3000`)
+
 ## v0.11.16 (2026-04-14)
 
 ### UI: Blog 디자인 개선 + sticky header + loading spinner

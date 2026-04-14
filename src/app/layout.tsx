@@ -13,6 +13,15 @@ export const metadata: Metadata = {
     title: "PortareFolium",
     description: "포트폴리오 & 기술 블로그",
     icons: { icon: "/favicon.svg" },
+    verification: {
+        google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
+        other: process.env.NEXT_PUBLIC_NAVER_VERIFICATION
+            ? {
+                  "naver-site-verification":
+                      process.env.NEXT_PUBLIC_NAVER_VERIFICATION,
+              }
+            : undefined,
+    },
 };
 
 const VALID_SCHEMES: readonly string[] = ALL_SCHEME_IDS;
