@@ -9,7 +9,7 @@ import remarkMath from "remark-math";
 import remarkGfm from "remark-gfm";
 import React from "react";
 import { visit } from "unist-util-visit";
-import { tailwindToHex, isLightBackground } from "@/lib/tailwind-colors";
+import { tailwindToHex } from "@/lib/tailwind-colors";
 import {
     directiveToJsx,
     transformOutsideCodeBlocks,
@@ -31,13 +31,17 @@ function YouTube({ id }: { id?: string }) {
     );
 }
 
+// 색상 shade 고정: 라이트 header=300, body=100 / 다크 header=700, body=800
+// base name("green") 또는 full name("green-400") 모두 허용 — shade 부분은 무시됨
+function deriveColorHex(colorName: string, shade: number): string {
+    const base = colorName.replace(/-\d+$/, "");
+    return tailwindToHex(`${base}-${shade}`);
+}
+
 function ColoredTable({
     columns,
     rows,
     columnHeadColors,
-    columnHeadColorsDark,
-    rowColors,
-    rowColorsDark,
 }: Record<string, any>) {
     function parseArr<T>(v: unknown): T[] {
         if (!v) return [];
@@ -53,22 +57,9 @@ function ColoredTable({
     const headColors = columnHeadColors
         ? parseArr<string>(columnHeadColors)
         : undefined;
-    const headColorsDark = columnHeadColorsDark
-        ? parseArr<string>(columnHeadColorsDark)
-        : undefined;
-    const bodyColors = rowColors ? parseArr<string>(rowColors) : undefined;
-    const bodyColorsDark = rowColorsDark
-        ? parseArr<string>(rowColorsDark)
-        : undefined;
 
     const NOWRAP = 15;
-    function getTextColor(name: string): string {
-        return isLightBackground(name)
-            ? "var(--color-foreground)"
-            : "rgba(255,255,255,0.95)";
-    }
-
-    const hasColors = !!(headColors?.length || bodyColors?.length);
+    const hasColors = !!headColors?.some(Boolean);
 
     return (
         <div className="colored-table-wrapper">
@@ -78,18 +69,15 @@ function ColoredTable({
                 <thead>
                     <tr>
                         {headers.map((h, i) => {
-                            const tl = headColors?.[i];
-                            const td = headColorsDark?.[i];
-                            const bgl = tl ? tailwindToHex(tl) : "";
-                            const bgd = td ? tailwindToHex(td) : "";
-                            const txl = tl ? getTextColor(tl) : "";
-                            const txd = td
-                                ? getTextColor(td)
-                                : tl
-                                  ? getTextColor(tl)
-                                  : "";
+                            const colorName = headColors?.[i];
+                            const lightHex = colorName
+                                ? deriveColorHex(colorName, 300)
+                                : "";
+                            const darkHex = colorName
+                                ? deriveColorHex(colorName, 700)
+                                : "";
                             const cls = [
-                                tl || td ? "pt-head-col" : "",
+                                lightHex ? "pt-head-col" : "",
                                 h.length <= NOWRAP ? "ft-nowrap" : "",
                             ]
                                 .filter(Boolean)
@@ -100,16 +88,13 @@ function ColoredTable({
                                     key={i}
                                     className={cls || undefined}
                                     style={
-                                        bgl
+                                        lightHex
                                             ? ({
-                                                  "--pt-bg": bgl,
-                                                  "--pt-text": txl,
+                                                  "--pt-head-bg": lightHex,
+                                                  "--pt-head-bg-dark": darkHex,
                                               } as any)
                                             : undefined
                                     }
-                                    data-pt-head-idx={i}
-                                    data-pt-bg-dark={bgd || undefined}
-                                    data-pt-text-dark={txd || undefined}
                                 >
                                     {h}
                                 </th>
@@ -121,19 +106,16 @@ function ColoredTable({
                     {dataRows.map((row, rIdx) => (
                         <tr key={rIdx}>
                             {row.map((cell, i) => {
-                                const tl = bodyColors?.[i];
-                                const td = bodyColorsDark?.[i];
-                                const bgl = tl ? tailwindToHex(tl) : "";
-                                const bgd = td ? tailwindToHex(td) : "";
-                                const txl = tl ? getTextColor(tl) : "";
-                                const txd = td
-                                    ? getTextColor(td)
-                                    : tl
-                                      ? getTextColor(tl)
-                                      : "";
+                                const colorName = headColors?.[i];
+                                const lightHex = colorName
+                                    ? deriveColorHex(colorName, 100)
+                                    : "";
+                                const darkHex = colorName
+                                    ? deriveColorHex(colorName, 800)
+                                    : "";
                                 const text = cell || "—";
                                 const cls = [
-                                    tl || td ? "pt-body-col" : "",
+                                    lightHex ? "pt-body-col" : "",
                                     text.length <= NOWRAP ? "ft-nowrap" : "",
                                 ]
                                     .filter(Boolean)
@@ -144,16 +126,14 @@ function ColoredTable({
                                         key={i}
                                         className={cls || undefined}
                                         style={
-                                            bgl
+                                            lightHex
                                                 ? ({
-                                                      "--pt-bg": bgl,
-                                                      "--pt-text": txl,
+                                                      "--pt-body-bg": lightHex,
+                                                      "--pt-body-bg-dark":
+                                                          darkHex,
                                                   } as any)
                                                 : undefined
                                         }
-                                        data-pt-body-idx={i}
-                                        data-pt-bg-dark={bgd || undefined}
-                                        data-pt-text-dark={txd || undefined}
                                     >
                                         {text}
                                     </td>

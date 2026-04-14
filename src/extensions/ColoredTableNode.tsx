@@ -6,7 +6,14 @@ import {
     NodeViewWrapper,
     type ReactNodeViewProps,
 } from "@tiptap/react";
-import { tailwindToHex, isLightBackground } from "@/lib/tailwind-colors";
+import { tailwindToHex } from "@/lib/tailwind-colors";
+
+// base name("green") 또는 full name("green-400") 모두 허용 — shade 부분은 무시됨
+// 라이트: header=300, body=100 / 다크: header=700, body=800
+function deriveColorHex(colorName: string, shade: number): string {
+    const base = colorName.replace(/-\d+$/, "");
+    return tailwindToHex(`${base}-${shade}`);
+}
 
 // 에디터 내 ColoredTable 프리뷰 (읽기 전용)
 function ColoredTablePreview({ node }: ReactNodeViewProps) {
@@ -38,10 +45,9 @@ function ColoredTablePreview({ node }: ReactNodeViewProps) {
                         <tr>
                             {columns.map((col, ci) => {
                                 const color = headColors[ci] || "";
-                                const hex = color ? tailwindToHex(color) : "";
-                                const isLight = color
-                                    ? isLightBackground(color)
-                                    : true;
+                                const hex = color
+                                    ? deriveColorHex(color, 300)
+                                    : "";
                                 return (
                                     <th
                                         key={ci}
@@ -50,9 +56,7 @@ function ColoredTablePreview({ node }: ReactNodeViewProps) {
                                             hex
                                                 ? {
                                                       backgroundColor: hex,
-                                                      color: isLight
-                                                          ? undefined
-                                                          : "rgba(255,255,255,0.95)",
+                                                      color: "oklch(0.1 0 0)",
                                                   }
                                                 : undefined
                                         }
@@ -66,14 +70,28 @@ function ColoredTablePreview({ node }: ReactNodeViewProps) {
                     <tbody>
                         {rows.map((row, ri) => (
                             <tr key={ri}>
-                                {columns.map((_, ci) => (
-                                    <td
-                                        key={ci}
-                                        className="border-b border-zinc-100 px-3 py-1.5 dark:border-zinc-800"
-                                    >
-                                        {row[ci] || "—"}
-                                    </td>
-                                ))}
+                                {columns.map((_, ci) => {
+                                    const color = headColors[ci] || "";
+                                    const bodyBg = color
+                                        ? deriveColorHex(color, 100)
+                                        : "";
+                                    return (
+                                        <td
+                                            key={ci}
+                                            className="border-b border-zinc-100 px-3 py-1.5 dark:border-zinc-800"
+                                            style={
+                                                bodyBg
+                                                    ? {
+                                                          backgroundColor:
+                                                              bodyBg,
+                                                      }
+                                                    : undefined
+                                            }
+                                        >
+                                            {row[ci] || "—"}
+                                        </td>
+                                    );
+                                })}
                             </tr>
                         ))}
                     </tbody>

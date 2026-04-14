@@ -290,16 +290,17 @@ function LatexInput({ editor }: { editor: Editor }) {
     );
 }
 
-// 색상 프리셋 (ColoredTable 모달 + CellColorPicker 공용)
+// 색상 프리셋 — base name만 사용 (shade는 렌더링 시 고정: header 300/700, body 100/800)
+// picker 미리보기 hex는 라이트 모드 header shade(*-300) 기준
 const COLOR_PRESETS = [
-    { name: "slate-200", label: "Slate", hex: "#e2e8f0" },
-    { name: "red-200", label: "Red", hex: "#fecaca" },
-    { name: "orange-200", label: "Orange", hex: "#fed7aa" },
-    { name: "yellow-200", label: "Yellow", hex: "#fef08a" },
-    { name: "green-200", label: "Green", hex: "#bbf7d0" },
-    { name: "blue-200", label: "Blue", hex: "#bfdbfe" },
-    { name: "purple-200", label: "Purple", hex: "#e9d5ff" },
-    { name: "pink-200", label: "Pink", hex: "#fbcfe8" },
+    { name: "slate", label: "Slate", hex: "#cbd5e1" },
+    { name: "red", label: "Red", hex: "#fca5a5" },
+    { name: "orange", label: "Orange", hex: "#fdba74" },
+    { name: "yellow", label: "Yellow", hex: "#fde047" },
+    { name: "green", label: "Green", hex: "#86efac" },
+    { name: "blue", label: "Blue", hex: "#93c5fd" },
+    { name: "purple", label: "Purple", hex: "#d8b4fe" },
+    { name: "pink", label: "Pink", hex: "#f9a8d4" },
 ];
 
 // 컬럼 헤더 색상 picker (미니)
@@ -378,37 +379,8 @@ interface ColDef {
     color: string | null;
 }
 
-// JSX 코드에서 ColoredTable attribute 파싱
-function parseColoredTableJsx(code: string): {
-    columns: string;
-    rows: string;
-    columnHeadColors: string;
-} | null {
-    const m = code.match(/<(?:ColoredTable|FoliumTable)\s+([\s\S]*?)\s*\/>/);
-    if (!m) return null;
-    const attrs = m[1];
-    const extract = (key: string): string | null => {
-        const re = new RegExp(
-            `${key}\\s*=\\s*(?:\\{'([^']*)'\\}|'([^']*)'|"([^"]*)")`
-        );
-        const am = attrs.match(re);
-        if (!am) return null;
-        return am[1] ?? am[2] ?? am[3] ?? null;
-    };
-    const columns = extract("columns");
-    const rows = extract("rows");
-    if (!columns || !rows) return null;
-    return {
-        columns,
-        rows,
-        columnHeadColors: extract("columnHeadColors") ?? "[]",
-    };
-}
-
 function ColoredTableInsert({ editor }: { editor: Editor }) {
     const [open, setOpen] = useState(false);
-    const [tab, setTab] = useState<"classic" | "code">("classic");
-    const [codeText, setCodeText] = useState("");
     const [columns, setColumns] = useState<ColDef[]>([
         { name: "", color: null },
         { name: "", color: null },
@@ -476,27 +448,7 @@ function ColoredTableInsert({ editor }: { editor: Editor }) {
         );
     };
 
-    // Code 탭 삽입
-    const handleCodeInsert = () => {
-        const parsed = parseColoredTableJsx(codeText);
-        if (!parsed) return;
-        editor
-            .chain()
-            .focus()
-            .insertContent({
-                type: "coloredTableEmbed",
-                attrs: {
-                    columns: parsed.columns,
-                    rows: parsed.rows,
-                    columnHeadColors: parsed.columnHeadColors,
-                },
-            })
-            .run();
-        setCodeText("");
-        setOpen(false);
-    };
-
-    // Classic 탭 삽입
+    // 삽입
     const handleInsert = () => {
         const colNames = columns.map(
             (c) => c.name || `Col ${columns.indexOf(c) + 1}`
@@ -566,177 +518,117 @@ function ColoredTableInsert({ editor }: { editor: Editor }) {
             </button>
             {open && (
                 <div className="tablet:w-[480px] absolute top-full right-0 z-50 mt-1 flex max-h-[60vh] w-[calc(100vw-2rem)] flex-col gap-3 overflow-y-auto rounded-xl border border-zinc-200 bg-white p-4 shadow-xl dark:border-zinc-700 dark:bg-zinc-800">
-                    {/* 탭 */}
-                    <div className="flex gap-1 rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-700">
-                        <button
-                            type="button"
-                            onClick={() => setTab("classic")}
-                            className={`flex-1 rounded-md px-3 py-1 text-xs font-medium transition-colors ${tab === "classic" ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-600 dark:text-zinc-100" : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400"}`}
-                        >
-                            Classic
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setTab("code")}
-                            className={`flex-1 rounded-md px-3 py-1 text-xs font-medium transition-colors ${tab === "code" ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-600 dark:text-zinc-100" : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400"}`}
-                        >
-                            Code
-                        </button>
-                    </div>
-
-                    {tab === "code" ? (
-                        <>
-                            <textarea
-                                value={codeText}
-                                onChange={(e) => setCodeText(e.target.value)}
-                                placeholder={
-                                    '<ColoredTable columns={\'["항목","내용"]\'} rows={\'[["값1","값2"]]\'} />'
-                                }
-                                className="h-32 w-full resize-y rounded border border-zinc-300 bg-white px-2 py-1.5 font-mono text-xs leading-relaxed text-zinc-900 outline-none focus:ring-1 focus:ring-indigo-400 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
-                                spellCheck={false}
-                            />
-                            <div className="flex items-center justify-between">
-                                <p className="text-xs text-zinc-400 dark:text-zinc-500">
-                                    {parseColoredTableJsx(codeText)
-                                        ? "파싱 성공"
-                                        : "ColoredTable JSX를 붙여넣으세요"}
-                                </p>
-                                <button
-                                    onClick={handleCodeInsert}
-                                    disabled={!parseColoredTableJsx(codeText)}
-                                    className="rounded bg-zinc-800 px-4 py-1.5 text-sm whitespace-nowrap text-white transition-opacity hover:opacity-80 disabled:opacity-40 dark:bg-zinc-200 dark:text-zinc-900"
-                                >
-                                    삽입
-                                </button>
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            {/* 컬럼 헤더 영역 */}
-                            <div className="flex items-end gap-1">
-                                {columns.map((col, ci) => (
-                                    <div
-                                        key={ci}
-                                        className="flex min-w-0 flex-1 flex-col gap-1"
-                                    >
-                                        <div className="flex items-center gap-1">
-                                            <MiniColorPicker
-                                                value={col.color}
-                                                onChange={(c) =>
-                                                    updateColumnColor(ci, c)
-                                                }
-                                            />
-                                            {columns.length > 1 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        removeColumn(ci)
-                                                    }
-                                                    className="text-xs text-zinc-400 hover:text-red-500"
-                                                    title="컬럼 삭제"
-                                                >
-                                                    ✕
-                                                </button>
-                                            )}
-                                        </div>
-                                        <input
-                                            type="text"
-                                            value={col.name}
-                                            onChange={(e) =>
-                                                updateColumnName(
-                                                    ci,
-                                                    e.target.value
-                                                )
-                                            }
-                                            placeholder={`Col ${ci + 1}`}
-                                            className={`${inputCls} font-semibold`}
-                                            style={
-                                                col.color
-                                                    ? {
-                                                          backgroundColor:
-                                                              COLOR_PRESETS.find(
-                                                                  (p) =>
-                                                                      p.name ===
-                                                                      col.color
-                                                              )?.hex,
-                                                      }
-                                                    : undefined
-                                            }
-                                        />
-                                    </div>
-                                ))}
-                                <button
-                                    type="button"
-                                    onClick={addColumn}
-                                    className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded border border-dashed border-zinc-300 text-zinc-400 hover:border-indigo-400 hover:text-indigo-500 dark:border-zinc-600"
-                                    title="컬럼 추가"
-                                >
-                                    +
-                                </button>
-                            </div>
-
-                            {/* 구분선 */}
-                            <hr className="border-zinc-200 dark:border-zinc-700" />
-
-                            {/* 행 데이터 */}
-                            <div className="flex flex-col gap-1.5">
-                                {rows.map((row, ri) => (
-                                    <div
-                                        key={ri}
-                                        className="flex items-center gap-1"
-                                    >
-                                        {row.map((cell, ci) => (
-                                            <input
-                                                key={ci}
-                                                type="text"
-                                                value={cell}
-                                                onChange={(e) =>
-                                                    updateCell(
-                                                        ri,
-                                                        ci,
-                                                        e.target.value
-                                                    )
-                                                }
-                                                placeholder="—"
-                                                className={`min-w-0 flex-1 ${inputCls}`}
-                                            />
-                                        ))}
+                    {/* 컬럼 헤더 영역 */}
+                    <div className="flex items-end gap-1">
+                        {columns.map((col, ci) => (
+                            <div
+                                key={ci}
+                                className="flex min-w-0 flex-1 flex-col gap-1"
+                            >
+                                <div className="flex items-center gap-1">
+                                    <MiniColorPicker
+                                        value={col.color}
+                                        onChange={(c) =>
+                                            updateColumnColor(ci, c)
+                                        }
+                                    />
+                                    {columns.length > 1 && (
                                         <button
                                             type="button"
-                                            onClick={() => removeRow(ri)}
-                                            disabled={rows.length <= 1}
-                                            className="shrink-0 text-xs text-zinc-400 hover:text-red-500 disabled:invisible"
-                                            title="행 삭제"
+                                            onClick={() => removeColumn(ci)}
+                                            className="text-xs text-zinc-400 hover:text-red-500"
+                                            title="컬럼 삭제"
                                         >
                                             ✕
                                         </button>
-                                    </div>
-                                ))}
+                                    )}
+                                </div>
+                                <input
+                                    type="text"
+                                    value={col.name}
+                                    onChange={(e) =>
+                                        updateColumnName(ci, e.target.value)
+                                    }
+                                    placeholder={`Col ${ci + 1}`}
+                                    className={`${inputCls} font-semibold`}
+                                    style={
+                                        col.color
+                                            ? {
+                                                  backgroundColor:
+                                                      COLOR_PRESETS.find(
+                                                          (p) =>
+                                                              p.name ===
+                                                              col.color
+                                                      )?.hex,
+                                              }
+                                            : undefined
+                                    }
+                                />
                             </div>
+                        ))}
+                        <button
+                            type="button"
+                            onClick={addColumn}
+                            className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded border border-dashed border-zinc-300 text-zinc-400 hover:border-indigo-400 hover:text-indigo-500 dark:border-zinc-600"
+                            title="컬럼 추가"
+                        >
+                            +
+                        </button>
+                    </div>
 
-                            {/* 행 추가 */}
-                            <button
-                                type="button"
-                                onClick={addRow}
-                                className="w-full rounded border border-dashed border-zinc-300 py-1 text-sm text-zinc-400 hover:border-indigo-400 hover:text-indigo-500 dark:border-zinc-600"
-                            >
-                                + 행 추가
-                            </button>
+                    {/* 구분선 */}
+                    <hr className="border-zinc-200 dark:border-zinc-700" />
 
-                            {/* 하단 액션 */}
-                            <div className="flex items-center justify-between">
-                                <p className="text-xs text-zinc-400 dark:text-zinc-500">
-                                    저장 후 렌더링
-                                </p>
+                    {/* 행 데이터 */}
+                    <div className="flex flex-col gap-1.5">
+                        {rows.map((row, ri) => (
+                            <div key={ri} className="flex items-center gap-1">
+                                {row.map((cell, ci) => (
+                                    <input
+                                        key={ci}
+                                        type="text"
+                                        value={cell}
+                                        onChange={(e) =>
+                                            updateCell(ri, ci, e.target.value)
+                                        }
+                                        placeholder="—"
+                                        className={`min-w-0 flex-1 ${inputCls}`}
+                                    />
+                                ))}
                                 <button
-                                    onClick={handleInsert}
-                                    className="rounded bg-zinc-800 px-4 py-1.5 text-sm whitespace-nowrap text-white transition-opacity hover:opacity-80 dark:bg-zinc-200 dark:text-zinc-900"
+                                    type="button"
+                                    onClick={() => removeRow(ri)}
+                                    disabled={rows.length <= 1}
+                                    className="shrink-0 text-xs text-zinc-400 hover:text-red-500 disabled:invisible"
+                                    title="행 삭제"
                                 >
-                                    삽입
+                                    ✕
                                 </button>
                             </div>
-                        </>
-                    )}
+                        ))}
+                    </div>
+
+                    {/* 행 추가 */}
+                    <button
+                        type="button"
+                        onClick={addRow}
+                        className="w-full rounded border border-dashed border-zinc-300 py-1 text-sm text-zinc-400 hover:border-indigo-400 hover:text-indigo-500 dark:border-zinc-600"
+                    >
+                        + 행 추가
+                    </button>
+
+                    {/* 하단 액션 */}
+                    <div className="flex items-center justify-between">
+                        <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                            저장 후 렌더링
+                        </p>
+                        <button
+                            onClick={handleInsert}
+                            className="rounded bg-zinc-800 px-4 py-1.5 text-sm whitespace-nowrap text-white transition-opacity hover:opacity-80 dark:bg-zinc-200 dark:text-zinc-900"
+                        >
+                            삽입
+                        </button>
+                    </div>
                 </div>
             )}
         </div>

@@ -309,7 +309,8 @@ html.dark .prose :where(td) {
 /* ── ColoredTable ─────────────────────────────────────────────────── */
 /* renderMarkdown()이 생성한 HTML에 적용 (ColoredTable 컴포넌트 스타일) */
 .colored-table-wrapper {
-    overflow: hidden;
+    width: 100%;
+    overflow-x: auto;
     background: var(--color-surface);
     margin: 0;
     padding: 0;
@@ -337,13 +338,30 @@ html.dark .prose :where(td) {
     letter-spacing: 0.02em;
     font-size: 1.25rem;
 }
+/* 헤더 색상 — 라이트 모드 (shade 300) */
 .colored-table th.pt-head-col {
-    background: var(--pt-bg) !important;
-    color: var(--pt-text) !important;
+    background: var(--pt-head-bg);
+    color: oklch(0.1 0 0);
 }
+/* 헤더 색상 — 다크 모드 (shade 700) */
+html.dark .colored-table th.pt-head-col {
+    background: var(--pt-head-bg-dark);
+    color: oklch(0.95 0 0);
+}
+/* 파생 바디 색상 — 라이트 모드 (shade 100) */
 .colored-table td.pt-body-col {
-    background: var(--pt-bg) !important;
-    color: var(--pt-text) !important;
+    background: var(--pt-body-bg);
+    color: oklch(0.15 0 0);
+}
+/* 파생 바디 색상 — 다크 모드 */
+html.dark .colored-table td.pt-body-col {
+    background: var(--pt-body-bg-dark);
+    color: oklch(0.88 0 0);
+}
+/* 색상 미지정 바디 셀 */
+.colored-table td:not(.pt-body-col) {
+    background: var(--color-surface-subtle);
+    color: var(--color-foreground);
 }
 .colored-table tbody tr:last-child td {
     border-bottom: 1px solid var(--color-border);
@@ -352,9 +370,6 @@ html.dark .prose :where(td) {
     filter: brightness(0.97);
 }
 .colored-table th:not(.pt-head-col) {
-    color: var(--color-foreground);
-}
-.colored-table td:not(.pt-body-col) {
     color: var(--color-foreground);
 }
 
@@ -730,9 +745,9 @@ html.dark .prose :where(td) {
     margin-bottom: 0;
 }
 
-/* 일반 table overflow 방지 (ColoredTable은 자체 wrapper 사용) */
-.post-content.prose :where(table),
-.portfolio-markdoc-body.prose :where(table) {
+/* 일반 table overflow 방지 (ColoredTable은 자체 wrapper 사용하므로 제외) */
+.post-content.prose :where(table:not(.colored-table)),
+.portfolio-markdoc-body.prose :where(table:not(.colored-table)) {
     display: block;
     overflow-x: auto;
 }
