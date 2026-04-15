@@ -1,5 +1,15 @@
 # CHANGES
 
+## v0.11.37 (2026-04-15)
+
+### fix: JSX 속성 `\[ \]` escape 방어 — render-time + MCP save-time layer 추가
+
+- `src/lib/markdown.tsx`: `renderMarkdown()` 진입부에 `unescapeJsxBrackets(content)` 추가. DB에 이미 오염된 content도 프론트엔드 render 시점에 자동 정리. `unstable_cache`로 감싸져 있어 cache hit 시 regex 스킵.
+- `src/lib/mcp-tools.ts`: `sanitizeContentField(fields)` helper 추가. `handleCreatePost` / `handleUpdatePost` / `handleCreatePortfolioItem` / `handleUpdatePortfolioItem` 4개 핸들러의 insert/update payload에 적용 — MCP 에이전트가 직접 호출해도 DB에 오염된 content 유입 차단.
+- **목적**: v0.11.36의 editor-path patch는 admin editor 경로만 커버. MCP 직접 호출 / psql 수동 UPDATE / snapshot 복원 등 예외 경로에도 방어 layer 추가해 **defense-in-depth** 완성.
+- **DB 부담**: 0 (CPU-only regex, 기존 쿼리에 추가 I/O 없음). cache hit이면 render 경로도 스킵.
+- 타입체크 + 기존 88 tests 모두 통과.
+
 ## v0.11.36 (2026-04-15)
 
 ### fix: tiptap-markdown의 JSX 속성 `\[ \]` escape 원천 차단 (acorn parse error 해결)

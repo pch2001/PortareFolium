@@ -1,5 +1,14 @@
 import { serverClient } from "@/lib/supabase";
+import { unescapeJsxBrackets } from "@/lib/tiptap-markdown";
 import type { Resume } from "@/types/resume";
+
+// content field가 있으면 JSX 태그 내부 \[ \] escape 복원
+function sanitizeContentField<T extends Record<string, unknown>>(fields: T): T {
+    if (typeof fields.content === "string") {
+        return { ...fields, content: unescapeJsxBrackets(fields.content) };
+    }
+    return fields;
+}
 
 // ─── 스냅샷 ───────────────────────────────────────────────────────────────────
 
@@ -227,7 +236,7 @@ export async function handleCreatePost(
 
     const { data, error } = await serverClient
         .from("posts")
-        .insert(args)
+        .insert(sanitizeContentField(args))
         .select("id, slug")
         .single();
 
@@ -266,7 +275,7 @@ export async function handleUpdatePost(args: {
 
     const { data, error } = await serverClient
         .from("posts")
-        .update(fields)
+        .update(sanitizeContentField(fields))
         .eq("slug", slug)
         .select("id, slug")
         .single();
@@ -351,7 +360,7 @@ export async function handleCreatePortfolioItem(
 
     const { data, error } = await serverClient
         .from("portfolio_items")
-        .insert(args)
+        .insert(sanitizeContentField(args))
         .select("id, slug")
         .single();
 
@@ -403,7 +412,7 @@ export async function handleUpdatePortfolioItem(args: {
 
     const { data, error } = await serverClient
         .from("portfolio_items")
-        .update(fields)
+        .update(sanitizeContentField(fields))
         .eq("slug", slug)
         .select("id, slug")
         .single();

@@ -13,6 +13,7 @@ import {
     directiveToJsx,
     transformOutsideCodeBlocks,
 } from "@/lib/mdx-directive-converter";
+import { unescapeJsxBrackets } from "@/lib/tiptap-markdown";
 import MarkdownImage from "@/components/MarkdownImage";
 
 function YouTube({ id }: { id?: string }) {
@@ -225,8 +226,9 @@ export function getCachedMarkdown(
 
 export async function renderMarkdown(content: string): Promise<string> {
     try {
-        // directive → JSX 변환 + 남은 {} 이스케이프
-        let mdx = directiveToJsx(content);
+        // JSX 태그 내부 \[ \] escape 복원 (예외 경로로 DB에 오염된 content 방어)
+        let mdx = unescapeJsxBrackets(content);
+        mdx = directiveToJsx(mdx);
         mdx = transformOutsideCodeBlocks(mdx, escapeStrayCurlyBraces);
         // 콘텐츠 내 next/image import 제거 — renderToString 서버 컨텍스트 호환
         mdx = mdx.replace(
