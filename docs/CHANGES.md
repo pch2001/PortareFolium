@@ -1,5 +1,14 @@
 # CHANGES
 
+## v0.11.43 (2026-04-16)
+
+### feat: Resume theme 통합 + sectionLayout prop 연결 (US-002, US-003)
+
+- `src/components/resume/ResumeMinimal.tsx`, `src/components/resume/ResumePhases.tsx` 삭제
+- `src/components/resume/ResumeModern.tsx`: 구 Phases 구현을 base로 재작성. `sectionLayout?: ResumeSectionLayout` prop 추가, 하드코딩 섹션 순서 제거, `resolveSectionOrder()` 기반 렌더. volunteer/publications/interests/references 신규 generic renderer 추가. `data-pdf-block` + `data-pdf-block-item` attributes 유지
+- `src/components/resume/ResumeClassic.tsx`: left sidebar (basics/contact/location/profiles) 유지, right-side 섹션만 `resolveSectionOrder()` 기반 렌더. `sectionLayout?: ResumeSectionLayout` prop 추가. 하드코딩 섹션 순서 제거
+- `src/app/(frontend)/resume/page.tsx`: `site_config.resume_section_layout` fetch 추가, theme union `"classic" | "modern"`으로 narrow. 레거시 `"minimal"`/`"phases"` 값을 `"modern"`으로 coerce. DB에 row 없을 때 `DEFAULT_RESUME_LAYOUT` fallback
+
 ## v0.11.42 (2026-04-16)
 
 ### feat: Resume layout editor 데이터 모델 추가 (Phase A — 데이터 기반 작업)
