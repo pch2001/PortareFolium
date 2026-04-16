@@ -2,6 +2,11 @@
 
 ## v0.11.49 (2026-04-16)
 
+### test: Resume layout E2E 제거
+
+- `e2e/authenticated/resume-layout-editor.spec.ts` 삭제
+- Resume layout test가 `resume_section_layout`를 직접 저장하면서 실제 이력서 편집 상태를 reset하던 흐름 제거
+
 ### feat: Core Competencies 섹션에 emoji 지원 추가
 
 - `src/types/resume.ts`: `coreCompetencies` 타입을 배열에서 `{ emoji?, showEmoji?, entries }` 객체 wrapper로 변경. `defaultSectionLabels`에 `coreCompetencies: "핵심역량"` 추가
