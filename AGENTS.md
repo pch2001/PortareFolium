@@ -53,9 +53,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Testing Gate
 
 - **Commit gate (느슨)**: `git commit` 전에는 `pnpm exec vitest run` (unit + integration)만 통과하면 된다. pre-commit hook(husky + lint-staged)이 이미 이 수준을 강제함. 빠른 iteration을 위해 E2E는 요구하지 않는다.
-- **Push gate (엄격)**: `git push` 전에는 반드시 관련 E2E를 **전부 통과**시켜야 한다.
-    - 최소 요구: `pnpm exec playwright test --project=chromium --project=authenticated-chromium` 0 failure.
-    - 변경 범위가 admin / resume / portfolio / blog 등 특정 도메인에 한정되면 해당 spec만 집중 실행 가능하지만, 한 건이라도 실패하면 push 금지.
+- **Push gate (엄격)**: `git push` 전에는 반드시 **전체 크로스 브라우저 E2E**를 통과시켜야 한다.
+    - 최소 요구: `pnpm exec playwright test --project=chromium --project=firefox --project=webkit --project=authenticated-chromium --project=authenticated-firefox --project=authenticated-webkit` 0 failure. 3개 엔진(Chromium/Firefox/WebKit) 모두 통과 필수 — 단일 엔진만 실행하여 push하지 말 것.
+    - 변경 범위가 admin / resume / portfolio / blog 등 특정 도메인에 한정되면 해당 spec만 집중 실행 가능하지만, 3개 엔진 모두에서 한 건이라도 실패하면 push 금지.
     - `test.skip()`이 늘어나면 원인을 기록 (CI DB 시드 부재 등). 조용히 skip만 누적시키지 말 것.
     - CI가 fail하면 push 후에라도 즉시 재현 → 수정 → push 루프를 실행한다.
 - **예외**: `docs`-only 또는 파일 삭제만 있는 push에서는 E2E 스킵 허용. 그 외 코드/설정 변경을 포함한 push는 전부 엄격 모드.

@@ -215,6 +215,9 @@ export default function ResumePanel() {
         useState<ResumeSectionLayout>(DEFAULT_RESUME_LAYOUT);
     const [initialSectionLayout, setInitialSectionLayout] =
         useState<ResumeSectionLayout>(DEFAULT_RESUME_LAYOUT);
+    const initialSectionLayoutRef = useRef<ResumeSectionLayout>(
+        DEFAULT_RESUME_LAYOUT
+    );
     const [layoutEditMode, setLayoutEditMode] = useState(false);
     const [jobFields, setJobFields] = useState<JobFieldItem[]>([]);
     const [activeJobField, setActiveJobField] = useState<string>("");
@@ -309,6 +312,7 @@ export default function ResumePanel() {
                     );
                     setResumeSectionLayout(normalized);
                     setInitialSectionLayout(normalized);
+                    initialSectionLayoutRef.current = normalized;
                 }
                 if (Array.isArray(jfRow?.value)) {
                     setJobFields(jfRow.value as JobFieldItem[]);
@@ -412,6 +416,7 @@ export default function ResumePanel() {
             setIsDirty(false);
             setSavedAt(new Date());
             setInitialSectionLayout(resumeSectionLayout);
+            initialSectionLayoutRef.current = resumeSectionLayout;
             await revalidateResume();
             await revalidateHome();
             setStatus({
@@ -501,14 +506,16 @@ export default function ResumePanel() {
                         )}
                         <button
                             onClick={() => {
-                                if (layoutEditMode && isLayoutDirty) {
+                                const saved = initialSectionLayoutRef.current;
+                                const dirty =
+                                    JSON.stringify(resumeSectionLayout) !==
+                                    JSON.stringify(saved);
+                                if (layoutEditMode && dirty) {
                                     const ok = window.confirm(
                                         "저장되지 않은 변경사항이 있습니다. 정말 종료하시겠습니까?"
                                     );
                                     if (!ok) return;
-                                    setResumeSectionLayout(
-                                        initialSectionLayout
-                                    );
+                                    setResumeSectionLayout(saved);
                                 }
                                 setLayoutEditMode(!layoutEditMode);
                             }}
