@@ -10,6 +10,7 @@ import {
     listTokens,
 } from "@/app/admin/actions/agent-tokens";
 import ContentWrapper from "@/components/ContentWrapper";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 // 유효 duration 옵션
 const DURATION_OPTIONS = [
@@ -32,6 +33,7 @@ function getTokenStatus(token: TokenRow): "active" | "expired" | "revoked" {
 }
 
 export default function AgentTokensPanel() {
+    const { confirm } = useConfirmDialog();
     const [tokens, setTokens] = useState<TokenRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [label, setLabel] = useState("");
@@ -43,6 +45,8 @@ export default function AgentTokensPanel() {
     const [copied, setCopied] = useState(false);
     const refreshButtonClassName =
         "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200";
+    const primaryButtonClassName =
+        "bg-(--color-accent) text-(--color-on-accent) hover:opacity-90";
 
     const load = async () => {
         setLoading(true);
@@ -73,6 +77,14 @@ export default function AgentTokensPanel() {
     };
 
     const handleRevoke = async (id: string) => {
+        const ok = await confirm({
+            title: "토큰 폐기",
+            description: "이 Agent 토큰을 폐기하시겠습니까?",
+            confirmText: "폐기",
+            cancelText: "취소",
+            variant: "destructive",
+        });
+        if (!ok) return;
         setRevoking(id);
         const res = await revokeToken(id);
         setRevoking(null);
@@ -133,6 +145,7 @@ export default function AgentTokensPanel() {
                         <Button
                             onClick={handleIssue}
                             disabled={issuing || !label.trim()}
+                            className={primaryButtonClassName}
                         >
                             <Key className="mr-2 h-4 w-4 shrink-0" />
                             <span className="whitespace-nowrap">
@@ -154,7 +167,11 @@ export default function AgentTokensPanel() {
                                 <code className="flex-1 rounded bg-green-100 px-2 py-1.5 font-mono text-xs break-all text-green-900 dark:bg-green-900/40 dark:text-green-200">
                                     {newToken}
                                 </code>
-                                <Button size="sm" onClick={copyToken}>
+                                <Button
+                                    size="sm"
+                                    onClick={copyToken}
+                                    className={primaryButtonClassName}
+                                >
                                     <span className="whitespace-nowrap">
                                         {copied ? "복사됨" : "복사"}
                                     </span>

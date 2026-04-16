@@ -8,6 +8,7 @@ import {
     type JobFieldItem,
 } from "@/components/admin/JobFieldSelector";
 import SkillEditorModal from "@/components/admin/skills/SkillEditorModal";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { Resume, ResumeSkillKeyword } from "@/types/resume";
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
@@ -110,6 +111,7 @@ export default function SkillsAdminSection({
     jobFields,
     onBackup,
 }: SkillsAdminSectionProps) {
+    const { confirm } = useConfirmDialog();
     const [sortMode, setSortMode] = useState<"category" | "alpha">("category");
     const [filterCategory, setFilterCategory] = useState("all");
     const [modalState, setModalState] = useState<ModalState | null>(null);
@@ -225,8 +227,15 @@ export default function SkillsAdminSection({
     };
 
     // 단일 삭제
-    const handleDelete = (catIdx: number, kwIdx: number) => {
-        if (!confirm("삭제하시겠습니까?")) return;
+    const handleDelete = async (catIdx: number, kwIdx: number) => {
+        const ok = await confirm({
+            title: "스킬 삭제",
+            description: "삭제하시겠습니까?",
+            confirmText: "삭제",
+            cancelText: "취소",
+            variant: "destructive",
+        });
+        if (!ok) return;
         onBackup();
         const skills = skillsOrDefault(resumeData);
         const entries = skills.entries.map((cat, i) => {
@@ -263,9 +272,15 @@ export default function SkillsAdminSection({
     };
 
     // 배치 삭제
-    const handleBatchDelete = () => {
-        if (!confirm(`선택한 ${selectedKeys.size}개 스킬을 삭제하시겠습니까?`))
-            return;
+    const handleBatchDelete = async () => {
+        const ok = await confirm({
+            title: "스킬 일괄 삭제",
+            description: `선택한 ${selectedKeys.size}개 스킬을 삭제하시겠습니까?`,
+            confirmText: "삭제",
+            cancelText: "취소",
+            variant: "destructive",
+        });
+        if (!ok) return;
         onBackup();
         const skills = skillsOrDefault(resumeData);
         const toRemoveMap = new Map<number, Set<number>>();
@@ -441,11 +456,18 @@ export default function SkillsAdminSection({
     };
 
     // 카테고리 삭제
-    const deleteCategory = (idx: number) => {
+    const deleteCategory = async (idx: number) => {
         const skills = skillsOrDefault(resumeData);
         const cat = skills.entries[idx];
         if ((cat.keywords ?? []).length > 0) return;
-        if (!confirm("카테고리를 삭제하시겠습니까?")) return;
+        const ok = await confirm({
+            title: "카테고리 삭제",
+            description: "카테고리를 삭제하시겠습니까?",
+            confirmText: "삭제",
+            cancelText: "취소",
+            variant: "destructive",
+        });
+        if (!ok) return;
         const entries = skills.entries.filter((_, i) => i !== idx);
         setResumeData({ ...resumeData, skills: { ...skills, entries } });
     };

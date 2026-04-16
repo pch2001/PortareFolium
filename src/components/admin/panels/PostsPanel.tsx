@@ -36,6 +36,7 @@ import MetadataSheet from "@/components/admin/MetadataSheet";
 import SaveIndicator from "@/components/admin/SaveIndicator";
 import AdminSaveBar from "@/components/admin/AdminSaveBar";
 import { Badge } from "@/components/ui/badge";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 // 포스트 행 타입 (Supabase posts 테이블)
 interface Post {
@@ -165,6 +166,7 @@ export default function PostsPanel({
         JSON.stringify(form) !== JSON.stringify(initialFormRef.current);
 
     const { confirmLeave } = useUnsavedWarning(isDirty);
+    const { confirm } = useConfirmDialog();
 
     // 포스트 목록 로드 (인증된 어드민이므로 draft 포함 전체 조회)
     const loadPosts = async () => {
@@ -430,18 +432,25 @@ export default function PostsPanel({
     useKeyboardSave(handleSave);
 
     // 목록으로 이탈 (dirty 확인 포함)
-    const handleBack = () => {
-        if (confirmLeave()) {
-            setEditTarget(null);
-            onEditPathChange?.("");
-            setMetadataOpen(false);
-            loadStateCounts();
-        }
+    const handleBack = async () => {
+        if (!(await confirmLeave())) return;
+        setEditTarget(null);
+        onEditPathChange?.("");
+        setMetadataOpen(false);
+        loadStateCounts();
     };
 
     // 삭제 (스토리지 cleanup 포함)
     const handleDelete = async (id: string) => {
-        if (!browserClient || !confirm("정말 삭제하시겠습니까?")) return;
+        if (!browserClient) return;
+        const ok = await confirm({
+            title: "포스트 삭제",
+            description: "정말 삭제하시겠습니까?",
+            confirmText: "삭제",
+            cancelText: "취소",
+            variant: "destructive",
+        });
+        if (!ok) return;
         // slug 확인 (스토리지 폴더 삭제용)
         const target = posts.find((p) => p.id === id);
         const { error: err } = await browserClient

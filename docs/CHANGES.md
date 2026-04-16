@@ -1,5 +1,60 @@
 # CHANGES
 
+## v0.11.67 (2026-04-16)
+
+### fix: SiteConfigPanel 제목 고정 + 내부 scroll 패턴 적용
+
+- `src/components/admin/AdminDashboard.tsx`: "config" 탭을 `panelOwnsHeight` + `overflow-hidden` 목록에 추가하여 패널이 자체 높이 관리
+- `src/components/admin/panels/SiteConfigPanel.tsx`: PostsPanel과 동일한 flex scroll 패턴 적용 — 제목은 `shrink-0`로 상단 고정, 나머지 콘텐츠는 `flex-1 overflow-y-auto`로 내부 scroll
+
+## v0.11.66 (2026-04-16)
+
+### fix: SnapshotsPanel batch action bar에서 카드형 box 제거
+
+- `src/components/admin/panels/SnapshotsPanel.tsx`: `전체 선택` checkbox와 `선택 삭제` 버튼 영역이 스냅샷 카드처럼 보이지 않도록 border/background box 제거
+
+## v0.11.65 (2026-04-16)
+
+### docs: SnapshotsPanel 설명 문구를 실제 동작 기준으로 구체화
+
+- `src/components/admin/panels/SnapshotsPanel.tsx`: 스냅샷 생성 시점, 대상 테이블, 레코드당 20개 유지, 복원이 같은 `id` 레코드를 snapshot JSON으로 덮어쓰는 동작, admin 일반 저장과 별개라는 점을 설명에 명시
+
+## v0.11.64 (2026-04-16)
+
+### fix: SnapshotsPanel 복원 confirm 문구 강화
+
+- `src/components/admin/panels/SnapshotsPanel.tsx`: `복원` confirm에 overwrite와 되돌리기 어려움을 명시하고, confirm button label을 `덮어쓰기 복원`으로 변경
+
+## v0.11.63 (2026-04-16)
+
+### feat: SnapshotsPanel 선택 checkbox와 일괄 삭제 추가
+
+- `src/app/admin/actions/snapshots.ts`: 여러 snapshot id를 한 번에 삭제하는 `deleteSnapshots()` 서버 액션 추가
+- `src/components/admin/panels/SnapshotsPanel.tsx`: 각 카드 좌측 checkbox, 상단 `전체 선택`, 선택 개수 표시, red solid `선택 삭제` batch action 추가
+
+## v0.11.62 (2026-04-16)
+
+### feat: SnapshotsPanel 개별 삭제 버튼 추가
+
+- `src/app/admin/actions/snapshots.ts`: `content_snapshots` 행을 직접 지우는 `deleteSnapshot()` 서버 액션 추가
+- `src/components/admin/panels/SnapshotsPanel.tsx`: 각 스냅샷 카드에 red solid `삭제` 버튼 추가, confirm dialog 이후 삭제 실행
+
+## v0.11.61 (2026-04-16)
+
+### fix: SnapshotsPanel 데이터 보기 빈 영역 수정
+
+- `src/app/admin/actions/snapshots.ts`: `listSnapshots()`가 `content_snapshots.data` 컬럼을 함께 조회하도록 수정
+- `src/components/admin/panels/SnapshotsPanel.tsx`: `데이터 보기`에서 실제 snapshot payload가 표시되도록 서버 응답 shape 복구
+
+## v0.11.60 (2026-04-16)
+
+### feat: admin confirm을 custom alert dialog로 통일
+
+- `src/components/ui/alert-dialog.tsx`, `src/components/ui/confirm-dialog.tsx`: shadcn/Radix 기반 공용 `AlertDialog` wrapper와 Promise 기반 `confirm()` provider 추가
+- `src/app/admin/layout.tsx`: admin 전체를 `ConfirmDialogProvider`로 감싸 destructive action과 인앱 이탈 확인을 custom dialog로 통일
+- `PostsPanel`, `PortfolioPanel`, `BooksSubPanel`, `TagsPanel`, `SnapshotsPanel`, `AboutPanel`, `SiteConfigPanel`, `SkillsAdminSection`, `ResumePanel`, `useUnsavedWarning`: native `confirm()`을 custom dialog 호출로 교체
+- `beforeunload` 기반 브라우저 이탈 경고는 기존 native prompt 유지
+
 ## v0.11.59 (2026-04-16)
 
 ### fix: SiteConfigPanel 직무 분야 삭제에 confirm 추가

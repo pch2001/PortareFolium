@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ConfirmDialogProvider } from "@/components/ui/confirm-dialog";
 
 export const metadata: Metadata = {
     title: "Admin — PortareFolium",
@@ -10,5 +11,5 @@ export default function AdminLayout({
 }: {
     children: React.ReactNode;
 }) {
-    return children;
+    return <ConfirmDialogProvider>{children}</ConfirmDialogProvider>;
 }

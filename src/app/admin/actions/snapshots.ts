@@ -20,7 +20,7 @@ export async function listSnapshots(
 
     let query = serverClient
         .from("content_snapshots")
-        .select("id, source_table, record_id, triggered_by, created_at")
+        .select("id, source_table, record_id, data, triggered_by, created_at")
         .order("created_at", { ascending: false })
         .limit(limit);
 
@@ -61,6 +61,36 @@ export async function restoreSnapshot(
         .from(source_table)
         .update(record)
         .eq("id", record_id);
+
+    if (error) return { error: error.message };
+    return { success: true };
+}
+
+// 스냅샷 삭제
+export async function deleteSnapshot(
+    id: string
+): Promise<{ success: boolean } | { error: string }> {
+    if (!serverClient) return { error: "serverClient 없음" };
+
+    const { error } = await serverClient
+        .from("content_snapshots")
+        .delete()
+        .eq("id", id);
+
+    if (error) return { error: error.message };
+    return { success: true };
+}
+
+export async function deleteSnapshots(
+    ids: string[]
+): Promise<{ success: boolean } | { error: string }> {
+    if (!serverClient) return { error: "serverClient 없음" };
+    if (ids.length === 0) return { success: true };
+
+    const { error } = await serverClient
+        .from("content_snapshots")
+        .delete()
+        .in("id", ids);
 
     if (error) return { error: error.message };
     return { success: true };
