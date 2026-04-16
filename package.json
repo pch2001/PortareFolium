@@ -114,7 +114,8 @@
         "tailwindcss": "^4.1.18",
         "tsx": "^4.19.3",
         "typescript": "~5.9.3",
-        "vitest": "^4.0.18"
+        "vitest": "^4.0.18",
+        "wrangler": "^4.83.0"
     },
     "lint-staged": {
         "*.{js,mjs,cjs,ts,tsx,jsx,json,md,css,scss,yaml,yml}": "prettier --write"
