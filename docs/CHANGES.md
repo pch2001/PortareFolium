@@ -1,5 +1,14 @@
 # CHANGES
 
+## v0.11.58 (2026-04-16)
+
+### feat: SiteConfigPanel 직무 분야 selector를 선택 중심 레이아웃으로 재구성
+
+- `src/components/admin/panels/SiteConfigPanel.tsx`: `현재 활성 직무 분야` 요약 block 추가
+- 직무 분야 목록을 card grid로 재구성하고, 각 card에서 `기본으로 선택` / `삭제` 액션을 명시적으로 분리
+- `새 직무 분야 추가`를 별도 composer panel로 분리하고 emoji, 이름, 상속 시작점을 한 영역에 정리
+- 상속 시작점 `select`와 `option`에 surface/text 색을 명시해 dark mode에서 dropdown menu가 흰 배경으로 열리던 문제 수정
+
 ## v0.11.57 (2026-04-16)
 
 ### fix: AgentTokensPanel 만료·폐기 상태 badge를 solid로 변경

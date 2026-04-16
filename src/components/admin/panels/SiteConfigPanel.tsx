@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { ChevronDown, Trash2 } from "lucide-react";
+import { Check, ChevronDown, Plus, Trash2 } from "lucide-react";
 import { COLOR_SCHEMES, type ColorScheme } from "@/lib/color-schemes";
 import AdminSaveBar from "@/components/admin/AdminSaveBar";
 
@@ -61,6 +61,8 @@ export default function SiteConfigPanel() {
     const [inheritFrom, setInheritFrom] = useState("");
     const [showPicker, setShowPicker] = useState(false);
     const pickerRef = useRef<HTMLDivElement>(null);
+    const activeField =
+        jobFields.find((field) => field.id === activeJobField) ?? null;
 
     // Supabase에서 현재 설정 로드
     useEffect(() => {
@@ -623,124 +625,232 @@ export default function SiteConfigPanel() {
             <Separator />
 
             {/* 직무 분야 관리 */}
-            <section className="space-y-3">
+            <section className="space-y-5">
                 <h3 className="text-lg font-semibold text-(--color-foreground)">
                     이력서 직무 분야
                 </h3>
                 <p className="text-sm text-(--color-muted)">
                     Resume / Portfolio 페이지에서 이 값으로 항목을 필터링합니다.
-                    활성 분야를 클릭해서 선택하세요.
+                    기본으로 사용할 직무 분야를 먼저 선택하고, 아래에서 새
+                    분야를 추가하세요.
                 </p>
 
-                {/* job field 목록 */}
-                <div className="space-y-3">
-                    {jobFields.length === 0 && (
-                        <p className="py-3 text-sm text-(--color-muted)">
-                            등록된 직무 분야가 없습니다
-                        </p>
-                    )}
-                    {jobFields.map((field) => (
-                        <div
-                            key={field.id}
-                            className={`group flex flex-wrap items-center gap-4`}
-                        >
-                            <button
-                                onClick={() => handleSelectJobField(field.id)}
-                                className={`flex flex-1 items-center gap-2 rounded-lg p-3 text-left ${activeJobField === field.id ? "bg-(--color-accent)" : "bg-(--color-surface-subtle)"}`}
-                            >
-                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[22%] bg-gray-300 text-xl">
-                                    {field.emoji}
-                                </span>
-                                <span
-                                    className={`text-sm font-medium ${activeJobField === field.id ? "text-(--color-on-accent)" : "text-(--color-foreground)"}`}
-                                >
-                                    {field.name}
-                                </span>
-                                {activeJobField === field.id && (
-                                    <span className="ml-auto text-base font-semibold text-(--color-on-accent)">
-                                        활성
+                <div className="laptop:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] grid gap-4">
+                    <div className="space-y-4">
+                        <div className="rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-5">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div className="space-y-1">
+                                    <p className="text-xs font-bold tracking-widest text-(--color-muted) uppercase">
+                                        현재 활성 직무 분야
+                                    </p>
+                                    {activeField ? (
+                                        <div className="flex items-center gap-3">
+                                            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[28%] bg-(--color-surface) text-2xl shadow-sm">
+                                                {activeField.emoji}
+                                            </span>
+                                            <div className="min-w-0">
+                                                <p className="text-base font-semibold text-(--color-foreground)">
+                                                    {activeField.name}
+                                                </p>
+                                                <p className="text-sm text-(--color-muted)">
+                                                    {activeField.id}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-(--color-muted)">
+                                            아직 기본 직무 분야가 선택되지
+                                            않았습니다
+                                        </p>
+                                    )}
+                                </div>
+                                {activeField && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-green-500 px-3 py-1 text-xs font-semibold text-white dark:bg-green-600">
+                                        <Check className="h-3.5 w-3.5" />
+                                        기본 선택
                                     </span>
                                 )}
-                            </button>
-                            <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => handleDeleteJobField(field.id)}
-                                className="tablet:opacity-0 tablet:group-hover:opacity-100 h-full bg-red-600 p-3 text-white transition-opacity"
-                            >
-                                <Trash2 size={13} />
-                                삭제
-                            </Button>
+                            </div>
                         </div>
-                    ))}
-                </div>
 
-                {/* 새 job field 추가 폼 */}
-                <div className="space-y-2 pt-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                        {/* emoji picker */}
-                        <div className="relative" ref={pickerRef}>
-                            <button
-                                type="button"
-                                onClick={() => setShowPicker((v) => !v)}
-                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-(--color-border) text-xl hover:border-(--color-accent)/50"
-                            >
-                                {newEmoji}
-                            </button>
-                            {showPicker && (
-                                <div className="absolute bottom-12 left-0 z-50">
-                                    <Picker
-                                        data={data}
-                                        onEmojiSelect={(emoji: {
-                                            native: string;
-                                        }) => {
-                                            setNewEmoji(emoji.native);
-                                            setShowPicker(false);
-                                        }}
-                                        locale="ko"
-                                        previewPosition="none"
-                                        skinTonePosition="none"
-                                    />
+                        {jobFields.length === 0 ? (
+                            <div className="rounded-2xl border border-dashed border-(--color-border) bg-(--color-surface-subtle) px-5 py-8 text-sm text-(--color-muted)">
+                                등록된 직무 분야가 없습니다
+                            </div>
+                        ) : (
+                            <div className="tablet:grid-cols-2 grid gap-3">
+                                {jobFields.map((field) => {
+                                    const isActive =
+                                        activeJobField === field.id;
+
+                                    return (
+                                        <div
+                                            key={field.id}
+                                            className={`rounded-2xl border p-4 transition-colors ${
+                                                isActive
+                                                    ? "border-(--color-accent) bg-(--color-accent)/8"
+                                                    : "border-(--color-border) bg-(--color-surface)"
+                                            }`}
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <span
+                                                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[28%] text-2xl shadow-sm ${
+                                                        isActive
+                                                            ? "bg-(--color-accent) text-(--color-on-accent)"
+                                                            : "bg-(--color-surface-subtle)"
+                                                    }`}
+                                                >
+                                                    {field.emoji}
+                                                </span>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <p className="text-sm font-semibold text-(--color-foreground)">
+                                                            {field.name}
+                                                        </p>
+                                                        {isActive && (
+                                                            <span className="rounded-full bg-green-500 px-2 py-0.5 text-[11px] font-semibold text-white dark:bg-green-600">
+                                                                현재 사용 중
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="mt-1 font-mono text-xs text-(--color-muted)">
+                                                        {field.id}
+                                                    </p>
+                                                    <p className="mt-3 text-sm text-(--color-muted)">
+                                                        {isActive
+                                                            ? "Resume / Portfolio 기본 필터로 사용 중"
+                                                            : "이 분야를 기본 직무 분야로 전환"}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-4 flex items-center justify-between gap-3 border-t border-(--color-border) pt-3">
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        handleSelectJobField(
+                                                            field.id
+                                                        )
+                                                    }
+                                                    disabled={isActive}
+                                                    className="bg-green-500 text-white hover:bg-green-400 disabled:bg-green-500/60 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
+                                                >
+                                                    {isActive
+                                                        ? "선택됨"
+                                                        : "기본으로 선택"}
+                                                </Button>
+                                                <Button
+                                                    variant="default"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        handleDeleteJobField(
+                                                            field.id
+                                                        )
+                                                    }
+                                                    className="bg-red-600 text-white hover:bg-red-500 dark:bg-red-600 dark:text-white dark:hover:bg-red-500"
+                                                >
+                                                    <Trash2 size={13} />
+                                                    삭제
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-5">
+                        <div className="space-y-1">
+                            <p className="text-xs font-bold tracking-widest text-(--color-muted) uppercase">
+                                새 직무 분야 추가
+                            </p>
+                            <p className="text-sm text-(--color-muted)">
+                                새 이름과 emoji를 정한 뒤 필요하면 기존 분야를
+                                상속해서 시작합니다.
+                            </p>
+                        </div>
+
+                        <div className="mt-4 space-y-3">
+                            <div className="flex items-center gap-3">
+                                <div className="relative" ref={pickerRef}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPicker((v) => !v)}
+                                        className="flex h-11 w-11 items-center justify-center rounded-xl border border-(--color-border) bg-(--color-surface-subtle) text-2xl transition-colors hover:border-(--color-accent)/50"
+                                    >
+                                        {newEmoji}
+                                    </button>
+                                    {showPicker && (
+                                        <div className="absolute top-14 left-0 z-50">
+                                            <Picker
+                                                data={data}
+                                                onEmojiSelect={(emoji: {
+                                                    native: string;
+                                                }) => {
+                                                    setNewEmoji(emoji.native);
+                                                    setShowPicker(false);
+                                                }}
+                                                locale="ko"
+                                                previewPosition="none"
+                                                skinTonePosition="none"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                                <Input
+                                    value={newName}
+                                    onChange={(e) => setNewName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter")
+                                            handleAddJobField();
+                                    }}
+                                    placeholder="직무 분야 이름"
+                                    className="flex-1 border-(--color-border)"
+                                />
+                            </div>
+
+                            {jobFields.length > 0 && (
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium text-(--color-muted)">
+                                        상속 시작점
+                                    </Label>
+                                    <select
+                                        value={inheritFrom}
+                                        onChange={(e) =>
+                                            setInheritFrom(e.target.value)
+                                        }
+                                        className="h-11 w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:outline-none"
+                                    >
+                                        <option
+                                            value=""
+                                            className="bg-(--color-surface) text-(--color-foreground)"
+                                        >
+                                            없음
+                                        </option>
+                                        {jobFields.map((f) => (
+                                            <option
+                                                key={f.id}
+                                                value={f.id}
+                                                className="bg-(--color-surface) text-(--color-foreground)"
+                                            >
+                                                {f.emoji} {f.name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                             )}
-                        </div>
-                        <Input
-                            value={newName}
-                            onChange={(e) => setNewName(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") handleAddJobField();
-                            }}
-                            placeholder="직무 분야 이름"
-                            className="flex-1 border-(--color-border)"
-                        />
-                        <Button
-                            onClick={handleAddJobField}
-                            disabled={!newName.trim()}
-                            size="sm"
-                        >
-                            추가
-                        </Button>
-                    </div>
-                    {/* 상속 부모 선택 */}
-                    {jobFields.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-2">
-                            <span className="shrink-0 text-sm text-(--color-muted)">
-                                상속
-                            </span>
-                            <select
-                                value={inheritFrom}
-                                onChange={(e) => setInheritFrom(e.target.value)}
-                                className="h-9 flex-1 rounded-md border border-(--color-border) bg-transparent px-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:outline-none"
+
+                            <Button
+                                onClick={handleAddJobField}
+                                disabled={!newName.trim()}
+                                className="w-full bg-green-500 text-white hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                             >
-                                <option value="">없음</option>
-                                {jobFields.map((f) => (
-                                    <option key={f.id} value={f.id}>
-                                        {f.emoji} {f.name}
-                                    </option>
-                                ))}
-                            </select>
+                                <Plus className="mr-2 h-4 w-4" />
+                                추가
+                            </Button>
                         </div>
-                    )}
+                    </div>
                 </div>
             </section>
 
