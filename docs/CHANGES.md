@@ -1,5 +1,11 @@
 # CHANGES
 
+## v0.11.59 (2026-04-16)
+
+### fix: SiteConfigPanel 직무 분야 삭제에 confirm 추가
+
+- `src/components/admin/panels/SiteConfigPanel.tsx`: 직무 분야 `삭제` 버튼 클릭 시 field 이름을 포함한 confirm을 먼저 띄우고, 확인한 경우에만 삭제 실행
+
 ## v0.11.58 (2026-04-16)
 
 ### feat: SiteConfigPanel 직무 분야 selector를 선택 중심 레이아웃으로 재구성

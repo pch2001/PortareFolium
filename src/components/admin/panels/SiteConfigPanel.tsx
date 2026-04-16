@@ -639,7 +639,7 @@ export default function SiteConfigPanel() {
                     <div className="space-y-4">
                         <div className="rounded-2xl border border-(--color-border) bg-(--color-surface-subtle) p-5">
                             <div className="flex flex-wrap items-start justify-between gap-3">
-                                <div className="space-y-1">
+                                <div className="space-y-4">
                                     <p className="text-xs font-bold tracking-widest text-(--color-muted) uppercase">
                                         현재 활성 직무 분야
                                     </p>
@@ -742,11 +742,16 @@ export default function SiteConfigPanel() {
                                                 <Button
                                                     variant="default"
                                                     size="sm"
-                                                    onClick={() =>
+                                                    onClick={() => {
+                                                        const ok =
+                                                            window.confirm(
+                                                                `"${field.name}" 직무 분야를 정말 삭제하시겠습니까?`
+                                                            );
+                                                        if (!ok) return;
                                                         handleDeleteJobField(
                                                             field.id
-                                                        )
-                                                    }
+                                                        );
+                                                    }}
                                                     className="bg-red-600 text-white hover:bg-red-500 dark:bg-red-600 dark:text-white dark:hover:bg-red-500"
                                                 >
                                                     <Trash2 size={13} />
