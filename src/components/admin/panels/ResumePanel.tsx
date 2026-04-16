@@ -291,10 +291,20 @@ export default function ResumePanel() {
                 };
                 if (!error && row) {
                     setRowId(row.id);
-                    const loaded = normalizeSkills({
+                    const raw = {
                         ...defaultResume,
                         ...(row.data as Resume),
-                    });
+                    };
+                    // 하위 호환: 기존 배열 → 객체 wrapper
+                    if (Array.isArray(raw.coreCompetencies)) {
+                        raw.coreCompetencies = {
+                            entries: raw.coreCompetencies as unknown as {
+                                title: string;
+                                description: string;
+                            }[],
+                        };
+                    }
+                    const loaded = normalizeSkills(raw);
                     savedDataRef.current = JSON.stringify(loaded);
                     setResumeData(loaded);
                 } else {
@@ -1033,19 +1043,69 @@ export default function ResumePanel() {
                 >
                     <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-bold text-(--color-foreground)">
-                                Core Competencies (핵심역량)
-                            </h3>
+                            <div className="flex items-center gap-2">
+                                <h3 className="flex items-center text-xl font-bold text-(--color-foreground)">
+                                    <SectionEmojiSelector
+                                        value={
+                                            resumeData?.coreCompetencies
+                                                ?.emoji || ""
+                                        }
+                                        onChange={(v) => {
+                                            setResumeData({
+                                                ...resumeData,
+                                                coreCompetencies: {
+                                                    ...(resumeData.coreCompetencies || {
+                                                        entries: [],
+                                                    }),
+                                                    emoji: v,
+                                                },
+                                            });
+                                        }}
+                                    />
+                                    Core Competencies (핵심역량)
+                                </h3>
+                                <div className="ml-4 flex items-center gap-2">
+                                    <Switch
+                                        id="show-emojis-coreCompetencies"
+                                        checked={
+                                            resumeData?.coreCompetencies
+                                                ?.showEmoji === true
+                                        }
+                                        onCheckedChange={(checked) =>
+                                            setResumeData({
+                                                ...resumeData,
+                                                coreCompetencies: {
+                                                    ...(resumeData.coreCompetencies || {
+                                                        entries: [],
+                                                    }),
+                                                    showEmoji: checked,
+                                                },
+                                            })
+                                        }
+                                    />
+                                    <label
+                                        htmlFor="show-emojis-coreCompetencies"
+                                        className="text-xs text-(--color-muted)"
+                                    >
+                                        Emoji 표시
+                                    </label>
+                                </div>
+                            </div>
                             <span className="text-sm text-(--color-muted)">
-                                {(resumeData?.coreCompetencies ?? []).length} /
-                                4
+                                {
+                                    (
+                                        resumeData?.coreCompetencies?.entries ??
+                                        []
+                                    ).length
+                                }{" "}
+                                / 4
                             </span>
                         </div>
                         <p className="text-sm text-(--color-muted)">
                             이력서의 핵심역량 섹션에 표시됩니다. 아래 저장
                             버튼으로 함께 저장됩니다.
                         </p>
-                        {(resumeData?.coreCompetencies ?? []).map(
+                        {(resumeData?.coreCompetencies?.entries ?? []).map(
                             (comp, idx) => (
                                 <div
                                     key={idx}
@@ -1069,14 +1129,22 @@ export default function ResumePanel() {
                                                         ? {
                                                               ...prev,
                                                               coreCompetencies:
-                                                                  (
-                                                                      prev.coreCompetencies ??
-                                                                      []
-                                                                  ).filter(
-                                                                      (_, i) =>
-                                                                          i !==
-                                                                          idx
-                                                                  ),
+                                                                  {
+                                                                      ...prev.coreCompetencies,
+                                                                      entries: (
+                                                                          prev
+                                                                              .coreCompetencies
+                                                                              ?.entries ??
+                                                                          []
+                                                                      ).filter(
+                                                                          (
+                                                                              _,
+                                                                              i
+                                                                          ) =>
+                                                                              i !==
+                                                                              idx
+                                                                      ),
+                                                                  },
                                                           }
                                                         : prev
                                                 );
@@ -1099,24 +1167,30 @@ export default function ResumePanel() {
                                                             ? {
                                                                   ...prev,
                                                                   coreCompetencies:
-                                                                      (
-                                                                          prev.coreCompetencies ??
-                                                                          []
-                                                                      ).map(
-                                                                          (
-                                                                              c,
-                                                                              i
-                                                                          ) =>
-                                                                              i ===
-                                                                              idx
-                                                                                  ? {
-                                                                                        ...c,
-                                                                                        title: e
-                                                                                            .target
-                                                                                            .value,
-                                                                                    }
-                                                                                  : c
-                                                                      ),
+                                                                      {
+                                                                          ...prev.coreCompetencies,
+                                                                          entries:
+                                                                              (
+                                                                                  prev
+                                                                                      .coreCompetencies
+                                                                                      ?.entries ??
+                                                                                  []
+                                                                              ).map(
+                                                                                  (
+                                                                                      c,
+                                                                                      i
+                                                                                  ) =>
+                                                                                      i ===
+                                                                                      idx
+                                                                                          ? {
+                                                                                                ...c,
+                                                                                                title: e
+                                                                                                    .target
+                                                                                                    .value,
+                                                                                            }
+                                                                                          : c
+                                                                              ),
+                                                                      },
                                                               }
                                                             : prev
                                                     )
@@ -1137,25 +1211,31 @@ export default function ResumePanel() {
                                                             ? {
                                                                   ...prev,
                                                                   coreCompetencies:
-                                                                      (
-                                                                          prev.coreCompetencies ??
-                                                                          []
-                                                                      ).map(
-                                                                          (
-                                                                              c,
-                                                                              i
-                                                                          ) =>
-                                                                              i ===
-                                                                              idx
-                                                                                  ? {
-                                                                                        ...c,
-                                                                                        description:
-                                                                                            e
-                                                                                                .target
-                                                                                                .value,
-                                                                                    }
-                                                                                  : c
-                                                                      ),
+                                                                      {
+                                                                          ...prev.coreCompetencies,
+                                                                          entries:
+                                                                              (
+                                                                                  prev
+                                                                                      .coreCompetencies
+                                                                                      ?.entries ??
+                                                                                  []
+                                                                              ).map(
+                                                                                  (
+                                                                                      c,
+                                                                                      i
+                                                                                  ) =>
+                                                                                      i ===
+                                                                                      idx
+                                                                                          ? {
+                                                                                                ...c,
+                                                                                                description:
+                                                                                                    e
+                                                                                                        .target
+                                                                                                        .value,
+                                                                                            }
+                                                                                          : c
+                                                                              ),
+                                                                      },
                                                               }
                                                             : prev
                                                     )
@@ -1168,7 +1248,8 @@ export default function ResumePanel() {
                                 </div>
                             )
                         )}
-                        {(resumeData?.coreCompetencies ?? []).length < 4 && (
+                        {(resumeData?.coreCompetencies?.entries ?? []).length <
+                            4 && (
                             <button
                                 type="button"
                                 onClick={() =>
@@ -1176,14 +1257,18 @@ export default function ResumePanel() {
                                         prev
                                             ? {
                                                   ...prev,
-                                                  coreCompetencies: [
-                                                      ...(prev.coreCompetencies ??
-                                                          []),
-                                                      {
-                                                          title: "",
-                                                          description: "",
-                                                      },
-                                                  ],
+                                                  coreCompetencies: {
+                                                      ...prev.coreCompetencies,
+                                                      entries: [
+                                                          ...(prev
+                                                              .coreCompetencies
+                                                              ?.entries ?? []),
+                                                          {
+                                                              title: "",
+                                                              description: "",
+                                                          },
+                                                      ],
+                                                  },
                                               }
                                             : prev
                                     )

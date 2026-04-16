@@ -69,7 +69,9 @@ export function resolveSectionOrder(
     return normalized.order.filter((key) => {
         if (disabledSet.has(key)) return false;
         if (key === "coreCompetencies") {
-            return (resume.coreCompetencies ?? []).length > 0;
+            const cc = resume.coreCompetencies;
+            const entries = Array.isArray(cc) ? cc : (cc?.entries ?? []);
+            return entries.length > 0;
         }
         const sec = (resume as unknown as Record<string, unknown>)[key];
         if (!sec || typeof sec !== "object") return false;

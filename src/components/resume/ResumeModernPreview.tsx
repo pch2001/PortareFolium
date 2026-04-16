@@ -53,7 +53,7 @@ export default function ResumeModernPreview({
 
     const renderCoreCompetencies = () => (
         <section key="coreCompetencies" className="mb-10">
-            {sectionH2("핵심역량")}
+            {sectionH2(getLabel("coreCompetencies"))}
             <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
                 {coreCompetencies.map((comp, idx) => (
                     <div

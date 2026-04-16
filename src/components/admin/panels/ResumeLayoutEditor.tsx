@@ -17,7 +17,6 @@ interface Props {
 
 // defaultSectionLabels에 없는 섹션 fallback label
 const EXTRA_LABELS: Record<string, string> = {
-    coreCompetencies: "핵심역량",
     careerPhases: "커리어 타임라인",
 };
 
@@ -67,13 +66,17 @@ export default function ResumeLayoutEditor({
                 {theme === "classic" ? (
                     <ResumeClassicPreview
                         resume={resume}
-                        coreCompetencies={resume.coreCompetencies ?? []}
+                        coreCompetencies={
+                            resume.coreCompetencies?.entries ?? []
+                        }
                         sectionLayout={{ order, disabled: layout.disabled }}
                     />
                 ) : (
                     <ResumeModernPreview
                         resume={resume}
-                        coreCompetencies={resume.coreCompetencies ?? []}
+                        coreCompetencies={
+                            resume.coreCompetencies?.entries ?? []
+                        }
                         sectionLayout={{ order, disabled: layout.disabled }}
                     />
                 )}

@@ -1,5 +1,16 @@
 # CHANGES
 
+## v0.11.49 (2026-04-16)
+
+### feat: Core Competencies 섹션에 emoji 지원 추가
+
+- `src/types/resume.ts`: `coreCompetencies` 타입을 배열에서 `{ emoji?, showEmoji?, entries }` 객체 wrapper로 변경. `defaultSectionLabels`에 `coreCompetencies: "핵심역량"` 추가
+- `src/components/admin/panels/ResumePanel.tsx`: `SectionEmojiSelector` + `Switch` 추가. 기존 배열 데이터 하위 호환 정규화
+- `src/lib/resume-layout.ts`: `resolveSectionOrder`에서 배열/객체 양쪽 형식 지원
+- `src/app/(frontend)/resume/page.tsx`: 하위 호환 정규화 (배열 → entries 추출)
+- `ResumeClassic.tsx`, `ResumeModern.tsx`, `ResumeClassicPreview.tsx`, `ResumeModernPreview.tsx`: 하드코딩 "핵심역량" → `getLabel("coreCompetencies")` 변경 (emoji 반영)
+- `ResumeLayoutEditor.tsx`: `EXTRA_LABELS`에서 중복 제거, preview에 `.entries` 전달
+
 ## v0.11.48 (2026-04-16)
 
 ### refactor: layout edit mode에서 레이아웃 선택 + 기본 정보 섹션 숨김

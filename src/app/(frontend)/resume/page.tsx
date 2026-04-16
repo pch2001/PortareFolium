@@ -85,7 +85,11 @@ export default async function ResumePage() {
         }
     }
 
-    const coreCompetencies = resumeDataRaw.coreCompetencies ?? [];
+    // 하위 호환: 기존 배열 → 객체 wrapper 정규화
+    const rawCC = resumeDataRaw.coreCompetencies;
+    const coreCompetencies = Array.isArray(rawCC)
+        ? rawCC
+        : (rawCC?.entries ?? []);
 
     const resumeData: Resume = {
         ...resumeDataRaw,

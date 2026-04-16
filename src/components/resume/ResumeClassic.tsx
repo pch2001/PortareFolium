@@ -65,7 +65,7 @@ export default async function ResumeClassic({
     const renderCoreCompetencies = () => (
         <section key="coreCompetencies" className="mb-10" data-pdf-block>
             <h2 className="mb-5 border-b border-(--color-border) pb-1.5 text-xl font-bold tracking-widest text-(--color-accent) uppercase">
-                핵심역량
+                {getLabel("coreCompetencies")}
             </h2>
             <div className="grid grid-cols-1 gap-4">
                 {coreCompetencies.map((comp, idx) => (

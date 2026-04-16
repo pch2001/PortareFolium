@@ -45,6 +45,12 @@
 | 테스트 정리 | `src/__tests__/color-schemes.test.ts` (삭제), `mermaid-themes.test.ts`, `tailwind-colors.test.ts`, `tiptap-utils.test.ts` (축소) |
 | 문서 | `docs/CHANGES.md`, `docs/TEST.md`, `README.md`, `AGENTS.md` |
 
+### feat: Core Competencies emoji 지원
+
+- `coreCompetencies` 타입을 `{ emoji?, showEmoji?, entries }` 객체 wrapper로 변경 + 기존 배열 하위 호환
+- admin editor에 `SectionEmojiSelector` + `Switch` 추가
+- resume theme에서 `getLabel("coreCompetencies")`로 emoji 반영
+
 ### refactor: layout edit mode에서 레이아웃 선택 + 기본 정보 섹션 숨김
 
 - `ResumePanel.tsx`: layout edit mode 진입 시 레이아웃 selector, 기본 정보 editor 조건부 숨김 → `ResumeLayoutEditor`만 표시
