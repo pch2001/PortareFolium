@@ -78,7 +78,8 @@ export default function AdminDashboard() {
         activeTab === "migrations" ||
         activeTab === "snapshots" ||
         activeTab === "agent-tokens" ||
-        activeTab === "prompts";
+        activeTab === "prompts" ||
+        activeTab === "config";
 
     useEffect(() => {
         const suffix = editPath ? `/${editPath}` : "";
@@ -179,7 +180,8 @@ export default function AdminDashboard() {
                             activeTab === "migrations" ||
                             activeTab === "snapshots" ||
                             activeTab === "agent-tokens" ||
-                            activeTab === "prompts"
+                            activeTab === "prompts" ||
+                            activeTab === "config"
                                 ? "overflow-hidden"
                                 : "overflow-y-auto"
                         }`}

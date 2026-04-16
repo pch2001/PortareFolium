@@ -2,66 +2,102 @@
 
 import { serverClient } from "@/lib/supabase";
 
-export interface Snapshot {
+export type DatabaseSnapshot = {
     id: string;
-    source_table: string;
-    record_id: string;
-    data: unknown;
-    triggered_by: string;
+    filename: string;
+    table_names: string[];
     created_at: string;
-}
+};
 
-// 테이블별 스냅샷 목록 조회
-export async function listSnapshots(
-    sourceTable?: string,
-    limit = 50
-): Promise<Snapshot[]> {
+type DatabaseSnapshotRow = DatabaseSnapshot & {
+    data: unknown;
+};
+
+export type SnapshotDownload = {
+    filename: string;
+    content: string;
+};
+
+// Snapshot 목록 조회
+export async function listSnapshots(limit = 30): Promise<DatabaseSnapshot[]> {
     if (!serverClient) return [];
 
-    let query = serverClient
-        .from("content_snapshots")
-        .select("id, source_table, record_id, triggered_by, created_at")
+    const { data, error } = await serverClient
+        .from("database_snapshots")
+        .select("id, filename, table_names, created_at")
         .order("created_at", { ascending: false })
         .limit(limit);
 
-    if (sourceTable) {
-        query = query.eq("source_table", sourceTable);
+    if (error) {
+        console.error(`[snapshots.ts::listSnapshots] ${error.message}`);
+        return [];
     }
 
-    const { data } = await query;
-    return (data as Snapshot[]) ?? [];
+    return (data as DatabaseSnapshot[]) ?? [];
 }
 
-// 스냅샷 단건 조회 (data 포함)
-export async function getSnapshot(id: string): Promise<Snapshot | null> {
-    if (!serverClient) return null;
+// Snapshot 생성
+export async function createSnapshot(): Promise<
+    DatabaseSnapshot | { error: string }
+> {
+    if (!serverClient) return { error: "serverClient 없음" };
 
-    const { data } = await serverClient
-        .from("content_snapshots")
-        .select("*")
+    const { data, error } = await serverClient
+        .rpc("create_database_snapshot")
+        .single();
+
+    if (error) {
+        console.error(`[snapshots.ts::createSnapshot] ${error.message}`);
+        return { error: error.message };
+    }
+
+    return data as DatabaseSnapshot;
+}
+
+// Snapshot 다운로드 데이터 조회
+export async function getSnapshotDownload(
+    id: string
+): Promise<SnapshotDownload | { error: string }> {
+    if (!serverClient) return { error: "serverClient 없음" };
+
+    const { data, error } = await serverClient
+        .from("database_snapshots")
+        .select("filename, data")
         .eq("id", id)
         .single();
 
-    return (data as Snapshot) ?? null;
+    if (error) {
+        console.error(`[snapshots.ts::getSnapshotDownload] ${error.message}`);
+        return { error: error.message };
+    }
+
+    const row = data as Pick<DatabaseSnapshotRow, "filename" | "data"> | null;
+
+    if (!row) {
+        return { error: "Snapshot 없음" };
+    }
+
+    return {
+        filename: row.filename,
+        content: JSON.stringify(row.data ?? {}, null, 2),
+    };
 }
 
-// 스냅샷 복원 (해당 테이블의 레코드를 snapshot data로 덮어쓰기)
-export async function restoreSnapshot(
+// Snapshot 삭제
+export async function deleteSnapshot(
     id: string
 ): Promise<{ success: boolean } | { error: string }> {
     if (!serverClient) return { error: "serverClient 없음" };
 
-    const snapshot = await getSnapshot(id);
-    if (!snapshot) return { error: "스냅샷 없음" };
-
-    const { source_table, record_id, data } = snapshot;
-    const record = data as Record<string, unknown>;
-
     const { error } = await serverClient
-        .from(source_table)
-        .update(record)
-        .eq("id", record_id);
+        .from("database_snapshots")
+        .delete()
+        .eq("id", id);
 
-    if (error) return { error: error.message };
+    if (error) {
+        console.error(`[snapshots.ts::deleteSnapshot] ${error.message}`);
+        return { error: error.message };
+    }
+
     return { success: true };
 }

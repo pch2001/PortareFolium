@@ -39,6 +39,7 @@ import MetadataSheet from "@/components/admin/MetadataSheet";
 import SaveIndicator from "@/components/admin/SaveIndicator";
 import AdminSaveBar from "@/components/admin/AdminSaveBar";
 import BooksSubPanel from "@/components/admin/panels/BooksSubPanel";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface PortfolioItem {
     id: string;
@@ -208,6 +209,7 @@ export default function PortfolioPanel({
         JSON.stringify(form) !== JSON.stringify(initialFormRef.current);
 
     const { confirmLeave } = useUnsavedWarning(isDirty);
+    const { confirm } = useConfirmDialog();
 
     const loadItems = async () => {
         if (!browserClient) return;
@@ -450,17 +452,24 @@ export default function PortfolioPanel({
     useKeyboardSave(handleSave);
 
     // 목록으로 이탈 (dirty 확인 포함)
-    const handleBack = () => {
-        if (confirmLeave()) {
-            setEditTarget(null);
-            onEditPathChange?.("");
-            setMetadataOpen(false);
-            loadStateCounts();
-        }
+    const handleBack = async () => {
+        if (!(await confirmLeave())) return;
+        setEditTarget(null);
+        onEditPathChange?.("");
+        setMetadataOpen(false);
+        loadStateCounts();
     };
 
     const handleDelete = async (id: string) => {
-        if (!browserClient || !confirm("정말 삭제하시겠습니까?")) return;
+        if (!browserClient) return;
+        const ok = await confirm({
+            title: "프로젝트 삭제",
+            description: "정말 삭제하시겠습니까?",
+            confirmText: "삭제",
+            cancelText: "취소",
+            variant: "destructive",
+        });
+        if (!ok) return;
         const target = items.find((i) => i.id === id);
         await browserClient.from("portfolio_items").delete().eq("id", id);
         if (target?.slug) deleteStorageFolder(`portfolio/${target.slug}`);
@@ -716,7 +725,7 @@ export default function PortfolioPanel({
                             <button
                                 onClick={handleSave}
                                 disabled={saving || !isDirty}
-                                className="rounded-lg bg-(--color-accent) px-5 py-2 text-xl font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
+                                className="rounded-lg bg-green-500 px-5 py-2 text-xl font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 disabled:opacity-50 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                             >
                                 {saving ? "저장 중..." : "저장"}
                             </button>
@@ -1088,7 +1097,7 @@ export default function PortfolioPanel({
                                         type="button"
                                         onClick={batchSetJobField}
                                         disabled={batchSaving || !batchJobField}
-                                        className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90 disabled:opacity-50"
+                                        className="rounded-lg bg-green-500 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 disabled:opacity-50 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                     >
                                         적용
                                     </button>

@@ -23,6 +23,7 @@ import {
     type ResumeSectionLayout,
 } from "@/lib/resume-layout";
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import type {
     Resume,
     ResumeWork,
@@ -199,6 +200,7 @@ function SectionEmojiSelector({
 }
 
 export default function ResumePanel() {
+    const { confirm } = useConfirmDialog();
     const [resumeData, setResumeData] = useState<Resume | null>(null);
     const [rowId, setRowId] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
@@ -515,15 +517,19 @@ export default function ResumePanel() {
                             </span>
                         )}
                         <button
-                            onClick={() => {
+                            onClick={async () => {
                                 const saved = initialSectionLayoutRef.current;
                                 const dirty =
                                     JSON.stringify(resumeSectionLayout) !==
                                     JSON.stringify(saved);
                                 if (layoutEditMode && dirty) {
-                                    const ok = window.confirm(
-                                        "저장되지 않은 변경사항이 있습니다. 정말 종료하시겠습니까?"
-                                    );
+                                    const ok = await confirm({
+                                        title: "레이아웃 편집 종료",
+                                        description:
+                                            "저장되지 않은 변경사항이 있습니다. 정말 종료하시겠습니까?",
+                                        confirmText: "종료",
+                                        cancelText: "계속 편집",
+                                    });
                                     if (!ok) return;
                                     setResumeSectionLayout(saved);
                                 }
@@ -531,12 +537,14 @@ export default function ResumePanel() {
                             }}
                             className="rounded-lg bg-(--color-accent) px-4 py-2.5 text-base font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
                         >
-                            {layoutEditMode ? "편집 종료" : "레이아웃 편집"}
+                            {layoutEditMode
+                                ? "레이아웃 편집 종료"
+                                : "레이아웃 편집"}
                         </button>
                         <button
                             onClick={handleSave}
                             disabled={saving || (!isDirty && !isLayoutDirty)}
-                            className="rounded-lg bg-(--color-accent) px-6 py-2.5 text-base font-semibold text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
+                            className="rounded-lg bg-green-500 px-6 py-2.5 text-base font-semibold text-white transition-colors hover:bg-green-400 disabled:opacity-50 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                         >
                             {saving ? "저장 중..." : "변경사항 저장"}
                         </button>
@@ -544,7 +552,11 @@ export default function ResumePanel() {
                 </div>
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto">
+            <div
+                className={`flex min-h-0 flex-1 flex-col gap-8 ${
+                    layoutEditMode ? "overflow-hidden" : "overflow-y-auto"
+                }`}
+            >
                 {status && (
                     <p
                         className={`rounded-lg px-3 py-2 text-base ${status.type === "error" ? "bg-red-50 text-red-500 dark:bg-red-950/30" : "bg-green-50 text-green-600 dark:bg-green-950/30"}`}
@@ -905,7 +917,7 @@ export default function ResumePanel() {
                                             />
                                             <div className="flex gap-2 pt-1">
                                                 <button
-                                                    className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-bold text-(--color-on-accent)"
+                                                    className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-bold text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                     onClick={() => {
                                                         const keywords =
                                                             editingCareerPhaseKeywords
@@ -1117,13 +1129,15 @@ export default function ResumePanel() {
                                         </span>
                                         <button
                                             type="button"
-                                            onClick={() => {
-                                                if (
-                                                    !confirm(
-                                                        `역량 ${idx + 1}을 삭제하시겠습니까?`
-                                                    )
-                                                )
-                                                    return;
+                                            onClick={async () => {
+                                                const ok = await confirm({
+                                                    title: "역량 삭제",
+                                                    description: `역량 ${idx + 1}을 삭제하시겠습니까?`,
+                                                    confirmText: "삭제",
+                                                    cancelText: "취소",
+                                                    variant: "destructive",
+                                                });
+                                                if (!ok) return;
                                                 setResumeData((prev) =>
                                                     prev
                                                         ? {
@@ -1743,7 +1757,7 @@ export default function ResumePanel() {
                                                                 null
                                                             );
                                                         }}
-                                                        className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                                                        className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                     >
                                                         완료
                                                     </button>
@@ -1824,35 +1838,38 @@ export default function ResumePanel() {
                                                         복사
                                                     </button>
                                                     <button
-                                                        onClick={() => {
-                                                            if (
-                                                                confirm(
-                                                                    "삭제하시겠습니까?"
-                                                                )
-                                                            ) {
-                                                                const w = [
-                                                                    ...resumeData
-                                                                        .work!
-                                                                        .entries,
-                                                                ];
-                                                                w.splice(
-                                                                    idx,
-                                                                    1
-                                                                );
-                                                                setResumeData({
-                                                                    ...resumeData,
-                                                                    work: {
-                                                                        ...(resumeData.work || {
-                                                                            showEmoji: false,
-                                                                            emoji: "✔️",
-                                                                            entries:
-                                                                                [],
-                                                                        }),
-                                                                        entries:
-                                                                            w,
-                                                                    },
+                                                        onClick={async () => {
+                                                            const ok =
+                                                                await confirm({
+                                                                    title: "경력 삭제",
+                                                                    description:
+                                                                        "삭제하시겠습니까?",
+                                                                    confirmText:
+                                                                        "삭제",
+                                                                    cancelText:
+                                                                        "취소",
+                                                                    variant:
+                                                                        "destructive",
                                                                 });
-                                                            }
+                                                            if (!ok) return;
+                                                            const w = [
+                                                                ...resumeData
+                                                                    .work!
+                                                                    .entries,
+                                                            ];
+                                                            w.splice(idx, 1);
+                                                            setResumeData({
+                                                                ...resumeData,
+                                                                work: {
+                                                                    ...(resumeData.work || {
+                                                                        showEmoji: false,
+                                                                        emoji: "✔️",
+                                                                        entries:
+                                                                            [],
+                                                                    }),
+                                                                    entries: w,
+                                                                },
+                                                            });
                                                         }}
                                                         className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                                     >
@@ -2585,7 +2602,7 @@ export default function ResumePanel() {
                                                                 null
                                                             );
                                                         }}
-                                                        className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                                                        className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                     >
                                                         완료
                                                     </button>
@@ -2727,35 +2744,38 @@ export default function ResumePanel() {
                                                         복사
                                                     </button>
                                                     <button
-                                                        onClick={() => {
-                                                            if (
-                                                                confirm(
-                                                                    "삭제하시겠습니까?"
-                                                                )
-                                                            ) {
-                                                                const p = [
-                                                                    ...resumeData
-                                                                        .projects!
-                                                                        .entries,
-                                                                ];
-                                                                p.splice(
-                                                                    idx,
-                                                                    1
-                                                                );
-                                                                setResumeData({
-                                                                    ...resumeData,
-                                                                    projects: {
-                                                                        ...(resumeData.projects || {
-                                                                            showEmoji: false,
-                                                                            emoji: "✔️",
-                                                                            entries:
-                                                                                [],
-                                                                        }),
-                                                                        entries:
-                                                                            p,
-                                                                    },
+                                                        onClick={async () => {
+                                                            const ok =
+                                                                await confirm({
+                                                                    title: "프로젝트 삭제",
+                                                                    description:
+                                                                        "삭제하시겠습니까?",
+                                                                    confirmText:
+                                                                        "삭제",
+                                                                    cancelText:
+                                                                        "취소",
+                                                                    variant:
+                                                                        "destructive",
                                                                 });
-                                                            }
+                                                            if (!ok) return;
+                                                            const p = [
+                                                                ...resumeData
+                                                                    .projects!
+                                                                    .entries,
+                                                            ];
+                                                            p.splice(idx, 1);
+                                                            setResumeData({
+                                                                ...resumeData,
+                                                                projects: {
+                                                                    ...(resumeData.projects || {
+                                                                        showEmoji: false,
+                                                                        emoji: "✔️",
+                                                                        entries:
+                                                                            [],
+                                                                    }),
+                                                                    entries: p,
+                                                                },
+                                                            });
                                                         }}
                                                         className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                                     >
@@ -3148,7 +3168,7 @@ export default function ResumePanel() {
                                                             null
                                                         );
                                                     }}
-                                                    className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                                                    className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                 >
                                                     완료
                                                 </button>
@@ -3181,31 +3201,37 @@ export default function ResumePanel() {
                                                     수정
                                                 </button>
                                                 <button
-                                                    onClick={() => {
-                                                        if (
-                                                            confirm(
-                                                                "삭제하시겠습니까?"
-                                                            )
-                                                        ) {
-                                                            const e = [
-                                                                ...resumeData
-                                                                    .education!
-                                                                    .entries,
-                                                            ];
-                                                            e.splice(idx, 1);
-                                                            setResumeData({
-                                                                ...resumeData,
-                                                                education: {
-                                                                    ...(resumeData.education || {
-                                                                        showEmoji: false,
-                                                                        emoji: "✔️",
-                                                                        entries:
-                                                                            [],
-                                                                    }),
-                                                                    entries: e,
-                                                                },
+                                                    onClick={async () => {
+                                                        const ok =
+                                                            await confirm({
+                                                                title: "교육 삭제",
+                                                                description:
+                                                                    "삭제하시겠습니까?",
+                                                                confirmText:
+                                                                    "삭제",
+                                                                cancelText:
+                                                                    "취소",
+                                                                variant:
+                                                                    "destructive",
                                                             });
-                                                        }
+                                                        if (!ok) return;
+                                                        const e = [
+                                                            ...resumeData
+                                                                .education!
+                                                                .entries,
+                                                        ];
+                                                        e.splice(idx, 1);
+                                                        setResumeData({
+                                                            ...resumeData,
+                                                            education: {
+                                                                ...(resumeData.education || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: e,
+                                                            },
+                                                        });
                                                     }}
                                                     className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                                 >
@@ -3510,7 +3536,7 @@ export default function ResumePanel() {
                                                                 null
                                                             );
                                                         }}
-                                                        className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                                                        className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                     >
                                                         완료
                                                     </button>
@@ -3544,36 +3570,39 @@ export default function ResumePanel() {
                                                         수정
                                                     </button>
                                                     <button
-                                                        onClick={() => {
-                                                            if (
-                                                                confirm(
-                                                                    "삭제하시겠습니까?"
-                                                                )
-                                                            ) {
-                                                                const a = [
-                                                                    ...(resumeData
-                                                                        .awards
-                                                                        ?.entries ||
-                                                                        []),
-                                                                ];
-                                                                a.splice(
-                                                                    idx,
-                                                                    1
-                                                                );
-                                                                setResumeData({
-                                                                    ...resumeData,
-                                                                    awards: {
-                                                                        ...(resumeData.awards || {
-                                                                            showEmoji: false,
-                                                                            emoji: "✔️",
-                                                                            entries:
-                                                                                [],
-                                                                        }),
-                                                                        entries:
-                                                                            a,
-                                                                    },
+                                                        onClick={async () => {
+                                                            const ok =
+                                                                await confirm({
+                                                                    title: "수상 삭제",
+                                                                    description:
+                                                                        "삭제하시겠습니까?",
+                                                                    confirmText:
+                                                                        "삭제",
+                                                                    cancelText:
+                                                                        "취소",
+                                                                    variant:
+                                                                        "destructive",
                                                                 });
-                                                            }
+                                                            if (!ok) return;
+                                                            const a = [
+                                                                ...(resumeData
+                                                                    .awards
+                                                                    ?.entries ||
+                                                                    []),
+                                                            ];
+                                                            a.splice(idx, 1);
+                                                            setResumeData({
+                                                                ...resumeData,
+                                                                awards: {
+                                                                    ...(resumeData.awards || {
+                                                                        showEmoji: false,
+                                                                        emoji: "✔️",
+                                                                        entries:
+                                                                            [],
+                                                                    }),
+                                                                    entries: a,
+                                                                },
+                                                            });
                                                         }}
                                                         className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                                     >
@@ -3769,7 +3798,7 @@ export default function ResumePanel() {
                                                             null
                                                         );
                                                     }}
-                                                    className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90"
+                                                    className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                 >
                                                     완료
                                                 </button>
@@ -3798,31 +3827,37 @@ export default function ResumePanel() {
                                                     수정
                                                 </button>
                                                 <button
-                                                    onClick={() => {
-                                                        if (
-                                                            confirm(
-                                                                "삭제하시겠습니까?"
-                                                            )
-                                                        ) {
-                                                            const l = [
-                                                                ...resumeData
-                                                                    .languages!
-                                                                    .entries,
-                                                            ];
-                                                            l.splice(idx, 1);
-                                                            setResumeData({
-                                                                ...resumeData,
-                                                                languages: {
-                                                                    ...(resumeData.languages || {
-                                                                        showEmoji: false,
-                                                                        emoji: "✔️",
-                                                                        entries:
-                                                                            [],
-                                                                    }),
-                                                                    entries: l,
-                                                                },
+                                                    onClick={async () => {
+                                                        const ok =
+                                                            await confirm({
+                                                                title: "언어 삭제",
+                                                                description:
+                                                                    "삭제하시겠습니까?",
+                                                                confirmText:
+                                                                    "삭제",
+                                                                cancelText:
+                                                                    "취소",
+                                                                variant:
+                                                                    "destructive",
                                                             });
-                                                        }
+                                                        if (!ok) return;
+                                                        const l = [
+                                                            ...resumeData
+                                                                .languages!
+                                                                .entries,
+                                                        ];
+                                                        l.splice(idx, 1);
+                                                        setResumeData({
+                                                            ...resumeData,
+                                                            languages: {
+                                                                ...(resumeData.languages || {
+                                                                    showEmoji: false,
+                                                                    emoji: "✔️",
+                                                                    entries: [],
+                                                                }),
+                                                                entries: l,
+                                                            },
+                                                        });
                                                     }}
                                                     className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-opacity hover:opacity-90"
                                                 >
@@ -3839,7 +3874,7 @@ export default function ResumePanel() {
 
                 {/* Layout Editor mode */}
                 {layoutEditMode ? (
-                    <div className="min-h-[600px]" style={{ order: 9999 }}>
+                    <div className="min-h-0 flex-1" style={{ order: 9999 }}>
                         <ResumeLayoutEditor
                             resume={resumeData}
                             layout={resumeSectionLayout}

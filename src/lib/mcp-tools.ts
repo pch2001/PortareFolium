@@ -10,22 +10,6 @@ function sanitizeContentField<T extends Record<string, unknown>>(fields: T): T {
     return fields;
 }
 
-// ─── 스냅샷 ───────────────────────────────────────────────────────────────────
-
-// 변경 전 레코드를 content_snapshots에 저장
-export async function snapshotBefore(
-    sourceTable: string,
-    recordId: string,
-    data: unknown
-): Promise<void> {
-    if (!serverClient) return;
-    await serverClient.from("content_snapshots").insert({
-        source_table: sourceTable,
-        record_id: recordId,
-        data,
-    });
-}
-
 // ─── 툴 핸들러 ────────────────────────────────────────────────────────────────
 
 // 스키마 가이드 반환
@@ -35,7 +19,6 @@ export async function handleGetSchema(): Promise<unknown> {
             "slug must be lowercase, hyphen-separated, URL-safe (e.g. 'my-new-post')",
             "Set published: false on all new content unless explicitly told otherwise",
             "No delete tool exists — use update to revise content",
-            "All write tools auto-snapshot before mutating — mistakes are recoverable",
             "slug collision returns error code -32000 with 'slug 중복' message — pick a different slug",
             "For update_resume: always call get_resume first, then send the FULL section (emoji + showEmoji + entries) to avoid data loss",
             "content field is MDX (Markdown + JSX) — use the components below for rich embeds",
@@ -251,7 +234,7 @@ export async function handleCreatePost(
     return data;
 }
 
-// post 수정 (스냅샷 → 부분 업데이트)
+// post 수정
 export async function handleUpdatePost(args: {
     slug: string;
     [key: string]: unknown;
@@ -261,7 +244,6 @@ export async function handleUpdatePost(args: {
 
     const { slug, ...fields } = args;
 
-    // 현재 데이터 스냅샷
     const { data: current } = await serverClient
         .from("posts")
         .select("*")
@@ -270,8 +252,6 @@ export async function handleUpdatePost(args: {
 
     if (!current)
         throw new Error(`[mcp-tools::handleUpdatePost] slug 없음: ${slug}`);
-
-    await snapshotBefore("posts", current.id, current);
 
     const { data, error } = await serverClient
         .from("posts")
@@ -377,7 +357,7 @@ export async function handleCreatePortfolioItem(
     return data;
 }
 
-// portfolio_item 수정 (스냅샷 → 부분 업데이트)
+// portfolio_item 수정
 export async function handleUpdatePortfolioItem(args: {
     slug: string;
     [key: string]: unknown;
@@ -407,8 +387,6 @@ export async function handleUpdatePortfolioItem(args: {
         throw new Error(
             `[mcp-tools::handleUpdatePortfolioItem] slug 없음: ${slug}`
         );
-
-    await snapshotBefore("portfolio_items", current.id, current);
 
     const { data, error } = await serverClient
         .from("portfolio_items")
@@ -448,7 +426,7 @@ export async function handleGetResume(args: {
     return data;
 }
 
-// 이력서 수정 (스냅샷 → 섹션별 deep-merge)
+// 이력서 수정
 export async function handleUpdateResume(args: {
     lang?: "ko" | "en";
     data: Partial<Resume>;
@@ -466,8 +444,6 @@ export async function handleUpdateResume(args: {
 
     if (!current)
         throw new Error(`[mcp-tools::handleUpdateResume] lang 없음: ${lang}`);
-
-    await snapshotBefore("resume_data", current.id, current);
 
     // 섹션별 deep-merge: 기존 data + args.data
     const merged = { ...(current.data as object), ...args.data };

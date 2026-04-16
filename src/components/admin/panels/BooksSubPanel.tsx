@@ -32,6 +32,7 @@ import MetadataSheet from "@/components/admin/MetadataSheet";
 import SaveIndicator from "@/components/admin/SaveIndicator";
 import AdminSaveBar from "@/components/admin/AdminSaveBar";
 import { revalidateBook } from "@/app/admin/actions/revalidate";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface BookItem {
     id: string;
@@ -158,6 +159,7 @@ export default function BooksSubPanel({
         JSON.stringify(form) !== JSON.stringify(initialFormRef.current);
 
     const { confirmLeave } = useUnsavedWarning(isDirty);
+    const { confirm } = useConfirmDialog();
 
     const loadBooks = async () => {
         if (!browserClient) return;
@@ -316,7 +318,15 @@ export default function BooksSubPanel({
     }, [form, editTarget]);
 
     const handleDelete = async (id: string) => {
-        if (!browserClient || !confirm("도서를 삭제하시겠습니까?")) return;
+        if (!browserClient) return;
+        const ok = await confirm({
+            title: "도서 삭제",
+            description: "도서를 삭제하시겠습니까?",
+            confirmText: "삭제",
+            cancelText: "취소",
+            variant: "destructive",
+        });
+        if (!ok) return;
         const { error: err } = await browserClient
             .from("books")
             .delete()
@@ -393,8 +403,8 @@ export default function BooksSubPanel({
         await revalidateBook(editTarget.slug);
     };
 
-    const handleBack = () => {
-        if (isDirty && !confirmLeave()) return;
+    const handleBack = async () => {
+        if (!(await confirmLeave())) return;
         setEditTarget(null);
         setMetadataOpen(false);
         setError(null);
@@ -540,7 +550,7 @@ export default function BooksSubPanel({
                             <button
                                 onClick={handleSave}
                                 disabled={saving || !isDirty}
-                                className="rounded-lg bg-(--color-accent) px-5 py-2 text-xl font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
+                                className="rounded-lg bg-green-500 px-5 py-2 text-xl font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 disabled:opacity-50 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                             >
                                 {saving ? "저장 중..." : "저장"}
                             </button>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Key, Trash2 } from "lucide-react";
+import { Key, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -10,6 +10,7 @@ import {
     listTokens,
 } from "@/app/admin/actions/agent-tokens";
 import ContentWrapper from "@/components/ContentWrapper";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 // 유효 duration 옵션
 const DURATION_OPTIONS = [
@@ -32,6 +33,7 @@ function getTokenStatus(token: TokenRow): "active" | "expired" | "revoked" {
 }
 
 export default function AgentTokensPanel() {
+    const { confirm } = useConfirmDialog();
     const [tokens, setTokens] = useState<TokenRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [label, setLabel] = useState("");
@@ -41,6 +43,10 @@ export default function AgentTokensPanel() {
     const [error, setError] = useState<string | null>(null);
     const [revoking, setRevoking] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
+    const refreshButtonClassName =
+        "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200";
+    const primaryButtonClassName =
+        "bg-(--color-accent) text-(--color-on-accent) hover:opacity-90";
 
     const load = async () => {
         setLoading(true);
@@ -71,6 +77,14 @@ export default function AgentTokensPanel() {
     };
 
     const handleRevoke = async (id: string) => {
+        const ok = await confirm({
+            title: "토큰 폐기",
+            description: "이 Agent 토큰을 폐기하시겠습니까?",
+            confirmText: "폐기",
+            cancelText: "취소",
+            variant: "destructive",
+        });
+        if (!ok) return;
         setRevoking(id);
         const res = await revokeToken(id);
         setRevoking(null);
@@ -131,6 +145,7 @@ export default function AgentTokensPanel() {
                         <Button
                             onClick={handleIssue}
                             disabled={issuing || !label.trim()}
+                            className={primaryButtonClassName}
                         >
                             <Key className="mr-2 h-4 w-4 shrink-0" />
                             <span className="whitespace-nowrap">
@@ -152,7 +167,11 @@ export default function AgentTokensPanel() {
                                 <code className="flex-1 rounded bg-green-100 px-2 py-1.5 font-mono text-xs break-all text-green-900 dark:bg-green-900/40 dark:text-green-200">
                                     {newToken}
                                 </code>
-                                <Button size="sm" onClick={copyToken}>
+                                <Button
+                                    size="sm"
+                                    onClick={copyToken}
+                                    className={primaryButtonClassName}
+                                >
                                     <span className="whitespace-nowrap">
                                         {copied ? "복사됨" : "복사"}
                                     </span>
@@ -168,13 +187,18 @@ export default function AgentTokensPanel() {
                         토큰 목록
                     </h3>
                     <Button
-                        variant="outline"
                         size="sm"
                         onClick={load}
                         disabled={loading}
+                        className={refreshButtonClassName}
                     >
+                        <RefreshCw
+                            className={`mr-2 h-4 w-4 shrink-0 ${
+                                loading ? "animate-spin" : ""
+                            }`}
+                        />
                         <span className="whitespace-nowrap">
-                            {loading ? "로딩 중..." : "새로고침"}
+                            {loading ? "새로고침 중..." : "새로고침"}
                         </span>
                     </Button>
                 </section>
@@ -212,12 +236,12 @@ export default function AgentTokensPanel() {
                                             </Badge>
                                         )}
                                         {status === "expired" && (
-                                            <Badge variant="outline">
+                                            <Badge className="bg-amber-500 text-white dark:bg-amber-500 dark:text-white">
                                                 Expired
                                             </Badge>
                                         )}
                                         {status === "revoked" && (
-                                            <Badge variant="outline">
+                                            <Badge className="bg-red-600 text-white dark:bg-red-600 dark:text-white">
                                                 Revoked
                                             </Badge>
                                         )}
@@ -241,10 +265,10 @@ export default function AgentTokensPanel() {
                                 </div>
                                 {status === "active" && (
                                     <Button
-                                        variant="outline"
                                         size="sm"
                                         onClick={() => handleRevoke(token.id)}
                                         disabled={revoking === token.id}
+                                        className="bg-red-600 text-white hover:bg-red-500 dark:bg-red-600 dark:text-white dark:hover:bg-red-500"
                                     >
                                         <Trash2 className="mr-1.5 h-3.5 w-3.5 shrink-0" />
                                         <span className="whitespace-nowrap">

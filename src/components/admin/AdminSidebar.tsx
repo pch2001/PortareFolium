@@ -36,7 +36,7 @@ const SECTIONS = [
         label: "System",
         items: [
             { id: "migrations", label: "DB 마이그레이션", icon: Database },
-            { id: "snapshots", label: "스냅샷", icon: Archive },
+            { id: "snapshots", label: "DB 스냅샷", icon: Archive },
             { id: "agent-tokens", label: "Agent 토큰", icon: KeyRound },
             {
                 id: "prompts",

@@ -1,183 +1,261 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { Download, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { listSnapshots, restoreSnapshot } from "@/app/admin/actions/snapshots";
-import type { Snapshot } from "@/app/admin/actions/snapshots";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
+import {
+    createSnapshot,
+    deleteSnapshot,
+    getSnapshotDownload,
+    listSnapshots,
+} from "@/app/admin/actions/snapshots";
+import type { DatabaseSnapshot } from "@/app/admin/actions/snapshots";
 
-// 테이블 필터 옵션
-const TABLE_OPTIONS = [
-    { value: "", label: "전체" },
-    { value: "posts", label: "posts" },
-    { value: "portfolio_items", label: "portfolio_items" },
-    { value: "resume_data", label: "resume_data" },
-];
+type StatusMessage = {
+    ok: boolean;
+    text: string;
+};
 
 export default function SnapshotsPanel() {
-    const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
+    const { confirm } = useConfirmDialog();
+    const [snapshots, setSnapshots] = useState<DatabaseSnapshot[]>([]);
     const [loading, setLoading] = useState(true);
-    const [tableFilter, setTableFilter] = useState("");
-    const [restoring, setRestoring] = useState<string | null>(null);
-    const [restoreMsg, setRestoreMsg] = useState<{
-        id: string;
-        ok: boolean;
-        msg: string;
-    } | null>(null);
-    const [expanded, setExpanded] = useState<string | null>(null);
+    const [creating, setCreating] = useState(false);
+    const [downloadingId, setDownloadingId] = useState<string | null>(null);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [status, setStatus] = useState<StatusMessage | null>(null);
+    const refreshButtonClassName =
+        "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200";
 
+    // Snapshot 목록 로드
     const load = async () => {
         setLoading(true);
-        setSnapshots(await listSnapshots(tableFilter || undefined));
+        setSnapshots(await listSnapshots());
         setLoading(false);
     };
 
     useEffect(() => {
-        load();
-    }, [tableFilter]);
+        void load();
+    }, []);
 
-    const handleRestore = async (snapshot: Snapshot) => {
-        if (
-            !confirm(
-                `이 스냅샷으로 복원하시겠습니까?\n테이블: ${snapshot.source_table}\n시각: ${new Date(snapshot.created_at).toLocaleString("ko-KR")}`
-            )
-        )
+    // Snapshot 생성
+    const handleCreateSnapshot = async () => {
+        setCreating(true);
+        setStatus(null);
+
+        const result = await createSnapshot();
+
+        setCreating(false);
+
+        if ("error" in result) {
+            setStatus({ ok: false, text: result.error });
             return;
-        setRestoring(snapshot.id);
-        setRestoreMsg(null);
-        const res = await restoreSnapshot(snapshot.id);
-        setRestoring(null);
-        if ("error" in res) {
-            setRestoreMsg({ id: snapshot.id, ok: false, msg: res.error });
-        } else {
-            setRestoreMsg({ id: snapshot.id, ok: true, msg: "복원 완료" });
         }
+
+        setStatus({ ok: true, text: "Snapshot 생성 완료" });
+        setSnapshots((prev) => [result, ...prev]);
+    };
+
+    // Snapshot 다운로드
+    const handleDownloadSnapshot = async (snapshot: DatabaseSnapshot) => {
+        setDownloadingId(snapshot.id);
+        setStatus(null);
+
+        const result = await getSnapshotDownload(snapshot.id);
+
+        setDownloadingId(null);
+
+        if ("error" in result) {
+            setStatus({ ok: false, text: result.error });
+            return;
+        }
+
+        const blob = new Blob([result.content], {
+            type: "application/json;charset=utf-8",
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = result.filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+
+        setStatus({ ok: true, text: `${result.filename} 다운로드 시작` });
+    };
+
+    // Snapshot 삭제
+    const handleDeleteSnapshot = async (snapshot: DatabaseSnapshot) => {
+        const ok = await confirm({
+            title: "DB Snapshot 삭제",
+            description: `이 Snapshot을 삭제하시겠습니까?\n시각: ${new Date(snapshot.created_at).toLocaleString("ko-KR")}`,
+            confirmText: "삭제",
+            cancelText: "취소",
+            variant: "destructive",
+        });
+
+        if (!ok) return;
+
+        setDeletingId(snapshot.id);
+        setStatus(null);
+
+        const result = await deleteSnapshot(snapshot.id);
+
+        setDeletingId(null);
+
+        if ("error" in result) {
+            setStatus({ ok: false, text: result.error });
+            return;
+        }
+
+        setSnapshots((prev) => prev.filter((item) => item.id !== snapshot.id));
+        setStatus({ ok: true, text: "Snapshot 삭제 완료" });
     };
 
     return (
         <div className="flex h-full min-h-0 flex-col overflow-hidden">
-            {/* 헤더 + 필터 — 스크롤 중에도 상단 고정 */}
             <div className="sticky top-0 z-10 shrink-0 space-y-4 bg-(--color-surface) pb-3">
                 <div>
                     <h2 className="mb-1 text-3xl font-bold tracking-tight text-(--color-foreground)">
-                        콘텐츠 스냅샷
+                        DB 스냅샷
                     </h2>
-                    <p className="text-sm text-(--color-muted)">
-                        MCP 에이전트 쓰기 작업 전 자동 저장된 백업. 레코드당
-                        최대 20개 보관.
-                    </p>
+                    <div className="space-y-1 text-sm text-(--color-muted)">
+                        <p>
+                            <code>Take snapshot</code>은 현재{" "}
+                            <code>public</code> schema 전체를 JSON으로
+                            저장합니다.
+                        </p>
+                        <p>
+                            <code>storage</code> 이미지와 <code>auth</code>{" "}
+                            데이터는 포함되지 않습니다.
+                        </p>
+                        <p>
+                            페이지 내 미리보기는 제공하지 않고, 생성 시각 확인과
+                            JSON 다운로드만 지원합니다.
+                        </p>
+                    </div>
                 </div>
 
-                {/* 필터 + 새로고침 */}
                 <div className="flex flex-wrap items-center gap-3">
-                    <select
-                        value={tableFilter}
-                        onChange={(e) => setTableFilter(e.target.value)}
-                        className="rounded-lg border border-(--color-border) bg-(--color-surface-subtle) px-3 py-2 text-sm text-(--color-foreground) focus:ring-2 focus:ring-(--color-accent) focus:outline-none"
-                    >
-                        {TABLE_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value}>
-                                {opt.label}
-                            </option>
-                        ))}
-                    </select>
                     <Button
-                        variant="outline"
                         size="sm"
-                        onClick={load}
-                        disabled={loading}
+                        onClick={() => void load()}
+                        disabled={loading || creating}
+                        className={refreshButtonClassName}
                     >
+                        <RefreshCw
+                            className={`mr-2 h-4 w-4 shrink-0 ${
+                                loading ? "animate-spin" : ""
+                            }`}
+                        />
                         <span className="whitespace-nowrap">
-                            {loading ? "로딩 중..." : "새로고침"}
+                            {loading ? "새로고침 중..." : "새로고침"}
+                        </span>
+                    </Button>
+
+                    <Button
+                        size="sm"
+                        onClick={() => void handleCreateSnapshot()}
+                        disabled={creating || loading}
+                        className="bg-green-600 text-white hover:bg-green-500 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
+                    >
+                        <Plus className="mr-2 h-4 w-4 shrink-0" />
+                        <span className="whitespace-nowrap">
+                            {creating ? "생성 중..." : "Take snapshot"}
                         </span>
                     </Button>
                 </div>
+
+                {status && (
+                    <p
+                        className={[
+                            "text-sm font-medium",
+                            status.ok ? "text-green-600" : "text-red-500",
+                        ].join(" ")}
+                    >
+                        {status.text}
+                    </p>
+                )}
             </div>
 
-            <div className="min-h-0 flex-1 space-y-8 overflow-y-auto">
-                {/* 스냅샷 목록 */}
+            <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
                 {snapshots.length === 0 && !loading && (
                     <p className="text-sm text-(--color-muted)">
-                        스냅샷이 없습니다.
+                        저장된 DB Snapshot이 없습니다.
                     </p>
                 )}
 
                 <div className="space-y-3">
-                    {snapshots.map((snap) => {
-                        const isExpanded = expanded === snap.id;
-                        const msg =
-                            restoreMsg?.id === snap.id ? restoreMsg : null;
-                        return (
-                            <div
-                                key={snap.id}
-                                className="space-y-2 rounded-xl border border-(--color-border) bg-(--color-surface) p-4"
-                            >
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <Badge variant="secondary">
-                                        {snap.source_table}
-                                    </Badge>
-                                    <span className="font-mono text-xs text-(--color-muted)">
-                                        {snap.record_id}
-                                    </span>
-                                    <span className="ml-auto text-xs text-(--color-muted)">
+                    {snapshots.map((snapshot) => (
+                        <div
+                            key={snapshot.id}
+                            className="rounded-xl border border-(--color-border) bg-(--color-surface) p-4"
+                        >
+                            <div className="flex flex-wrap items-start gap-3">
+                                <div className="min-w-0 flex-1 space-y-1">
+                                    <p className="truncate font-mono text-sm text-(--color-foreground)">
+                                        {snapshot.filename}
+                                    </p>
+                                    <p className="text-xs text-(--color-muted)">
+                                        생성 시각:{" "}
                                         {new Date(
-                                            snap.created_at
+                                            snapshot.created_at
                                         ).toLocaleString("ko-KR")}
-                                    </span>
+                                    </p>
+                                    <p className="text-xs text-(--color-muted)">
+                                        포함 테이블:{" "}
+                                        {snapshot.table_names.length}개
+                                    </p>
                                 </div>
 
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <button
+                                <div className="flex flex-wrap gap-2 self-center">
+                                    <Button
+                                        size="sm"
                                         onClick={() =>
-                                            setExpanded(
-                                                isExpanded ? null : snap.id
+                                            void handleDownloadSnapshot(
+                                                snapshot
                                             )
                                         }
-                                        className="text-xs text-(--color-accent) hover:underline"
+                                        disabled={
+                                            downloadingId === snapshot.id ||
+                                            deletingId === snapshot.id ||
+                                            creating
+                                        }
+                                        className="bg-(--color-accent) text-(--color-on-accent) hover:opacity-90"
                                     >
-                                        {isExpanded
-                                            ? "데이터 숨기기"
-                                            : "데이터 보기"}
-                                    </button>
-
-                                    {msg && (
-                                        <span
-                                            className={[
-                                                "text-xs font-medium",
-                                                msg.ok
-                                                    ? "text-green-600"
-                                                    : "text-red-500",
-                                            ].join(" ")}
-                                        >
-                                            {msg.msg}
+                                        <Download className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+                                        <span className="whitespace-nowrap">
+                                            {downloadingId === snapshot.id
+                                                ? "다운로드 준비 중..."
+                                                : "다운로드"}
                                         </span>
-                                    )}
+                                    </Button>
 
                                     <Button
-                                        variant="outline"
                                         size="sm"
-                                        onClick={() => handleRestore(snap)}
-                                        disabled={restoring === snap.id}
-                                        className="ml-auto"
+                                        onClick={() =>
+                                            void handleDeleteSnapshot(snapshot)
+                                        }
+                                        disabled={
+                                            deletingId === snapshot.id ||
+                                            downloadingId === snapshot.id ||
+                                            creating
+                                        }
+                                        className="bg-red-600 text-white hover:bg-red-500 dark:bg-red-600 dark:text-white dark:hover:bg-red-500"
                                     >
-                                        <RotateCcw className="mr-1.5 h-3.5 w-3.5 shrink-0" />
+                                        <Trash2 className="mr-1.5 h-3.5 w-3.5 shrink-0" />
                                         <span className="whitespace-nowrap">
-                                            {restoring === snap.id
-                                                ? "복원 중..."
-                                                : "복원"}
+                                            {deletingId === snapshot.id
+                                                ? "삭제 중..."
+                                                : "삭제"}
                                         </span>
                                     </Button>
                                 </div>
-
-                                {isExpanded && (
-                                    <pre className="mt-2 overflow-x-auto rounded-lg bg-(--color-surface-subtle) p-3 text-xs leading-relaxed text-(--color-foreground)">
-                                        {JSON.stringify(snap.data, null, 2)}
-                                    </pre>
-                                )}
                             </div>
-                        );
-                    })}
+                        </div>
+                    ))}
                 </div>
             </div>
         </div>

@@ -1,5 +1,139 @@
 # CHANGES
 
+## v0.11.68 (2026-04-16)
+
+### feat: DB Snapshot을 전체 public schema 백업 방식으로 전환
+
+- `src/app/admin/actions/snapshots.ts`: `database_snapshots` 기준의 생성·목록·다운로드·삭제 서버 액션으로 전면 교체
+- `src/components/admin/panels/SnapshotsPanel.tsx`: 기존 MCP record snapshot 브라우저를 제거하고 `Take snapshot`, 생성 시각 표시, JSON 다운로드, 삭제 중심 UI로 재구성
+- `src/lib/mcp-tools.ts`: MCP write path의 `content_snapshots` 자동 백업 로직과 관련 안내 문구 제거
+- `src/lib/migrations.ts`, `supabase/setup.sql`, `supabase/migration-whole.sql`: `database_snapshots` 테이블과 `create_database_snapshot()` 함수 추가, 기존 `content_snapshots` 구조 제거, DB schema version `0.11.68` 반영
+
+## v0.11.67 (2026-04-16)
+
+### fix: SiteConfigPanel 제목 고정 + 내부 scroll 패턴 적용
+
+- `src/components/admin/AdminDashboard.tsx`: "config" 탭을 `panelOwnsHeight` + `overflow-hidden` 목록에 추가하여 패널이 자체 높이 관리
+- `src/components/admin/panels/SiteConfigPanel.tsx`: PostsPanel과 동일한 flex scroll 패턴 적용 — 제목은 `shrink-0`로 상단 고정, 나머지 콘텐츠는 `flex-1 overflow-y-auto`로 내부 scroll
+
+## v0.11.66 (2026-04-16)
+
+### fix: SnapshotsPanel batch action bar에서 카드형 box 제거
+
+- `src/components/admin/panels/SnapshotsPanel.tsx`: `전체 선택` checkbox와 `선택 삭제` 버튼 영역이 스냅샷 카드처럼 보이지 않도록 border/background box 제거
+
+## v0.11.65 (2026-04-16)
+
+### docs: SnapshotsPanel 설명 문구를 실제 동작 기준으로 구체화
+
+- `src/components/admin/panels/SnapshotsPanel.tsx`: 스냅샷 생성 시점, 대상 테이블, 레코드당 20개 유지, 복원이 같은 `id` 레코드를 snapshot JSON으로 덮어쓰는 동작, admin 일반 저장과 별개라는 점을 설명에 명시
+
+## v0.11.64 (2026-04-16)
+
+### fix: SnapshotsPanel 복원 confirm 문구 강화
+
+- `src/components/admin/panels/SnapshotsPanel.tsx`: `복원` confirm에 overwrite와 되돌리기 어려움을 명시하고, confirm button label을 `덮어쓰기 복원`으로 변경
+
+## v0.11.63 (2026-04-16)
+
+### feat: SnapshotsPanel 선택 checkbox와 일괄 삭제 추가
+
+- `src/app/admin/actions/snapshots.ts`: 여러 snapshot id를 한 번에 삭제하는 `deleteSnapshots()` 서버 액션 추가
+- `src/components/admin/panels/SnapshotsPanel.tsx`: 각 카드 좌측 checkbox, 상단 `전체 선택`, 선택 개수 표시, red solid `선택 삭제` batch action 추가
+
+## v0.11.62 (2026-04-16)
+
+### feat: SnapshotsPanel 개별 삭제 버튼 추가
+
+- `src/app/admin/actions/snapshots.ts`: `content_snapshots` 행을 직접 지우는 `deleteSnapshot()` 서버 액션 추가
+- `src/components/admin/panels/SnapshotsPanel.tsx`: 각 스냅샷 카드에 red solid `삭제` 버튼 추가, confirm dialog 이후 삭제 실행
+
+## v0.11.61 (2026-04-16)
+
+### fix: SnapshotsPanel 데이터 보기 빈 영역 수정
+
+- `src/app/admin/actions/snapshots.ts`: `listSnapshots()`가 `content_snapshots.data` 컬럼을 함께 조회하도록 수정
+- `src/components/admin/panels/SnapshotsPanel.tsx`: `데이터 보기`에서 실제 snapshot payload가 표시되도록 서버 응답 shape 복구
+
+## v0.11.60 (2026-04-16)
+
+### feat: admin confirm을 custom alert dialog로 통일
+
+- `src/components/ui/alert-dialog.tsx`, `src/components/ui/confirm-dialog.tsx`: shadcn/Radix 기반 공용 `AlertDialog` wrapper와 Promise 기반 `confirm()` provider 추가
+- `src/app/admin/layout.tsx`: admin 전체를 `ConfirmDialogProvider`로 감싸 destructive action과 인앱 이탈 확인을 custom dialog로 통일
+- `PostsPanel`, `PortfolioPanel`, `BooksSubPanel`, `TagsPanel`, `SnapshotsPanel`, `AboutPanel`, `SiteConfigPanel`, `SkillsAdminSection`, `ResumePanel`, `useUnsavedWarning`: native `confirm()`을 custom dialog 호출로 교체
+- `beforeunload` 기반 브라우저 이탈 경고는 기존 native prompt 유지
+
+## v0.11.59 (2026-04-16)
+
+### fix: SiteConfigPanel 직무 분야 삭제에 confirm 추가
+
+- `src/components/admin/panels/SiteConfigPanel.tsx`: 직무 분야 `삭제` 버튼 클릭 시 field 이름을 포함한 confirm을 먼저 띄우고, 확인한 경우에만 삭제 실행
+
+## v0.11.58 (2026-04-16)
+
+### feat: SiteConfigPanel 직무 분야 selector를 선택 중심 레이아웃으로 재구성
+
+- `src/components/admin/panels/SiteConfigPanel.tsx`: `현재 활성 직무 분야` 요약 block 추가
+- 직무 분야 목록을 card grid로 재구성하고, 각 card에서 `기본으로 선택` / `삭제` 액션을 명시적으로 분리
+- `새 직무 분야 추가`를 별도 composer panel로 분리하고 emoji, 이름, 상속 시작점을 한 영역에 정리
+- 상속 시작점 `select`와 `option`에 surface/text 색을 명시해 dark mode에서 dropdown menu가 흰 배경으로 열리던 문제 수정
+
+## v0.11.57 (2026-04-16)
+
+### fix: AgentTokensPanel 만료·폐기 상태 badge를 solid로 변경
+
+- `src/components/admin/panels/AgentTokensPanel.tsx`: `Expired` badge를 amber solid, `Revoked` badge를 red solid로 변경
+
+## v0.11.56 (2026-04-16)
+
+### fix: AgentTokensPanel 폐기 버튼을 red solid로 변경
+
+- `src/components/admin/panels/AgentTokensPanel.tsx`: active 토큰의 `폐기` 버튼을 outline에서 red solid 버튼으로 변경
+
+## v0.11.55 (2026-04-16)
+
+### fix: admin refresh 버튼을 solid 스타일 + 회전 아이콘으로 정리
+
+- `src/components/admin/panels/MigrationsPanel.tsx`: 새로고침 버튼 2곳을 outline에서 solid neutral 버튼으로 변경하고, refresh 중 `RefreshCw` icon 회전 추가
+- `src/components/admin/panels/AgentTokensPanel.tsx`: 토큰 목록 새로고침 버튼을 동일한 solid neutral 버튼으로 변경하고, loading 중 `RefreshCw` icon 회전 추가
+
+## v0.11.54 (2026-04-16)
+
+### fix: admin 저장 버튼의 light/dark green 강도 조정
+
+- 저장 계열 버튼의 green tone을 `light = bg-green-500 / hover:bg-green-400`, `dark = dark:bg-green-600 / dark:hover:bg-green-500`로 재조정
+- `PostsPanel`, `PortfolioPanel`, `BooksSubPanel`, `ResumePanel`, `TagsPanel`, `SiteConfigPanel`, `AboutPanel`, `SkillEditorModal`, `SkillsAdminSection`, `EditorStatePreservation`, `TiptapImageUpload`, `MigrationsPanel` 반영
+
+## v0.11.53 (2026-04-16)
+
+### fix: admin 저장 버튼을 개별 Tailwind class로 재정의
+
+- `src/styles/global.css`: `admin-save-button` utility 제거
+- `PostsPanel`, `PortfolioPanel`, `BooksSubPanel`, `ResumePanel`, `TagsPanel`, `SiteConfigPanel`, `AboutPanel`: 저장/완료/적용 버튼에 green Tailwind class를 직접 적용하고 `dark:bg-green-*`, `dark:hover:bg-green-*`까지 명시
+- `SkillEditorModal`, `SkillsAdminSection`, `EditorStatePreservation`, `TiptapImageUpload`, `MigrationsPanel`: modal과 보조 admin 컴포넌트의 저장 계열 버튼도 전역 utility 없이 동일 기준으로 치환
+
+## v0.11.52 (2026-04-16)
+
+### fix: admin 저장 버튼 색상을 green으로 통일
+
+- `src/styles/global.css`: color scheme과 무관하게 admin 저장 계열 버튼이 green을 유지하도록 `admin-save-button` utility 추가
+- `PostsPanel`, `PortfolioPanel`, `BooksSubPanel`, `ResumePanel`, `TagsPanel`, `SiteConfigPanel`, `AboutPanel`: 저장 bar와 inline 저장 버튼을 `admin-save-button`으로 통일
+- `SkillEditorModal`, `SkillsAdminSection`, `EditorStatePreservation`, `TiptapImageUpload`, `MigrationsPanel`: modal과 보조 admin 컴포넌트의 저장/적용 버튼도 green으로 통일
+
+## v0.11.51 (2026-04-16)
+
+### fix: Resume layout mode 종료 버튼 label 명확화
+
+- `src/components/admin/panels/ResumePanel.tsx`: layout mode 활성 상태의 상단 버튼 label을 `편집 종료`에서 `레이아웃 편집 종료`로 변경
+
+## v0.11.50 (2026-04-16)
+
+### fix: Resume layout editor에서 page scroll 제거
+
+- `src/components/admin/panels/ResumePanel.tsx`: `layoutEditMode` 활성화 시 바깥 본문 컨테이너를 `overflow-hidden`으로 전환하고, `ResumeLayoutEditor` wrapper를 `flex-1 min-h-0`로 변경해 page 자체 scroll 제거
+- `src/components/admin/panels/ResumeLayoutEditor.tsx`: root에 `overflow-hidden` 추가, preview pane과 section list pane에 `min-h-0` 적용으로 내부 두 pane만 독립 scroll 유지
+
 ## v0.11.49 (2026-04-16)
 
 ### chore: PR.md git tracking 제거

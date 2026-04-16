@@ -20,6 +20,7 @@ import {
     CollapsibleTrigger,
     CollapsibleContent,
 } from "@/components/ui/collapsible";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface TagItem {
     slug: string;
@@ -39,6 +40,7 @@ const SORT_KEY = "admin_tag_sort";
 const CAT_SORT_KEY = "admin_cat_sort";
 
 export default function TagsPanel() {
+    const { confirm } = useConfirmDialog();
     const [tab, setTab] = useState<ActiveTab>("tags");
 
     // 태그 상태
@@ -226,7 +228,15 @@ export default function TagsPanel() {
     };
 
     const handleDelete = async (slug: string) => {
-        if (!browserClient || !confirm(`태그 "${slug}"를 삭제할까요?`)) return;
+        if (!browserClient) return;
+        const ok = await confirm({
+            title: "태그 삭제",
+            description: `태그 "${slug}"를 삭제할까요?`,
+            confirmText: "삭제",
+            cancelText: "취소",
+            variant: "destructive",
+        });
+        if (!ok) return;
         setSaving(true);
         const { error: err } = await browserClient
             .from("tags")
@@ -261,13 +271,15 @@ export default function TagsPanel() {
 
     // 카테고리 삭제 (모든 posts의 category를 null로)
     const deleteCategory = async (name: string) => {
-        if (
-            !browserClient ||
-            !confirm(
-                `카테고리 "${name}"를 삭제할까요? 해당 카테고리를 사용하는 포스트의 카테고리가 초기화됩니다.`
-            )
-        )
-            return;
+        if (!browserClient) return;
+        const ok = await confirm({
+            title: "카테고리 삭제",
+            description: `카테고리 "${name}"를 삭제할까요? 해당 카테고리를 사용하는 포스트의 카테고리가 초기화됩니다.`,
+            confirmText: "삭제",
+            cancelText: "취소",
+            variant: "destructive",
+        });
+        if (!ok) return;
         setSaving(true);
         const { error: err } = await browserClient
             .from("posts")
@@ -596,6 +608,7 @@ export default function TagsPanel() {
                                     <Button
                                         onClick={handleSave}
                                         disabled={saving || !form.name.trim()}
+                                        className="bg-green-500 text-white hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                     >
                                         {saving ? "저장 중..." : "저장"}
                                     </Button>
@@ -742,6 +755,7 @@ export default function TagsPanel() {
                                                             saving ||
                                                             !catForm.trim()
                                                         }
+                                                        className="bg-green-500 text-white hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                                     >
                                                         저장
                                                     </Button>

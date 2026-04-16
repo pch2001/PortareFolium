@@ -36,6 +36,7 @@ import MetadataSheet from "@/components/admin/MetadataSheet";
 import SaveIndicator from "@/components/admin/SaveIndicator";
 import AdminSaveBar from "@/components/admin/AdminSaveBar";
 import { Badge } from "@/components/ui/badge";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 // 포스트 행 타입 (Supabase posts 테이블)
 interface Post {
@@ -165,6 +166,7 @@ export default function PostsPanel({
         JSON.stringify(form) !== JSON.stringify(initialFormRef.current);
 
     const { confirmLeave } = useUnsavedWarning(isDirty);
+    const { confirm } = useConfirmDialog();
 
     // 포스트 목록 로드 (인증된 어드민이므로 draft 포함 전체 조회)
     const loadPosts = async () => {
@@ -430,18 +432,25 @@ export default function PostsPanel({
     useKeyboardSave(handleSave);
 
     // 목록으로 이탈 (dirty 확인 포함)
-    const handleBack = () => {
-        if (confirmLeave()) {
-            setEditTarget(null);
-            onEditPathChange?.("");
-            setMetadataOpen(false);
-            loadStateCounts();
-        }
+    const handleBack = async () => {
+        if (!(await confirmLeave())) return;
+        setEditTarget(null);
+        onEditPathChange?.("");
+        setMetadataOpen(false);
+        loadStateCounts();
     };
 
     // 삭제 (스토리지 cleanup 포함)
     const handleDelete = async (id: string) => {
-        if (!browserClient || !confirm("정말 삭제하시겠습니까?")) return;
+        if (!browserClient) return;
+        const ok = await confirm({
+            title: "포스트 삭제",
+            description: "정말 삭제하시겠습니까?",
+            confirmText: "삭제",
+            cancelText: "취소",
+            variant: "destructive",
+        });
+        if (!ok) return;
         // slug 확인 (스토리지 폴더 삭제용)
         const target = posts.find((p) => p.id === id);
         const { error: err } = await browserClient
@@ -648,7 +657,7 @@ export default function PostsPanel({
                             <button
                                 onClick={handleSave}
                                 disabled={saving || !isDirty}
-                                className="rounded-lg bg-(--color-accent) px-5 py-2 text-xl font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
+                                className="rounded-lg bg-green-500 px-5 py-2 text-xl font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 disabled:opacity-50 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                             >
                                 {saving ? "저장 중..." : "저장"}
                             </button>
@@ -932,7 +941,7 @@ export default function PostsPanel({
                                     type="button"
                                     onClick={batchSetJobField}
                                     disabled={batchSaving || !batchJobField}
-                                    className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) hover:opacity-90 disabled:opacity-50"
+                                    className="rounded-lg bg-green-500 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 disabled:opacity-50 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                                 >
                                     적용
                                 </button>

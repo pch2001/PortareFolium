@@ -6,6 +6,7 @@ import {
     JobFieldSelector,
     type JobFieldItem,
 } from "@/components/admin/JobFieldSelector";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import type {
     ResumeSkillKeyword,
     ResumeWork,
@@ -101,6 +102,7 @@ export default function SkillEditorModal({
     jobFields,
     onSave,
 }: SkillEditorModalProps) {
+    const { confirm } = useConfirmDialog();
     const [form, setForm] = useState<FormState>(() =>
         buildInitialForm(initialSkill, initialCategoryName)
     );
@@ -169,7 +171,15 @@ export default function SkillEditorModal({
     }, [initialSkill, initialCategoryName]);
 
     // draft 삭제
-    const deleteDraft = useCallback(() => {
+    const deleteDraft = useCallback(async () => {
+        const ok = await confirm({
+            title: "임시 저장 삭제",
+            description: "임시 저장된 내용을 삭제하시겠습니까?",
+            confirmText: "삭제",
+            cancelText: "취소",
+            variant: "destructive",
+        });
+        if (!ok) return;
         try {
             localStorage.removeItem(DRAFT_KEY);
         } catch {
@@ -179,7 +189,7 @@ export default function SkillEditorModal({
         const f = buildInitialForm(initialSkill, initialCategoryName);
         setForm(f);
         setInitialRef(f);
-    }, [initialSkill, initialCategoryName]);
+    }, [confirm, initialSkill, initialCategoryName]);
 
     const isDirty = !formsEqual(form, initialRef);
 
@@ -570,7 +580,7 @@ export default function SkillEditorModal({
                     <button
                         disabled={!form.name.trim()}
                         onClick={handleSave}
-                        className="rounded-lg bg-(--color-accent) px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:opacity-50"
+                        className="rounded-lg bg-green-500 px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-green-400 disabled:opacity-50 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                     >
                         저장
                     </button>

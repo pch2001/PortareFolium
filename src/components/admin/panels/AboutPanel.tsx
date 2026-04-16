@@ -22,6 +22,7 @@ import {
     COMPETENCY_PLACEHOLDERS,
 } from "@/types/about";
 import { Button } from "@/components/ui/button";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Trash2 } from "lucide-react";
 import AdminSaveBar from "@/components/admin/AdminSaveBar";
 
@@ -36,6 +37,7 @@ function parseSectionText(text: string): string[] {
 }
 
 export default function AboutPanel() {
+    const { confirm } = useConfirmDialog();
     const [profileImage, setProfileImage] = useState("");
     const [imageUploading, setImageUploading] = useState(false);
     // resume_data 행 참조 (basics.image 단일 출처)
@@ -184,7 +186,16 @@ export default function AboutPanel() {
     };
 
     // Job Field별 소개 삭제
-    const handleRemoveIntro = (fieldId: string) => {
+    const handleRemoveIntro = async (fieldId: string) => {
+        const field = jobFields.find((item) => item.id === fieldId);
+        const ok = await confirm({
+            title: "소개 override 삭제",
+            description: `${field ? `${field.emoji} ${field.name}` : fieldId} 소개 override를 삭제하시겠습니까?`,
+            confirmText: "삭제",
+            cancelText: "취소",
+            variant: "destructive",
+        });
+        if (!ok) return;
         setIntroductions((prev) => {
             const next = { ...prev };
             delete next[fieldId];
@@ -335,7 +346,18 @@ export default function AboutPanel() {
                             <Button
                                 variant="destructive"
                                 size="sm"
-                                onClick={() => setProfileImage("")}
+                                onClick={async () => {
+                                    const ok = await confirm({
+                                        title: "프로필 이미지 삭제",
+                                        description:
+                                            "프로필 이미지를 삭제하시겠습니까?",
+                                        confirmText: "삭제",
+                                        cancelText: "취소",
+                                        variant: "destructive",
+                                    });
+                                    if (!ok) return;
+                                    setProfileImage("");
+                                }}
                             >
                                 <Trash2 size={13} />
                                 삭제
@@ -552,13 +574,15 @@ export default function AboutPanel() {
                                 </span>
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        if (
-                                            !confirm(
-                                                `Pillar ${idx + 1}을 삭제하시겠습니까?`
-                                            )
-                                        )
-                                            return;
+                                    onClick={async () => {
+                                        const ok = await confirm({
+                                            title: "Value Pillar 삭제",
+                                            description: `Pillar ${idx + 1}을 삭제하시겠습니까?`,
+                                            confirmText: "삭제",
+                                            cancelText: "취소",
+                                            variant: "destructive",
+                                        });
+                                        if (!ok) return;
                                         setValuePillars((prev) =>
                                             prev.filter((_, i) => i !== idx)
                                         );
@@ -723,7 +747,7 @@ export default function AboutPanel() {
                     variant="default"
                     onClick={handleSave}
                     disabled={saving}
-                    className="shrink-0 bg-green-600 px-8 text-white hover:bg-green-500"
+                    className="shrink-0 bg-green-500 px-8 text-white transition-colors hover:bg-green-400 dark:bg-green-600 dark:text-white dark:hover:bg-green-500"
                 >
                     {saving ? "저장 중..." : "변경사항 저장"}
                 </Button>
