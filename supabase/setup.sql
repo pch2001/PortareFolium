@@ -118,14 +118,13 @@ CREATE TABLE IF NOT EXISTS ai_agent_tokens (
     created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 콘텐츠 스냅샷 (MCP Agent 백업)
-CREATE TABLE IF NOT EXISTS content_snapshots (
-    id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    source_table   TEXT        NOT NULL,
-    record_id      TEXT        NOT NULL,
-    data           JSONB       NOT NULL,
-    triggered_by   TEXT        NOT NULL DEFAULT 'mcp_agent',
-    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- DB Snapshot
+CREATE TABLE IF NOT EXISTS database_snapshots (
+    id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    filename    TEXT        NOT NULL,
+    data        JSONB       NOT NULL,
+    table_names TEXT[]      NOT NULL DEFAULT '{}',
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- 에디터 상태 보존
@@ -147,7 +146,7 @@ CREATE INDEX IF NOT EXISTS idx_portfolio_slug    ON portfolio_items(slug);
 CREATE INDEX IF NOT EXISTS idx_portfolio_feat    ON portfolio_items(featured, order_idx);
 CREATE INDEX IF NOT EXISTS idx_books_slug        ON books(slug);
 CREATE INDEX IF NOT EXISTS idx_books_published   ON books(published, order_idx);
-CREATE INDEX IF NOT EXISTS idx_snapshots_lookup  ON content_snapshots(source_table, record_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_database_snapshots_created_at ON database_snapshots(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_editor_states_entity ON editor_states(entity_type, entity_slug, created_at DESC);
 
 -- ── updated_at 자동 갱신 트리거 ─────────────────────────────
@@ -183,33 +182,6 @@ CREATE OR REPLACE TRIGGER trg_site_config_updated_at
 CREATE OR REPLACE TRIGGER trg_books_updated_at
     BEFORE UPDATE ON books
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
-
--- ── 스냅샷 자동 정리 트리거 (최근 20건만 유지) ──────────────
-
-CREATE OR REPLACE FUNCTION prune_snapshots()
-RETURNS TRIGGER LANGUAGE plpgsql AS $$
-BEGIN
-    DELETE FROM content_snapshots
-    WHERE id IN (
-        SELECT id FROM content_snapshots
-        WHERE source_table = NEW.source_table AND record_id = NEW.record_id
-        ORDER BY created_at DESC
-        OFFSET 20
-    );
-    RETURN NEW;
-END;
-$$;
-
-DO $$ BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_trigger
-        WHERE tgname = 'trg_prune_snapshots'
-    ) THEN
-        CREATE TRIGGER trg_prune_snapshots
-            AFTER INSERT ON content_snapshots
-            FOR EACH ROW EXECUTE FUNCTION prune_snapshots();
-    END IF;
-END $$;
 
 -- ── Row Level Security ───────────────────────────────────────
 
@@ -288,11 +260,17 @@ CREATE POLICY "books_auth_all"
 -- ai_agent_tokens: 인증된 사용자만 접근
 ALTER TABLE ai_agent_tokens ENABLE ROW LEVEL SECURITY;
 
--- content_snapshots: 인증된 사용자만 접근
-ALTER TABLE content_snapshots ENABLE ROW LEVEL SECURITY;
+-- database_snapshots: 인증된 사용자만 접근
+ALTER TABLE database_snapshots ENABLE ROW LEVEL SECURITY;
 
 -- editor_states: 인증된 사용자만 접근
 ALTER TABLE editor_states ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "database_snapshots_admin_all"
+    ON database_snapshots FOR ALL
+    TO authenticated
+    USING (true)
+    WITH CHECK (true);
 
 CREATE POLICY "editor_states_admin_all"
     ON editor_states FOR ALL
@@ -311,6 +289,61 @@ $$;
 
 REVOKE ALL ON FUNCTION exec_sql(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION exec_sql(text) TO service_role;
+
+CREATE OR REPLACE FUNCTION create_database_snapshot()
+RETURNS TABLE (
+    id UUID,
+    filename TEXT,
+    table_names TEXT[],
+    created_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    snapshot_data JSONB := '{}'::jsonb;
+    current_rows JSONB;
+    current_table TEXT;
+    included_tables TEXT[] := ARRAY[]::TEXT[];
+    snapshot_time TIMESTAMPTZ := NOW();
+    snapshot_filename TEXT;
+BEGIN
+    snapshot_filename := 'supabase-db-snapshot-' ||
+        to_char(snapshot_time AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24-MI-SS"Z"') ||
+        '.json';
+
+    FOR current_table IN
+        SELECT tablename
+        FROM pg_catalog.pg_tables
+        WHERE schemaname = 'public'
+          AND tablename <> 'database_snapshots'
+        ORDER BY tablename
+    LOOP
+        EXECUTE format(
+            'SELECT COALESCE(jsonb_agg(to_jsonb(t)), ''[]''::jsonb) FROM public.%I t',
+            current_table
+        )
+        INTO current_rows;
+
+        snapshot_data := snapshot_data ||
+            jsonb_build_object(current_table, current_rows);
+        included_tables := array_append(included_tables, current_table);
+    END LOOP;
+
+    RETURN QUERY
+    INSERT INTO database_snapshots (filename, data, table_names, created_at)
+    VALUES (snapshot_filename, snapshot_data, included_tables, snapshot_time)
+    RETURNING
+        database_snapshots.id,
+        database_snapshots.filename,
+        database_snapshots.table_names,
+        database_snapshots.created_at;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION create_database_snapshot() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION create_database_snapshot() TO service_role;
 
 -- ── Storage: images 버킷 ─────────────────────────────────────
 
@@ -355,5 +388,5 @@ INSERT INTO site_config (key, value) VALUES
     ('seo_config',         '{"default_title":"PortareFolium","default_description":"포트폴리오 & 기술 블로그","default_og_image":""}'),
     ('resume_layout',      '"modern"'),
     -- 신규 설치: setup.sql이 최신 스키마를 적용하므로 현재 버전으로 초기화
-    ('db_schema_version',  '"0.11.21"')
+    ('db_schema_version',  '"0.11.68"')
 ON CONFLICT (key) DO NOTHING;

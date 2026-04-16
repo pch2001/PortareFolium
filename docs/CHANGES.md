@@ -1,5 +1,14 @@
 # CHANGES
 
+## v0.11.68 (2026-04-16)
+
+### feat: DB Snapshot을 전체 public schema 백업 방식으로 전환
+
+- `src/app/admin/actions/snapshots.ts`: `database_snapshots` 기준의 생성·목록·다운로드·삭제 서버 액션으로 전면 교체
+- `src/components/admin/panels/SnapshotsPanel.tsx`: 기존 MCP record snapshot 브라우저를 제거하고 `Take snapshot`, 생성 시각 표시, JSON 다운로드, 삭제 중심 UI로 재구성
+- `src/lib/mcp-tools.ts`: MCP write path의 `content_snapshots` 자동 백업 로직과 관련 안내 문구 제거
+- `src/lib/migrations.ts`, `supabase/setup.sql`, `supabase/migration-whole.sql`: `database_snapshots` 테이블과 `create_database_snapshot()` 함수 추가, 기존 `content_snapshots` 구조 제거, DB schema version `0.11.68` 반영
+
 ## v0.11.67 (2026-04-16)
 
 ### fix: SiteConfigPanel 제목 고정 + 내부 scroll 패턴 적용
