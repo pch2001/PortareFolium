@@ -543,93 +543,99 @@ export default function ResumePanel() {
                     </p>
                 )}
 
-                {/* 레이아웃 선택 */}
-                <section className="space-y-3 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
-                    <h3 className="text-xl font-bold text-(--color-foreground)">
-                        레이아웃
-                    </h3>
-                    <div className="flex gap-3">
-                        {(["classic", "modern"] as ResumeLayout[]).map((l) => (
-                            <button
-                                key={l}
-                                onClick={() => {
-                                    setResumeLayout(l);
-                                    saveLayout(l);
-                                }}
-                                className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize transition-opacity ${
-                                    resumeLayout === l
-                                        ? "bg-(--color-accent) text-(--color-on-accent)"
-                                        : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"
-                                }`}
-                            >
-                                {l}
-                            </button>
-                        ))}
-                    </div>
-                </section>
+                {/* 레이아웃 선택 — layout edit mode에서 숨김 */}
+                {!layoutEditMode && (
+                    <section className="space-y-3 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
+                        <h3 className="text-xl font-bold text-(--color-foreground)">
+                            레이아웃
+                        </h3>
+                        <div className="flex gap-3">
+                            {(["classic", "modern"] as ResumeLayout[]).map(
+                                (l) => (
+                                    <button
+                                        key={l}
+                                        onClick={() => {
+                                            setResumeLayout(l);
+                                            saveLayout(l);
+                                        }}
+                                        className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize transition-opacity ${
+                                            resumeLayout === l
+                                                ? "bg-(--color-accent) text-(--color-on-accent)"
+                                                : "border border-(--color-border) text-(--color-muted) hover:text-(--color-foreground)"
+                                        }`}
+                                    >
+                                        {l}
+                                    </button>
+                                )
+                            )}
+                        </div>
+                    </section>
+                )}
 
-                {/* 기본 정보 */}
-                <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
-                    <h3 className="text-xl font-bold text-(--color-foreground)">
-                        기본 정보
-                    </h3>
-                    <div className="tablet:flex-row tablet:gap-6 mb-4 flex flex-col items-start gap-4">
-                        {resumeData.basics?.image && (
-                            <img
-                                src={resumeData.basics.image}
-                                alt="Profile"
-                                className="tablet:h-48 tablet:w-48 h-32 w-32 shrink-0 rounded-full border border-(--color-border) object-cover"
+                {/* 기본 정보 — layout edit mode에서 숨김 */}
+                {!layoutEditMode && (
+                    <section className="space-y-4 rounded-xl border border-(--color-border) bg-(--color-surface) p-6">
+                        <h3 className="text-xl font-bold text-(--color-foreground)">
+                            기본 정보
+                        </h3>
+                        <div className="tablet:flex-row tablet:gap-6 mb-4 flex flex-col items-start gap-4">
+                            {resumeData.basics?.image && (
+                                <img
+                                    src={resumeData.basics.image}
+                                    alt="Profile"
+                                    className="tablet:h-48 tablet:w-48 h-32 w-32 shrink-0 rounded-full border border-(--color-border) object-cover"
+                                />
+                            )}
+                            <div className="max-w-full min-w-0 flex-1">
+                                <label className="text-sm font-medium text-(--color-muted)">
+                                    프로필 사진 (자동 업로드)
+                                </label>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    disabled={uploadingImage}
+                                    className={`mt-4 block max-w-full cursor-pointer rounded-lg border-2 border-(--color-border) px-4 py-2 text-sm font-semibold text-(--color-foreground) file:mr-4 file:rounded-lg file:border-0 file:bg-(--color-surface-subtle) file:px-4 file:py-2 file:text-sm file:font-semibold file:text-(--color-foreground) hover:file:bg-(--color-border) hover:file:text-(--color-foreground) disabled:opacity-50`}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
+                            <InputField
+                                label="이름 (Name)"
+                                value={resumeData.basics?.name || ""}
+                                onChange={(v) => updateBasics("name", v)}
                             />
-                        )}
-                        <div className="max-w-full min-w-0 flex-1">
-                            <label className="text-sm font-medium text-(--color-muted)">
-                                프로필 사진 (자동 업로드)
-                            </label>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImageUpload}
-                                disabled={uploadingImage}
-                                className={`mt-4 block max-w-full cursor-pointer rounded-lg border-2 border-(--color-border) px-4 py-2 text-sm font-semibold text-(--color-foreground) file:mr-4 file:rounded-lg file:border-0 file:bg-(--color-surface-subtle) file:px-4 file:py-2 file:text-sm file:font-semibold file:text-(--color-foreground) hover:file:bg-(--color-border) hover:file:text-(--color-foreground) disabled:opacity-50`}
+                            <InputField
+                                label="직함 (Label)"
+                                value={resumeData.basics?.label || ""}
+                                onChange={(v) => updateBasics("label", v)}
+                                placeholder="예: Frontend Developer"
+                            />
+                            <InputField
+                                label="이메일"
+                                value={resumeData.basics?.email || ""}
+                                onChange={(v) => updateBasics("email", v)}
+                            />
+                            <InputField
+                                label="전화번호"
+                                value={resumeData.basics?.phone || ""}
+                                onChange={(v) => updateBasics("phone", v)}
+                            />
+                            <InputField
+                                label="웹사이트 URL"
+                                value={resumeData.basics?.url || ""}
+                                onChange={(v) => updateBasics("url", v)}
                             />
                         </div>
-                    </div>
-
-                    <div className="tablet:grid-cols-2 grid grid-cols-1 gap-4">
-                        <InputField
-                            label="이름 (Name)"
-                            value={resumeData.basics?.name || ""}
-                            onChange={(v) => updateBasics("name", v)}
+                        <TextAreaField
+                            label="자기소개 (Summary)"
+                            value={resumeData.basics?.summary || ""}
+                            onChange={(v) => updateBasics("summary", v)}
+                            rows={4}
                         />
-                        <InputField
-                            label="직함 (Label)"
-                            value={resumeData.basics?.label || ""}
-                            onChange={(v) => updateBasics("label", v)}
-                            placeholder="예: Frontend Developer"
-                        />
-                        <InputField
-                            label="이메일"
-                            value={resumeData.basics?.email || ""}
-                            onChange={(v) => updateBasics("email", v)}
-                        />
-                        <InputField
-                            label="전화번호"
-                            value={resumeData.basics?.phone || ""}
-                            onChange={(v) => updateBasics("phone", v)}
-                        />
-                        <InputField
-                            label="웹사이트 URL"
-                            value={resumeData.basics?.url || ""}
-                            onChange={(v) => updateBasics("url", v)}
-                        />
-                    </div>
-                    <TextAreaField
-                        label="자기소개 (Summary)"
-                        value={resumeData.basics?.summary || ""}
-                        onChange={(v) => updateBasics("summary", v)}
-                        rows={4}
-                    />
-                </section>
+                    </section>
+                )}
 
                 {/* 커리어 타임라인 */}
                 <div

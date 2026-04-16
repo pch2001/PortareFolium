@@ -1,5 +1,11 @@
 # CHANGES
 
+## v0.11.48 (2026-04-16)
+
+### refactor: layout edit mode에서 레이아웃 선택 + 기본 정보 섹션 숨김
+
+- `src/components/admin/panels/ResumePanel.tsx`: `layoutEditMode` 활성화 시 레이아웃 selector (classic/modern)와 기본 정보 editor를 `{!layoutEditMode && ...}`로 조건부 렌더링. layout edit mode 진입 시 `ResumeLayoutEditor`만 표시
+
 ## v0.11.47 (2026-04-16)
 
 ### fix: Firefox E2E 실패 — "편집 종료" handler의 stale state revert 수정

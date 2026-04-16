@@ -45,6 +45,10 @@
 | 테스트 정리 | `src/__tests__/color-schemes.test.ts` (삭제), `mermaid-themes.test.ts`, `tailwind-colors.test.ts`, `tiptap-utils.test.ts` (축소) |
 | 문서 | `docs/CHANGES.md`, `docs/TEST.md`, `README.md`, `AGENTS.md` |
 
+### refactor: layout edit mode에서 레이아웃 선택 + 기본 정보 섹션 숨김
+
+- `ResumePanel.tsx`: layout edit mode 진입 시 레이아웃 selector, 기본 정보 editor 조건부 숨김 → `ResumeLayoutEditor`만 표시
+
 ### fix: Firefox E2E — "편집 종료" handler stale state revert 수정
 
 - `ResumePanel.tsx`: `initialSectionLayoutRef` 추가. save 시 ref 즉시 갱신, "편집 종료" handler에서 ref 기반 dirty 판정으로 Firefox batch flush 타이밍 차이 해소
