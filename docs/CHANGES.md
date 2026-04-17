@@ -1,5 +1,11 @@
 # CHANGES
 
+## v0.12.3 (2026-04-17)
+
+### fix: stale refresh token 에러 처리
+
+- `src/components/UserMenu.tsx`: `browserClient.auth.getSession()` 반환의 `error` 및 promise rejection을 처리. `AuthApiError: Invalid Refresh Token: Refresh Token Not Found`가 발생하면 `signOut({ scope: "local" })`로 localStorage의 stale 토큰만 정리 — 원격 세션은 건드리지 않음
+
 ## v0.12.2 (2026-04-17)
 
 ### fix: NotFound 페이지 setState-in-render 경고 제거 + Discord ack 지시 추가
