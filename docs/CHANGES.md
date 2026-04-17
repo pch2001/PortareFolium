@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.11.77 (2026-04-17)
+
+### feat: RichMarkdownEditor 이미지 thumbnail 선택 기능 추가
+
+- `src/components/admin/RichMarkdownEditor.tsx`: `onSetThumbnail` prop 추가, Tiptap Image 확장을 ReactNodeViewRenderer 기반으로 교체하여 WYSIWYG hover 시 "Set as thumbnail" 버튼 표시
+- `src/components/admin/panels/PostsPanel.tsx`: `onSetThumbnail` prop 연결
+- `src/components/admin/panels/PortfolioPanel.tsx`: `onSetThumbnail` prop 연결
+
 ## v0.11.76 (2026-04-17)
 
 ### fix: MigrationsPanel 미적용 안내 영역 우측 padding 보정
