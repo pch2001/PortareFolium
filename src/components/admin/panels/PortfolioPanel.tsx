@@ -612,60 +612,62 @@ export default function PortfolioPanel({
                     즉시 제공됩니다.
                 </p>
 
-                {/* 제목 입력 */}
-                <input
-                    type="text"
-                    value={form.title}
-                    onChange={(e) => {
-                        const t = e.target.value;
-                        setForm((f) => ({
-                            ...f,
-                            title: t,
-                            slug: slugLocked ? f.slug : toSlug(t),
-                        }));
-                    }}
-                    placeholder="프로젝트 이름을 입력하세요"
-                    className="w-full border-none bg-transparent py-4 text-3xl font-bold text-(--color-foreground) placeholder:text-(--color-muted) focus:outline-none"
-                />
-                {/* slug 입력 */}
-                <div className="flex items-center gap-2 border-t border-(--color-border) px-1 py-2">
-                    <span className="shrink-0 text-xs text-(--color-muted)">
-                        /{slugLocked ? "🔒" : "🔓"}
-                    </span>
+                <div className="rounded-xl transition-shadow focus-within:ring-2 focus-within:ring-(--color-accent)/40 focus-within:ring-inset">
+                    {/* 제목 입력 */}
                     <input
                         type="text"
-                        value={form.slug}
+                        value={form.title}
                         onChange={(e) => {
-                            setSlugLocked(true);
+                            const t = e.target.value;
                             setForm((f) => ({
                                 ...f,
-                                slug: e.target.value
-                                    .toLowerCase()
-                                    .replace(/\s+/g, "-")
-                                    .replace(
-                                        /[^a-z0-9가-힣ぁ-んァ-ヶ一-龥-]/g,
-                                        ""
-                                    )
-                                    .slice(0, 80),
+                                title: t,
+                                slug: slugLocked ? f.slug : toSlug(t),
                             }));
                         }}
-                        className="min-w-0 flex-1 bg-transparent text-xs text-(--color-muted) focus:text-(--color-foreground) focus:outline-none"
+                        placeholder="프로젝트 이름을 입력하세요"
+                        className="w-full border-none bg-transparent px-3 py-4 text-3xl font-bold text-(--color-foreground) placeholder:text-(--color-muted) focus:outline-none"
                     />
-                    {slugLocked && (
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setSlugLocked(false);
+                    {/* slug 입력 */}
+                    <div className="flex items-center gap-2 border-t border-(--color-border) px-3 py-2">
+                        <span className="shrink-0 text-xs text-(--color-muted)">
+                            /{slugLocked ? "🔒" : "🔓"}
+                        </span>
+                        <input
+                            type="text"
+                            value={form.slug}
+                            onChange={(e) => {
+                                setSlugLocked(true);
                                 setForm((f) => ({
                                     ...f,
-                                    slug: toSlug(f.title),
+                                    slug: e.target.value
+                                        .toLowerCase()
+                                        .replace(/\s+/g, "-")
+                                        .replace(
+                                            /[^a-z0-9가-힣ぁ-んァ-ヶ一-龥-]/g,
+                                            ""
+                                        )
+                                        .slice(0, 80),
                                 }));
                             }}
-                            className="shrink-0 rounded bg-(--color-surface-subtle) px-2 py-0.5 text-xs text-(--color-muted) hover:text-(--color-foreground)"
-                        >
-                            자동 생성
-                        </button>
-                    )}
+                            className="min-w-0 flex-1 bg-transparent text-xs text-(--color-muted) focus:text-(--color-foreground) focus:outline-none"
+                        />
+                        {slugLocked && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSlugLocked(false);
+                                    setForm((f) => ({
+                                        ...f,
+                                        slug: toSlug(f.title),
+                                    }));
+                                }}
+                                className="shrink-0 rounded bg-(--color-surface-subtle) px-2 py-0.5 text-xs text-(--color-muted) hover:text-(--color-foreground)"
+                            >
+                                자동 생성
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* 본문 에디터 */}
