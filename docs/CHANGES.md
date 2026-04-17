@@ -1,5 +1,11 @@
 # CHANGES
 
+## v0.11.92 (2026-04-17)
+
+### feat: Gantt Chart comment 표시 토글 추가
+
+- `src/components/admin/panels/GanttChartPanel.tsx`: 툴바에 "Comments ON/OFF" 토글 버튼 추가 (기본 OFF) — ON 시 각 task 아래에 full comment 노출, bar track 높이 44→60px 확장
+
 ## v0.11.91 (2026-04-17)
 
 ### fix: Gantt Chart task row를 compact 수평 레이아웃으로 변경
