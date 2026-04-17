@@ -2,7 +2,7 @@
 
 ## Summary
 
-Gantt Chart 패널 전면 재설계. CSV 업로드 방식을 폐기하고 Excel 스타일 인라인 테이블 편집 모달로 전환. category 필드 추가 및 카테고리별 색상 커스터마이징, compact row 레이아웃, comment 토글, JPG export 줌 버그 수정, 썸네일 버튼 위치 보정, Sonner toast, focus ring 클리핑 보정 등을 포함.
+Gantt Chart 패널 전면 재설계. CSV 업로드 방식을 폐기하고 Excel 스타일 인라인 테이블 편집 모달로 전환. category 필드 추가 및 카테고리별 색상 커스터마이징, compact row 레이아웃, comment 토글, JPG export 줌 버그 수정, 썸네일 버튼 위치 보정, Sonner toast 등을 포함.
 
 ---
 
@@ -30,10 +30,6 @@ Gantt Chart 패널 전면 재설계. CSV 업로드 방식을 폐기하고 Excel 
 - **thumbnail 버튼 위치 보정** (v0.11.83): image NodeView 내부 wrapper 기준 absolute overlay로 재배치, `global.css` prose 스타일 충돌 해결
 - **Sonner toast 추가** (v0.11.85–87): `sonner` 의존성, `src/components/ui/sonner.tsx` 신규, 전역 `Toaster` 연결, 썸네일 설정 성공 시 `toast.success` 피드백, 위치 `top-center`, 폰트/아이콘 보정
 
-### Admin 패널 기타
-
-- **focus ring clipping 보정** (v0.11.88): `PostsPanel` / `PortfolioPanel` title+slug 영역을 `focus-within` inset ring wrapper로 감싸 `overflow-hidden` 구조에서 focus ring이 잘리지 않도록 수정
-
 ### 문서
 
 - **README 릴리즈 구독 안내 추가**: Watch → Custom → Releases 설정 방법
@@ -53,8 +49,6 @@ Gantt Chart 패널 전면 재설계. CSV 업로드 방식을 폐기하고 Excel 
 | `src/components/ui/sonner.tsx` | 신규 |
 | `src/app/layout.tsx` | 수정 |
 | `src/styles/global.css` | 수정 |
-| `src/components/admin/panels/PostsPanel.tsx` | 수정 |
-| `src/components/admin/panels/PortfolioPanel.tsx` | 수정 |
 | `src/__tests__/gantt-chart.test.ts` | 수정 |
 | `docs/gantt-chart-sample.csv` | 수정 |
 | `README.md` | 수정 |
@@ -71,5 +65,4 @@ Gantt Chart 패널 전면 재설계. CSV 업로드 방식을 폐기하고 Excel 
 - [ ] JPG export: zoom 0.3 / 1.0 / 2.0 상태에서 각각 export — 여백 없는 전체 차트 확인
 - [ ] Comments 토글: OFF(기본) → ON 전환 시 comment 노출 및 bar 높이 확장 확인
 - [ ] Sonner toast: 썸네일 설정 클릭 후 top-center 토스트 표시 확인
-- [ ] focus ring: PostsPanel / PortfolioPanel title 필드 클릭 시 ring이 잘리지 않는지 확인
 - [ ] `pnpm exec vitest run` 전체 통과

@@ -1,5 +1,11 @@
 # CHANGES
 
+## v0.11.93 (2026-04-17)
+
+### revert: editor title focus ring 보정 되돌리기
+
+- `src/components/admin/panels/PostsPanel.tsx`, `src/components/admin/panels/PortfolioPanel.tsx`: v0.11.88의 title+slug `focus-within` inset ring wrapper 변경 제거
+
 ## v0.11.92 (2026-04-17)
 
 ### feat: Gantt Chart comment 표시 토글 추가
