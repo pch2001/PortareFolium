@@ -1,5 +1,37 @@
 # CHANGES
 
+## v0.11.89 (2026-04-17)
+
+### fix: GanttChartCategoryColorModal 색상 picker가 color square 옆에 열리도록 수정
+
+- `src/components/admin/panels/GanttChartCategoryColorModal.tsx`: hidden input + ref trigger 패턴 제거 → color input을 color square 버튼 내부에 `absolute inset-0 opacity-0` overlay로 삽입, picker가 버튼 위치 기준으로 열리도록 수정
+
+## v0.11.88 (2026-04-17)
+
+### fix: editor title 영역 focus ring 좌우 clipping 보정
+
+- `src/components/admin/panels/PostsPanel.tsx`, `src/components/admin/panels/PortfolioPanel.tsx`: title + slug 영역을 `focus-within` inset ring wrapper로 감싸고 좌우 padding을 추가해 focus ring이 상위 `overflow-hidden` 구조에서 잘리지 않도록 수정
+
+## v0.11.87 (2026-04-17)
+
+### fix: Sonner toast font와 success icon 시각 피드백 보정
+
+- `src/components/ui/sonner.tsx`: toast에 프로젝트 기본 `--font-sans` 적용
+- `src/components/ui/sonner.tsx`: success icon을 green `CheckCircle2`로 교체해 성공 상태를 시각적으로 구분
+
+## v0.11.86 (2026-04-17)
+
+### fix: Sonner toast 위치를 top-center로 변경
+
+- `src/components/ui/sonner.tsx`: 전역 `Toaster` 기본 위치를 `bottom-right`에서 `top-center`로 변경
+
+## v0.11.85 (2026-04-17)
+
+### fix: thumbnail 설정 성공 시 Sonner toast 추가
+
+- `sonner` 의존성 추가, `src/components/ui/sonner.tsx` 신규, `src/app/layout.tsx`에 전역 `Toaster` 연결
+- `src/components/admin/RichMarkdownEditor.tsx`: `썸네일로 설정` 클릭 후 `toast.success("썸네일로 설정됨")` 호출로 성공 피드백 추가
+
 ## v0.11.84 (2026-04-17)
 
 ### fix: Gantt Chart JPG export 줌 무관하게 항상 100% 크기로 캡처

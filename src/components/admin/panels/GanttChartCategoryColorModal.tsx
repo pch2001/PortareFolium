@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { browserClient } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import type { GanttChartArchive } from "@/lib/gantt-chart";
@@ -30,7 +30,6 @@ export default function GanttChartCategoryColorModal({
     onClose,
     onSaved,
 }: Props) {
-    const colorInputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
     const [entries, setEntries] = useState<CategoryEntry[]>(() => {
         const uniqueCategories = [
             ...new Set(archive.tasks.map((t) => t.category).filter(Boolean)),
@@ -154,38 +153,26 @@ export default function GanttChartCategoryColorModal({
                                     />
                                     <button
                                         type="button"
-                                        onClick={() =>
-                                            colorInputRefs.current
-                                                .get(entry.originalName)
-                                                ?.click()
-                                        }
-                                        className="h-8 w-8 shrink-0 rounded-lg border-2 border-(--color-border) shadow-sm transition-transform hover:scale-110"
+                                        className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg border-2 border-(--color-border) shadow-sm transition-transform hover:scale-110"
                                         style={{
                                             backgroundColor: entry.color,
                                         }}
                                         title={entry.color}
-                                    />
-                                    <input
-                                        ref={(el) => {
-                                            if (el)
-                                                colorInputRefs.current.set(
+                                    >
+                                        <input
+                                            type="color"
+                                            value={entry.color}
+                                            onChange={(e) =>
+                                                updateEntry(
                                                     entry.originalName,
-                                                    el
-                                                );
-                                            else
-                                                colorInputRefs.current.delete(
-                                                    entry.originalName
-                                                );
-                                        }}
-                                        type="color"
-                                        value={entry.color}
-                                        onChange={(e) =>
-                                            updateEntry(entry.originalName, {
-                                                color: e.target.value,
-                                            })
-                                        }
-                                        className="hidden"
-                                    />
+                                                    {
+                                                        color: e.target.value,
+                                                    }
+                                                )
+                                            }
+                                            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                                        />
+                                    </button>
                                 </div>
                             ))}
                         </div>
