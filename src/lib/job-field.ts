@@ -52,3 +52,11 @@ export function normalizeJobFieldList(
         .map((item) => normalizeJobFieldValue(item))
         .filter(Boolean);
 }
+
+// 신규 생성 기본 job field 목록 생성
+export function getInitialJobFieldSelection(
+    activeJobField: string | null | undefined
+): string[] {
+    const normalized = normalizeJobFieldValue(activeJobField);
+    return normalized ? [normalized] : [];
+}

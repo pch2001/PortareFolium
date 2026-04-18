@@ -24,7 +24,10 @@ import EditorStatePreservation from "@/components/admin/EditorStatePreservation"
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { useKeyboardSave } from "@/lib/hooks/useKeyboardSave";
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
-import { normalizeJobFieldList } from "@/lib/job-field";
+import {
+    getInitialJobFieldSelection,
+    normalizeJobFieldList,
+} from "@/lib/job-field";
 import {
     JobFieldBadges,
     type JobFieldItem,
@@ -232,7 +235,7 @@ export default function BooksSubPanel({
         const base: BookForm = {
             ...EMPTY_FORM,
             order_idx: books.length,
-            jobField: activeJobField ? [activeJobField] : [],
+            jobField: getInitialJobFieldSelection(activeJobField),
         };
         initialFormRef.current = base;
         setForm(base);

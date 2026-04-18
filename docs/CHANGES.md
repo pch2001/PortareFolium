@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.9 (2026-04-18)
+
+### test: active job field 정규화 회귀 테스트 추가
+
+- `src/lib/job-field.ts`: 신규 생성 기본값 helper `getInitialJobFieldSelection()` 추가
+- `src/__tests__/job-field.test.ts`: `"game"` 형태의 잘못 저장된 값이 정규화되고 신규 생성 기본값으로 `["game"]`이 되는지 검증하는 테스트 추가
+- `src/components/admin/panels/PostsPanel.tsx`, `PortfolioPanel.tsx`, `BooksSubPanel.tsx`: 신규 생성 기본 job field를 helper로 통일
+
 ## v0.12.8 (2026-04-18)
 
 ### fix: active job field 저장값의 이중 문자열화 제거

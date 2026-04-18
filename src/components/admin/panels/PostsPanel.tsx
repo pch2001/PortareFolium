@@ -28,7 +28,11 @@ import EditorStatePreservation from "@/components/admin/EditorStatePreservation"
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { useKeyboardSave } from "@/lib/hooks/useKeyboardSave";
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
-import { normalizeJobFieldList, normalizeJobFieldValue } from "@/lib/job-field";
+import {
+    getInitialJobFieldSelection,
+    normalizeJobFieldList,
+    normalizeJobFieldValue,
+} from "@/lib/job-field";
 import {
     JobFieldBadges,
     type JobFieldItem,
@@ -327,7 +331,7 @@ export default function PostsPanel({
     const openNew = () => {
         const base: PostForm = {
             ...EMPTY_FORM,
-            jobField: activeJobField ? [activeJobField] : [],
+            jobField: getInitialJobFieldSelection(activeJobField),
         };
         initialFormRef.current = base;
         savedSlugRef.current = "";
