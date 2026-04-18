@@ -1,5 +1,17 @@
 # CHANGES
 
+## v0.12.15 (2026-04-18)
+
+### feat: editor open T3 안전망 + slug rename snapshot URL rewrite
+
+- `src/lib/snapshot-cleanup.ts`:
+    - `maybeCleanupOnOpen(entityType, entitySlug, args)` — `editor_states.count = 0`인 경우만 full true-orphan cleanup 실행 (count > 0이면 R2 호출 0). 외부에서 snapshot이 clear된 엣지 케이스 복구
+    - `rewriteSnapshotUrls(entityType, entitySlug, oldFolder, newFolder)` — slug rename 시 Initial/Auto-save/Bookmark 모든 snapshot.content의 folder prefix를 새 slug로 일괄 치환
+- `src/components/admin/panels/PostsPanel.tsx`, `PortfolioPanel.tsx`:
+    - `openEdit`에서 `maybeCleanupOnOpen` 호출 (T3 안전망)
+    - `migrateAssetsIfNeeded`에서 `moveStorageFolder` 뒤에 `rewriteSnapshotUrls` 호출 — slug rename 후 snapshot이 옛 prefix를 참조해 false-orphan 판정되는 문제 제거
+- `src/components/admin/EditorStatePreservation.tsx`: backdrop `z-[100]` → `z-100` Tailwind 네이티브 syntax로 정리
+
 ## v0.12.14 (2026-04-18)
 
 ### feat: snapshot-delete + 본문 image-remove 시 true-orphan cleanup 연동

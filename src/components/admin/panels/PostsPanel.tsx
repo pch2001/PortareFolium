@@ -12,6 +12,10 @@ import {
     extractKeysFromText,
     baseKey,
 } from "@/lib/orphan-cleanup";
+import {
+    rewriteSnapshotUrls,
+    maybeCleanupOnOpen,
+} from "@/lib/snapshot-cleanup";
 import { toSlug, uniqueSlug } from "@/lib/slug";
 import { revalidatePost } from "@/app/admin/actions/revalidate";
 import {
@@ -300,8 +304,15 @@ export default function PostsPanel({
         og_image: form.og_image || null,
     });
 
-    // 편집 화면 열기
+    // 편집 화면 열기 — T3 안전망: snapshot 0건이면 full true-orphan cleanup
     const openEdit = (post: Post) => {
+        void maybeCleanupOnOpen("post", post.slug, {
+            folderPath: `blog/${post.slug}`,
+            entityType: "post",
+            entitySlug: post.slug,
+            currentContent: post.content,
+            thumbnail: post.thumbnail ?? "",
+        });
         const jf = post.job_field;
         const f: PostForm = {
             slug: post.slug,
@@ -356,6 +367,12 @@ export default function PostsPanel({
         setTransferring(true);
         try {
             await moveStorageFolder(`blog/${oldSlug}`, `blog/${newSlug}`);
+            await rewriteSnapshotUrls(
+                "post",
+                oldSlug,
+                `blog/${oldSlug}`,
+                `blog/${newSlug}`
+            );
             const updated = replaceImageUrls(
                 form.content,
                 `blog/${oldSlug}`,

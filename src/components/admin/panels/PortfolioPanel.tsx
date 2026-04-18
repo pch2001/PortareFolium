@@ -12,6 +12,10 @@ import {
     extractKeysFromText,
     baseKey,
 } from "@/lib/orphan-cleanup";
+import {
+    rewriteSnapshotUrls,
+    maybeCleanupOnOpen,
+} from "@/lib/snapshot-cleanup";
 import { toSlug } from "@/lib/slug";
 import { revalidatePortfolioItem } from "@/app/admin/actions/revalidate";
 import {
@@ -337,6 +341,13 @@ export default function PortfolioPanel({
     });
 
     const openEdit = (item: PortfolioItem) => {
+        void maybeCleanupOnOpen("portfolio", item.slug, {
+            folderPath: `portfolio/${item.slug}`,
+            entityType: "portfolio",
+            entitySlug: item.slug,
+            currentContent: item.content,
+            thumbnail: item.thumbnail ?? "",
+        });
         const f = itemToForm(item);
         initialFormRef.current = f;
         savedSlugRef.current = item.slug;
@@ -372,6 +383,12 @@ export default function PortfolioPanel({
         setTransferring(true);
         try {
             await moveStorageFolder(
+                `portfolio/${oldSlug}`,
+                `portfolio/${newSlug}`
+            );
+            await rewriteSnapshotUrls(
+                "portfolio",
+                oldSlug,
                 `portfolio/${oldSlug}`,
                 `portfolio/${newSlug}`
             );
