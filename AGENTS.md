@@ -336,7 +336,9 @@ src/
 │   ├── agent-token.ts                  # Agent 토큰 검증 유틸
 │   ├── toc.ts                          # 목차 생성
 │   ├── r2.ts                           # Cloudflare R2 S3 호환 client (Vercel 서버 런타임)
-│   ├── image-upload.ts                 # 이미지 업로드 (R2 API route 경유) + 에셋 이전/삭제
+│   ├── image-upload.ts                 # 이미지 업로드 (R2 API route 경유) + 에셋 이전/삭제 + deleteStorageKeys
+│   ├── orphan-cleanup.ts               # content/thumbnail/snapshot 참조 union 기반 true-orphan R2 key 삭제 (sidecar-aware)
+│   ├── snapshot-cleanup.ts             # editor_states snapshot 조회 + slug rename 시 URL 재작성 + editor open 시 안전망 cleanup
 │   ├── gantt-chart.ts                  # Gantt Chart CSV 파싱 + timeline 빌드 + bar/color scheme 정의
 │   ├── job-field.ts                    # 직군 필드 유틸
 │   ├── mermaid-render.ts               # Mermaid 렌더링
