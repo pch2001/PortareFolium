@@ -1,5 +1,18 @@
 # CHANGES
 
+## v0.12.14 (2026-04-18)
+
+### feat: snapshot-delete + 본문 image-remove 시 true-orphan cleanup 연동
+
+- `src/lib/snapshot-cleanup.ts`: `triggerSnapshotCleanup(args)` helper — fire-and-forget cleanup 호출
+- `src/components/admin/EditorStatePreservation.tsx`:
+    - `folderPath` / `thumbnail` props 추가 (post/portfolio 한정 cleanup 활성화)
+    - `fireCleanup` callback 통합 — init 종료, autosave eviction, `handleDelete`, `handleDeleteAll` 4개 지점에서 호출
+    - `currentContent` / `thumbnail` ref로 stale 회피
+- `src/components/admin/panels/PostsPanel.tsx`, `PortfolioPanel.tsx`:
+    - `EditorStatePreservation`에 `folderPath` + `thumbnail` 전달
+    - `RichMarkdownEditor`에 `onImagesRemoved` 핸들러 — 1초 debounce 후 받은 URL 배열을 `extractKeysFromText` + `baseKey`로 변환해 `cleanupTrueOrphans({ candidates })` 호출 (Trigger 1 parent-side wiring)
+
 ## v0.12.13 (2026-04-18)
 
 ### feat: RichMarkdownEditor drag-drop + paste 이미지 업로드 + URL handling

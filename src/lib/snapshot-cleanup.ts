@@ -1,4 +1,4 @@
-// editor_states snapshot 조회 및 snapshot 삭제 + true-orphan cleanup wrapper
+// editor_states snapshot 조회 + snapshot 삭제 후 true-orphan cleanup helper
 import { browserClient } from "@/lib/supabase";
 import { cleanupTrueOrphans, type CleanupArgs } from "@/lib/orphan-cleanup";
 
@@ -22,25 +22,11 @@ export async function loadSnapshotsContent(
     }
 }
 
-// snapshot ids 삭제 후 true-orphan cleanup — 6개 진입점 통합 wrapper
-// candidates는 삭제 직전 snapshot content에서 추출한 base key 목록
-export async function deleteSnapshotsAndCleanup(
-    ids: string[],
-    args: CleanupArgs
-): Promise<void> {
-    if (!browserClient || ids.length === 0) return;
-    try {
-        await browserClient.from("editor_states").delete().in("id", ids);
-    } catch (e) {
-        console.error(
-            `[snapshot-cleanup::deleteSnapshotsAndCleanup] snapshot delete 실패`,
-            e
-        );
-        return;
-    }
+// snapshot 삭제 직후 호출 — true-orphan cleanup을 background에 fire-and-forget
+export function triggerSnapshotCleanup(args: CleanupArgs): void {
     cleanupTrueOrphans(args).catch((e) => {
         console.error(
-            `[snapshot-cleanup::deleteSnapshotsAndCleanup] cleanup 실패`,
+            `[snapshot-cleanup::triggerSnapshotCleanup] cleanup 실패`,
             e
         );
     });

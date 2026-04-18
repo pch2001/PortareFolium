@@ -7,6 +7,11 @@ import {
     deleteStorageFolder,
     replaceImageUrls,
 } from "@/lib/image-upload";
+import {
+    cleanupTrueOrphans,
+    extractKeysFromText,
+    baseKey,
+} from "@/lib/orphan-cleanup";
 import { toSlug, uniqueSlug } from "@/lib/slug";
 import { revalidatePost } from "@/app/admin/actions/revalidate";
 import {
@@ -622,6 +627,29 @@ export default function PostsPanel({
                         onSetThumbnail={(url) =>
                             setForm((f) => ({ ...f, thumbnail: url }))
                         }
+                        onImagesRemoved={(urls) => {
+                            const folder = `blog/${form.slug || "untitled"}`;
+                            const keys = urls.flatMap((u) =>
+                                extractKeysFromText(u, folder)
+                            );
+                            if (keys.length === 0) return;
+                            const bases = Array.from(
+                                new Set(keys.map(baseKey))
+                            );
+                            cleanupTrueOrphans({
+                                folderPath: folder,
+                                entityType: "post",
+                                entitySlug: form.slug || "new",
+                                currentContent: form.content,
+                                thumbnail: form.thumbnail,
+                                candidates: bases,
+                            }).catch((e) => {
+                                console.error(
+                                    "[PostsPanel::onImagesRemoved] cleanup 실패",
+                                    e
+                                );
+                            });
+                        }}
                     />
                 </div>
 
@@ -707,6 +735,8 @@ export default function PostsPanel({
                     isOpen={stateModalOpen}
                     onClose={() => setStateModalOpen(false)}
                     onSnapshotCountChange={(total) => setSnapshotCount(total)}
+                    folderPath={`blog/${form.slug || "untitled"}`}
+                    thumbnail={form.thumbnail}
                 />
             </div>
         );
