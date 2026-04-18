@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.24 (2026-04-19)
+
+### fix: Firefox WebKit lightbox E2E 클릭 타이밍 회귀 보정
+
+- `e2e/content-rendering.spec.ts`: `content-rendering` suite를 serial로 고정해 `beforeAll`의 `/blog` 접근 타이밍 충돌을 방지
+- `e2e/content-rendering.spec.ts`: lightbox 대상 이미지를 `.post-content img[data-lightbox-idx]` 기준으로 기다린 뒤 `scrollIntoViewIfNeeded()`와 `complete/naturalWidth` poll을 거쳐 선택하도록 helper 보강
+- `e2e/content-rendering.spec.ts`: Firefox/WebKit의 visibility 판정 차이를 피하기 위해 lightbox 이미지 클릭을 `force: true`로 변경
+
 ## v0.12.23 (2026-04-19)
 
 ### feat: lightbox v2 Sub-A~D 추가
