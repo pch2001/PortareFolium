@@ -2,7 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronLeft, ChevronRight, Play, X } from "lucide-react";
+import {
+    ChevronLeft,
+    ChevronRight,
+    Play,
+    Repeat,
+    RotateCcw,
+    X,
+    ZoomIn,
+    ZoomOut,
+} from "lucide-react";
 
 type LightboxImage = {
     alt: string;
@@ -24,7 +33,6 @@ type ImageLightboxProps = {
 };
 
 const FILMSTRIP_RADIUS = 5;
-const FILMSTRIP_WINDOW = FILMSTRIP_RADIUS * 2 + 1;
 const MAX_SCALE = 4;
 const MIN_SCALE = 1;
 const SCALE_STEP = 0.25;
@@ -46,6 +54,28 @@ function getYoutubeThumbnail(videoId: string): string {
 // 값 clamp
 function clamp(value: number, min: number, max: number): number {
     return Math.min(max, Math.max(min, value));
+}
+
+// 이미지 overflow 계산
+function getImageOverflow(
+    frame: HTMLDivElement | null,
+    image: HTMLImageElement | null,
+    scale: number
+) {
+    if (!frame || !image) {
+        return {
+            overflowX: 0,
+            overflowY: 0,
+        };
+    }
+
+    const scaledWidth = image.clientWidth * scale;
+    const scaledHeight = image.clientHeight * scale;
+
+    return {
+        overflowX: Math.max(0, (scaledWidth - frame.clientWidth) / 2),
+        overflowY: Math.max(0, (scaledHeight - frame.clientHeight) / 2),
+    };
 }
 
 type FilmstripThumbnailProps = {
@@ -82,9 +112,9 @@ function FilmstripThumbnail({
             aria-label="filmstrip 이미지로 이동"
             aria-current={active ? "true" : undefined}
             onClick={onSelect}
-            className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-md border-2 transition-all ${
+            className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition-all ${
                 active
-                    ? "scale-110 border-(--color-accent)"
+                    ? "scale-105 border-(--color-accent)"
                     : "border-white/20 opacity-60 hover:opacity-100"
             }`}
         >
@@ -116,13 +146,13 @@ function collectMedia(root: Element): LightboxMedia[] {
     const nodes = Array.from(
         root.querySelectorAll<HTMLElement>("img, .youtube-embed-wrapper")
     );
-    const media: LightboxMedia[] = [];
+    const nextMedia: LightboxMedia[] = [];
 
     nodes.forEach((node) => {
         if (node.matches("img")) {
             const image = node as HTMLImageElement;
             if (!image.src) return;
-            media.push({
+            nextMedia.push({
                 type: "image",
                 src: image.src,
                 alt: image.alt ?? "",
@@ -133,7 +163,7 @@ function collectMedia(root: Element): LightboxMedia[] {
         if (node.matches(".youtube-embed-wrapper")) {
             const videoId = node.getAttribute("data-youtube-id")?.trim();
             if (!videoId) return;
-            media.push({
+            nextMedia.push({
                 type: "youtube",
                 videoId,
                 title: "YouTube video",
@@ -142,10 +172,10 @@ function collectMedia(root: Element): LightboxMedia[] {
         }
     });
 
-    return media;
+    return nextMedia;
 }
 
-// 본문 이미지 lightbox — contentSelector 하위 media 스캔 후 click wiring
+// 본문 이미지 lightbox
 export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
     const [media, setMedia] = useState<LightboxMedia[]>([]);
     const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -153,7 +183,11 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
     const [loopEnabled, setLoopEnabled] = useState(false);
     const [scale, setScale] = useState(1);
     const [translate, setTranslate] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [canPanImage, setCanPanImage] = useState(false);
     const mountedRef = useRef(false);
+    const imageRef = useRef<HTMLImageElement>(null);
+    const mediaFrameRef = useRef<HTMLDivElement>(null);
     const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
     const pinchRef = useRef<{ distance: number; startScale: number } | null>(
         null
@@ -164,21 +198,20 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
         x: number;
         y: number;
     } | null>(null);
-    const mediaFrameRef = useRef<HTMLDivElement>(null);
-    const [isDragging, setIsDragging] = useState(false);
+
+    const current = openIndex == null ? null : (media[openIndex] ?? null);
 
     const clampTranslate = useCallback(
         (nextScale: number, nextTranslate: { x: number; y: number }) => {
-            const frame = mediaFrameRef.current;
-            if (!frame || nextScale <= 1) return { x: 0, y: 0 };
-
-            const { width, height } = frame.getBoundingClientRect();
-            const maxX = (width * nextScale - width) / 2;
-            const maxY = (height * nextScale - height) / 2;
+            const { overflowX, overflowY } = getImageOverflow(
+                mediaFrameRef.current,
+                imageRef.current,
+                nextScale
+            );
 
             return {
-                x: clamp(nextTranslate.x, -maxX, maxX),
-                y: clamp(nextTranslate.y, -maxY, maxY),
+                x: clamp(nextTranslate.x, -overflowX, overflowX),
+                y: clamp(nextTranslate.y, -overflowY, overflowY),
             };
         },
         []
@@ -188,10 +221,37 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
         setScale(1);
         setTranslate({ x: 0, y: 0 });
         setIsDragging(false);
+        setCanPanImage(false);
         swipeStartRef.current = null;
         pinchRef.current = null;
         panRef.current = null;
     }, []);
+
+    const syncPanCapability = useCallback(() => {
+        if (current?.type !== "image") {
+            setCanPanImage(false);
+            return;
+        }
+
+        const { overflowX, overflowY } = getImageOverflow(
+            mediaFrameRef.current,
+            imageRef.current,
+            scale
+        );
+        const nextCanPan = overflowX > 0 || overflowY > 0;
+
+        setCanPanImage(nextCanPan);
+        if (!nextCanPan) {
+            setTranslate({ x: 0, y: 0 });
+            setIsDragging(false);
+            panRef.current = null;
+            return;
+        }
+
+        setTranslate((currentTranslate) =>
+            clampTranslate(scale, currentTranslate)
+        );
+    }, [clampTranslate, current?.type, scale]);
 
     const applyScale = useCallback(
         (updater: number | ((currentScale: number) => number)) => {
@@ -201,9 +261,11 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                         ? updater(currentScale)
                         : updater;
                 const nextScale = clamp(rawScale, MIN_SCALE, MAX_SCALE);
+
                 setTranslate((currentTranslate) =>
                     clampTranslate(nextScale, currentTranslate)
                 );
+
                 return nextScale;
             });
         },
@@ -293,7 +355,7 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
             root.removeEventListener("click", handleContentClick);
             mountedRef.current = false;
         };
-    }, [contentSelector, scanMedia, handleContentClick]);
+    }, [contentSelector, handleContentClick, scanMedia]);
 
     const close = useCallback(() => {
         setOpenIndex(null);
@@ -302,24 +364,26 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
     }, [resetImageTransform]);
 
     const goPrev = useCallback(() => {
-        setOpenIndex((i) => {
-            if (i == null) return i;
-            if (i <= 0) {
-                return loopEnabled && media.length > 0 ? media.length - 1 : i;
+        setOpenIndex((index) => {
+            if (index == null) return index;
+            if (index <= 0) {
+                return loopEnabled && media.length > 0
+                    ? media.length - 1
+                    : index;
             }
-            return i - 1;
+            return index - 1;
         });
         setPlayingVideoId(null);
         resetImageTransform();
     }, [loopEnabled, media.length, resetImageTransform]);
 
     const goNext = useCallback(() => {
-        setOpenIndex((i) => {
-            if (i == null) return i;
-            if (i >= media.length - 1) {
-                return loopEnabled && media.length > 0 ? 0 : i;
+        setOpenIndex((index) => {
+            if (index == null) return index;
+            if (index >= media.length - 1) {
+                return loopEnabled && media.length > 0 ? 0 : index;
             }
-            return i + 1;
+            return index + 1;
         });
         setPlayingVideoId(null);
         resetImageTransform();
@@ -336,12 +400,13 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
             else if (e.key === "ArrowLeft") goPrev();
             else if (e.key === "ArrowRight") goNext();
         };
+
         window.addEventListener("keydown", onKey);
         return () => {
             window.removeEventListener("keydown", onKey);
             document.body.style.overflow = prevOverflow;
         };
-    }, [openIndex, close, goPrev, goNext]);
+    }, [close, goNext, goPrev, openIndex]);
 
     useEffect(() => {
         if (openIndex == null) return;
@@ -349,10 +414,51 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
         resetImageTransform();
     }, [openIndex, resetImageTransform]);
 
+    useEffect(() => {
+        if (openIndex == null) return;
+
+        syncPanCapability();
+
+        const onResize = () => syncPanCapability();
+        window.addEventListener("resize", onResize);
+
+        return () => {
+            window.removeEventListener("resize", onResize);
+        };
+    }, [openIndex, syncPanCapability]);
+
+    useEffect(() => {
+        if (!isDragging || !canPanImage) return;
+
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!panRef.current) return;
+            const nextTranslate = {
+                x:
+                    panRef.current.startTranslateX +
+                    (e.clientX - panRef.current.x),
+                y:
+                    panRef.current.startTranslateY +
+                    (e.clientY - panRef.current.y),
+            };
+            setTranslate(clampTranslate(scale, nextTranslate));
+        };
+
+        const stopDragging = () => {
+            panRef.current = null;
+            setIsDragging(false);
+        };
+
+        window.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("mouseup", stopDragging);
+
+        return () => {
+            window.removeEventListener("mousemove", handleMouseMove);
+            window.removeEventListener("mouseup", stopDragging);
+        };
+    }, [canPanImage, clampTranslate, isDragging, scale]);
+
     if (openIndex == null || media.length === 0) return null;
     if (typeof document === "undefined") return null;
-
-    const current = media[openIndex];
     if (!current) return null;
 
     const atFirst = openIndex <= 0;
@@ -372,73 +478,28 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
         winEnd = total;
     }
     winStart = Math.max(0, winStart);
+
     const filmstrip = media.slice(winStart, winEnd);
     const shouldShowFilmstrip = total > 1;
     const caption =
         current.type === "image" ? current.alt?.trim() || "" : current.title;
+    const controlButtonClass =
+        "flex h-11 w-11 items-center justify-center rounded-full bg-black/72 text-white transition-colors hover:bg-black/86";
+    const pillButtonClass =
+        "inline-flex h-11 items-center gap-2 rounded-full bg-black/72 px-4 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-black/86";
+    const navButtonClass =
+        "absolute top-1/2 z-20 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white transition-colors hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-25";
 
     return createPortal(
         <div
             role="dialog"
             aria-modal="true"
             aria-label="이미지 확대 보기"
-            className="fixed inset-0 z-[120] flex flex-col bg-black/80 backdrop-blur-sm"
+            className="fixed inset-0 z-[120] bg-black/88 backdrop-blur-sm"
             onClick={close}
         >
-            <button
-                type="button"
-                aria-label="닫기"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    close();
-                }}
-                className="absolute top-4 right-4 z-10 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
-            >
-                <X className="h-5 w-5" />
-            </button>
-
-            <button
-                type="button"
-                aria-label="이전 이미지"
-                disabled={!canGoPrev}
-                onClick={(e) => {
-                    e.stopPropagation();
-                    goPrev();
-                }}
-                className="absolute inset-y-0 left-0 z-10 flex w-24 items-center justify-start bg-linear-to-r from-black/35 to-transparent pl-4 text-white transition-colors hover:from-black/55 disabled:cursor-not-allowed disabled:opacity-20"
-            >
-                <span className="flex h-full items-center">
-                    <ChevronLeft className="h-8 w-8" />
-                </span>
-            </button>
-
-            <button
-                type="button"
-                aria-label="다음 이미지"
-                disabled={!canGoNext}
-                onClick={(e) => {
-                    e.stopPropagation();
-                    goNext();
-                }}
-                className="absolute inset-y-0 right-0 z-10 flex w-24 items-center justify-end bg-linear-to-l from-black/35 to-transparent pr-4 text-white transition-colors hover:from-black/55 disabled:cursor-not-allowed disabled:opacity-20"
-            >
-                <span className="flex h-full items-center">
-                    <ChevronRight className="h-8 w-8" />
-                </span>
-            </button>
-
             <div
-                className="flex flex-1 items-center justify-center px-16 py-8"
-                onClick={(e) => e.stopPropagation()}
-                onWheel={(e) => {
-                    if (current.type !== "image") return;
-                    e.preventDefault();
-                    applyScale(
-                        (currentScale) =>
-                            currentScale +
-                            (e.deltaY < 0 ? SCALE_STEP : -SCALE_STEP)
-                    );
-                }}
+                className="flex h-full w-full items-center justify-center"
                 onTouchStart={(e) => {
                     if (current.type !== "image") {
                         const touch = e.touches[0];
@@ -453,12 +514,11 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                     if (e.touches.length === 2) {
                         const [a, b] = [e.touches[0], e.touches[1]];
                         if (!a || !b) return;
-                        const distance = Math.hypot(
-                            a.clientX - b.clientX,
-                            a.clientY - b.clientY
-                        );
                         pinchRef.current = {
-                            distance,
+                            distance: Math.hypot(
+                                a.clientX - b.clientX,
+                                a.clientY - b.clientY
+                            ),
                             startScale: scale,
                         };
                         swipeStartRef.current = null;
@@ -469,7 +529,7 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                     const touch = e.touches[0];
                     if (!touch) return;
 
-                    if (scale > 1) {
+                    if (canPanImage) {
                         panRef.current = {
                             x: touch.clientX,
                             y: touch.clientY,
@@ -502,7 +562,11 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                         return;
                     }
 
-                    if (e.touches.length === 1 && panRef.current && scale > 1) {
+                    if (
+                        e.touches.length === 1 &&
+                        panRef.current &&
+                        canPanImage
+                    ) {
                         const touch = e.touches[0];
                         if (!touch) return;
                         const nextTranslate = {
@@ -528,7 +592,7 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                     swipeStartRef.current = null;
                     if (!touch || !start) return;
 
-                    if (current.type === "image" && scale > 1) return;
+                    if (current.type === "image" && canPanImage) return;
 
                     const deltaX = touch.clientX - start.x;
                     const deltaY = touch.clientY - start.y;
@@ -550,17 +614,141 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
             >
                 <div
                     ref={mediaFrameRef}
-                    className="relative flex max-h-[80vh] max-w-[80vw] items-center justify-center"
+                    className="relative flex h-full w-full items-center justify-center overflow-hidden"
+                    onClick={(e) => e.stopPropagation()}
                 >
+                    <div className="pointer-events-none absolute inset-x-0 top-0 z-40 flex items-start justify-between p-4 sm:p-6">
+                        <div className="rounded-full bg-black/65 px-4 py-2 text-sm font-medium whitespace-nowrap text-white">
+                            {openIndex + 1} / {total}
+                        </div>
+
+                        <div className="pointer-events-auto flex items-center gap-2">
+                            {current.type === "image" && (
+                                <>
+                                    <button
+                                        type="button"
+                                        aria-label="축소"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            applyScale(
+                                                (currentScale) =>
+                                                    currentScale - SCALE_STEP
+                                            );
+                                        }}
+                                        className={controlButtonClass}
+                                    >
+                                        <ZoomOut className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        aria-label="확대"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            applyScale(
+                                                (currentScale) =>
+                                                    currentScale + SCALE_STEP
+                                            );
+                                        }}
+                                        className={controlButtonClass}
+                                    >
+                                        <ZoomIn className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        aria-label="확대 초기화"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            resetImageTransform();
+                                        }}
+                                        className={controlButtonClass}
+                                    >
+                                        <RotateCcw className="h-4 w-4" />
+                                    </button>
+                                </>
+                            )}
+
+                            <button
+                                type="button"
+                                aria-label="loop 토글"
+                                aria-pressed={loopEnabled}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setLoopEnabled((value) => !value);
+                                }}
+                                className={`${pillButtonClass} ${
+                                    loopEnabled ? "bg-(--color-accent)" : ""
+                                }`}
+                            >
+                                <Repeat className="h-4 w-4" />
+                                <span>
+                                    {loopEnabled ? "Loop On" : "Loop Off"}
+                                </span>
+                            </button>
+
+                            <button
+                                type="button"
+                                aria-label="닫기"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    close();
+                                }}
+                                className={controlButtonClass}
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        aria-label="이전 이미지"
+                        disabled={!canGoPrev}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            goPrev();
+                        }}
+                        className={`${navButtonClass} left-4 sm:left-6`}
+                    >
+                        <ChevronLeft className="h-7 w-7" />
+                    </button>
+
+                    <button
+                        type="button"
+                        aria-label="다음 이미지"
+                        disabled={!canGoNext}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            goNext();
+                        }}
+                        className={`${navButtonClass} right-4 sm:right-6`}
+                    >
+                        <ChevronRight className="h-7 w-7" />
+                    </button>
+
                     {current.type === "image" ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
+                            ref={imageRef}
                             key={current.src}
                             src={current.src}
                             alt={current.alt}
                             draggable={false}
+                            onLoad={() => syncPanCapability()}
+                            onClick={(e) => e.stopPropagation()}
+                            onWheel={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                applyScale(
+                                    (currentScale) =>
+                                        currentScale +
+                                        (e.deltaY < 0
+                                            ? SCALE_STEP
+                                            : -SCALE_STEP)
+                                );
+                            }}
                             onMouseDown={(e) => {
-                                if (scale <= 1) return;
+                                if (!canPanImage) return;
+                                e.stopPropagation();
                                 panRef.current = {
                                     x: e.clientX,
                                     y: e.clientY,
@@ -569,39 +757,12 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                                 };
                                 setIsDragging(true);
                             }}
-                            onMouseMove={(e) => {
-                                if (
-                                    !isDragging ||
-                                    !panRef.current ||
-                                    scale <= 1
-                                )
-                                    return;
-                                const nextTranslate = {
-                                    x:
-                                        panRef.current.startTranslateX +
-                                        (e.clientX - panRef.current.x),
-                                    y:
-                                        panRef.current.startTranslateY +
-                                        (e.clientY - panRef.current.y),
-                                };
-                                setTranslate(
-                                    clampTranslate(scale, nextTranslate)
-                                );
-                            }}
-                            onMouseUp={() => {
-                                panRef.current = null;
-                                setIsDragging(false);
-                            }}
-                            onMouseLeave={() => {
-                                panRef.current = null;
-                                setIsDragging(false);
-                            }}
-                            className={`relative max-h-[80vh] max-w-[80vw] object-contain select-none ${
-                                scale > 1
+                            className={`relative max-h-screen max-w-screen object-contain select-none ${
+                                canPanImage
                                     ? isDragging
                                         ? "cursor-grabbing"
                                         : "cursor-grab"
-                                    : ""
+                                    : "cursor-default"
                             }`}
                             style={{
                                 transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
@@ -609,7 +770,10 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                             }}
                         />
                     ) : playingVideoId === current.videoId ? (
-                        <div className="relative aspect-video w-[80vw] max-w-[1280px] overflow-hidden rounded-2xl bg-black">
+                        <div
+                            className="relative h-full w-full overflow-hidden bg-black"
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <iframe
                                 src={`https://www.youtube-nocookie.com/embed/${current.videoId}?autoplay=1&rel=0`}
                                 title={current.title}
@@ -621,15 +785,18 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                     ) : (
                         <button
                             type="button"
-                            onClick={() => setPlayingVideoId(current.videoId)}
-                            className="group relative overflow-hidden rounded-2xl"
                             aria-label="영상 재생"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setPlayingVideoId(current.videoId);
+                            }}
+                            className="group relative overflow-hidden rounded-[1.5rem]"
                         >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                                 src={current.thumbnailSrc}
                                 alt={current.title}
-                                className="max-h-[80vh] max-w-[80vw] object-contain"
+                                className="max-h-screen max-w-screen object-contain"
                             />
                             <span className="absolute inset-0 bg-black/25 transition-colors group-hover:bg-black/35" />
                             <span className="absolute inset-0 flex items-center justify-center">
@@ -639,102 +806,41 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                             </span>
                         </button>
                     )}
+
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 bg-linear-to-t from-black/88 via-black/45 to-transparent px-4 pt-24 pb-4 sm:px-6 sm:pb-6">
+                        <div className="pointer-events-auto mx-auto flex w-full max-w-4xl flex-col items-center gap-3">
+                            {caption && (
+                                <div className="text-center text-sm text-white/82">
+                                    {caption}
+                                </div>
+                            )}
+
+                            {shouldShowFilmstrip && (
+                                <div className="w-full max-w-full overflow-hidden px-2 py-2">
+                                    <div className="flex max-w-full justify-center gap-2 overflow-x-auto px-2 py-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                                        {filmstrip.map((item, i) => {
+                                            const realIdx = winStart + i;
+                                            const active =
+                                                realIdx === openIndex;
+                                            return (
+                                                <FilmstripThumbnail
+                                                    key={realIdx}
+                                                    media={item}
+                                                    active={active}
+                                                    onSelect={() => {
+                                                        setOpenIndex(realIdx);
+                                                        setPlayingVideoId(null);
+                                                    }}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            {caption && (
-                <div
-                    className="px-8 pb-2 text-center text-sm text-white/80"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {caption}
-                </div>
-            )}
-
-            <div
-                className="px-8 pb-3 text-center text-xs text-white/60"
-                onClick={(e) => e.stopPropagation()}
-            >
-                {openIndex + 1} / {total}
-            </div>
-
-            <div
-                className="flex justify-center gap-2 px-4 pb-3"
-                onClick={(e) => e.stopPropagation()}
-            >
-                {current.type === "image" && (
-                    <>
-                        <button
-                            type="button"
-                            aria-label="축소"
-                            onClick={() =>
-                                applyScale(
-                                    (currentScale) => currentScale - SCALE_STEP
-                                )
-                            }
-                            className="rounded-lg bg-white/15 px-3 py-2 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-white/25"
-                        >
-                            -
-                        </button>
-                        <button
-                            type="button"
-                            aria-label="확대"
-                            onClick={() =>
-                                applyScale(
-                                    (currentScale) => currentScale + SCALE_STEP
-                                )
-                            }
-                            className="rounded-lg bg-white/15 px-3 py-2 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-white/25"
-                        >
-                            +
-                        </button>
-                        <button
-                            type="button"
-                            aria-label="확대 초기화"
-                            onClick={() => resetImageTransform()}
-                            className="rounded-lg bg-white/15 px-3 py-2 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-white/25"
-                        >
-                            Reset
-                        </button>
-                    </>
-                )}
-                <button
-                    type="button"
-                    aria-label="loop 토글"
-                    aria-pressed={loopEnabled}
-                    onClick={() => setLoopEnabled((value) => !value)}
-                    className={`rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap text-white transition-colors ${
-                        loopEnabled
-                            ? "bg-(--color-accent)"
-                            : "bg-white/15 hover:bg-white/25"
-                    }`}
-                >
-                    {loopEnabled ? "Loop On" : "Loop Off"}
-                </button>
-            </div>
-
-            {shouldShowFilmstrip && (
-                <div
-                    className="flex justify-center gap-2 px-4 pb-6"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {filmstrip.map((item, i) => {
-                        const realIdx = winStart + i;
-                        const active = realIdx === openIndex;
-                        return (
-                            <FilmstripThumbnail
-                                key={realIdx}
-                                media={item}
-                                active={active}
-                                onSelect={() => {
-                                    setOpenIndex(realIdx);
-                                    setPlayingVideoId(null);
-                                }}
-                            />
-                        );
-                    })}
-                </div>
-            )}
         </div>,
         document.body
     );

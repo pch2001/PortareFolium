@@ -1,5 +1,37 @@
 # CHANGES
 
+## v0.12.35 (2026-04-20)
+
+### fix: lightbox filmstrip padding 확장 + scrollbar 숨김
+
+- `src/components/ImageLightbox.tsx`: filmstrip scroll viewport에 추가 padding을 넣어 active thumbnail border와 scale outline이 잘리지 않도록 조정
+- `src/components/ImageLightbox.tsx`: filmstrip horizontal scroll은 유지하면서 WebKit Firefox 기준 scrollbar가 보이지 않도록 숨김 규칙 추가
+- `package.json`: patch version `0.12.35`로 증가
+
+## v0.12.34 (2026-04-20)
+
+### fix: lightbox fullscreen 확장
+
+- `src/components/ImageLightbox.tsx`: outer inset padding과 frame width height 제한을 제거하고 lightbox media frame이 viewport 전체를 쓰도록 조정
+- `src/components/ImageLightbox.tsx`: image preview와 YouTube player가 fullscreen frame 기준으로 렌더되도록 max size 규칙 정리
+- `package.json`: patch version `0.12.34`로 증가
+
+## v0.12.33 (2026-04-20)
+
+### fix: lightbox 내부 click 전파 과민 닫기 보정
+
+- `src/components/ImageLightbox.tsx`: media frame 전체에 click 전파 차단 추가 — filmstrip 선택, caption 영역 click, image drag 이후 click이 overlay close로 이어지지 않도록 수정
+- `package.json`: patch version `0.12.33`로 증가
+
+## v0.12.32 (2026-04-20)
+
+### feat: lightbox overlay control 재배치 + drag 닫기 영역 보정
+
+- `src/components/ImageLightbox.tsx`: 상단 control bar와 하단 caption filmstrip을 media 위 overlay로 재배치하고 prev/next button z-index를 낮춰 control 위로 올라오지 않도록 조정
+- `src/components/ImageLightbox.tsx`: 이미지 실제 렌더 크기가 viewport frame을 넘길 때만 pan drag가 활성화되도록 overflow 기준 판정 로직 추가
+- `src/components/ImageLightbox.tsx`: 이미지와 control 바깥의 빈 overlay 영역 클릭 시 lightbox가 닫히도록 pointer event 구조 정리
+- `package.json`: patch version `0.12.32`로 증가
+
 ## v0.12.31 (2026-04-20)
 
 ### feat: lightbox thumb-only 정리 + debug backfill UX 보강

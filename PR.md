@@ -81,3 +81,7 @@ Gantt Chart 패널 전면 재설계. CSV 업로드 방식을 폐기하고 Excel 
 - **v0.12.28**: `ImageLightbox` Hook order 오류 수정, `content-rendering` spec에 browser console/pageerror assertion 추가, AGENTS frontend runtime gate 보강
 - **v0.12.29**: lightbox control row를 filmstrip 위로 이동, `Loop On/Off` toggle 추가, 좌우 prev/next를 전체 높이 rectangle hit-area로 확장
 - **v0.12.31**: lightbox를 thumb-only 구조로 정리하고, Debug backfill에 progress modal·결과 설명·free-tier billing 안내를 강화
+- **v0.12.32**: lightbox control bar와 caption filmstrip을 media overlay로 재배치하고, 빈 overlay 영역 click 닫기와 overflow 기준 pan drag를 정리
+- **v0.12.33**: media frame 내부 click 전파를 차단해 filmstrip 선택과 image drag 뒤 modal이 닫히는 과민 반응을 수정
+- **v0.12.34**: lightbox가 viewport 전체를 쓰도록 inset padding과 frame 제한을 제거하고 fullscreen media 렌더링으로 조정
+- **v0.12.35**: filmstrip scroll viewport padding을 늘려 active thumbnail outline 잘림을 막고 scrollbar는 숨김 처리
