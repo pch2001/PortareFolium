@@ -159,6 +159,7 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
     const [media, setMedia] = useState<LightboxMedia[]>([]);
     const [openIndex, setOpenIndex] = useState<number | null>(null);
     const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
+    const [loopEnabled, setLoopEnabled] = useState(false);
     const [scale, setScale] = useState(1);
     const [translate, setTranslate] = useState({ x: 0, y: 0 });
     const mountedRef = useRef(false);
@@ -310,16 +311,28 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
     }, [resetImageTransform]);
 
     const goPrev = useCallback(() => {
-        setOpenIndex((i) => (i == null || i <= 0 ? i : i - 1));
+        setOpenIndex((i) => {
+            if (i == null) return i;
+            if (i <= 0) {
+                return loopEnabled && media.length > 0 ? media.length - 1 : i;
+            }
+            return i - 1;
+        });
         setPlayingVideoId(null);
         resetImageTransform();
-    }, [resetImageTransform]);
+    }, [loopEnabled, media.length, resetImageTransform]);
 
     const goNext = useCallback(() => {
-        setOpenIndex((i) => (i == null || i >= media.length - 1 ? i : i + 1));
+        setOpenIndex((i) => {
+            if (i == null) return i;
+            if (i >= media.length - 1) {
+                return loopEnabled && media.length > 0 ? 0 : i;
+            }
+            return i + 1;
+        });
         setPlayingVideoId(null);
         resetImageTransform();
-    }, [media.length, resetImageTransform]);
+    }, [loopEnabled, media.length, resetImageTransform]);
 
     // keyboard + body scroll lock
     useEffect(() => {
@@ -353,6 +366,8 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
 
     const atFirst = openIndex <= 0;
     const atLast = openIndex >= media.length - 1;
+    const canGoPrev = loopEnabled || !atFirst;
+    const canGoNext = loopEnabled || !atLast;
     const total = media.length;
 
     let winStart = openIndex - FILMSTRIP_RADIUS;
@@ -391,72 +406,34 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                 <X className="h-5 w-5" />
             </button>
 
-            {current.type === "image" && (
-                <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
-                    <button
-                        type="button"
-                        aria-label="축소"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            applyScale(
-                                (currentScale) => currentScale - SCALE_STEP
-                            );
-                        }}
-                        className="rounded-lg bg-white/15 px-3 py-2 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-white/25"
-                    >
-                        -
-                    </button>
-                    <button
-                        type="button"
-                        aria-label="확대"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            applyScale(
-                                (currentScale) => currentScale + SCALE_STEP
-                            );
-                        }}
-                        className="rounded-lg bg-white/15 px-3 py-2 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-white/25"
-                    >
-                        +
-                    </button>
-                    <button
-                        type="button"
-                        aria-label="확대 초기화"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            resetImageTransform();
-                        }}
-                        className="rounded-lg bg-white/15 px-3 py-2 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-white/25"
-                    >
-                        Reset
-                    </button>
-                </div>
-            )}
-
             <button
                 type="button"
                 aria-label="이전 이미지"
-                disabled={atFirst}
+                disabled={!canGoPrev}
                 onClick={(e) => {
                     e.stopPropagation();
                     goPrev();
                 }}
-                className="absolute top-1/2 left-4 z-10 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition-opacity hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-30"
+                className="absolute inset-y-0 left-0 z-10 flex w-24 items-center justify-start bg-linear-to-r from-black/35 to-transparent pl-4 text-white transition-colors hover:from-black/55 disabled:cursor-not-allowed disabled:opacity-20"
             >
-                <ChevronLeft className="h-6 w-6" />
+                <span className="flex h-full items-center">
+                    <ChevronLeft className="h-8 w-8" />
+                </span>
             </button>
 
             <button
                 type="button"
                 aria-label="다음 이미지"
-                disabled={atLast}
+                disabled={!canGoNext}
                 onClick={(e) => {
                     e.stopPropagation();
                     goNext();
                 }}
-                className="absolute top-1/2 right-4 z-10 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white transition-opacity hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-30"
+                className="absolute inset-y-0 right-0 z-10 flex w-24 items-center justify-end bg-linear-to-l from-black/35 to-transparent pr-4 text-white transition-colors hover:from-black/55 disabled:cursor-not-allowed disabled:opacity-20"
             >
-                <ChevronRight className="h-6 w-6" />
+                <span className="flex h-full items-center">
+                    <ChevronRight className="h-8 w-8" />
+                </span>
             </button>
 
             <div
@@ -688,6 +665,61 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                 onClick={(e) => e.stopPropagation()}
             >
                 {openIndex + 1} / {total}
+            </div>
+
+            <div
+                className="flex justify-center gap-2 px-4 pb-3"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {current.type === "image" && (
+                    <>
+                        <button
+                            type="button"
+                            aria-label="축소"
+                            onClick={() =>
+                                applyScale(
+                                    (currentScale) => currentScale - SCALE_STEP
+                                )
+                            }
+                            className="rounded-lg bg-white/15 px-3 py-2 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-white/25"
+                        >
+                            -
+                        </button>
+                        <button
+                            type="button"
+                            aria-label="확대"
+                            onClick={() =>
+                                applyScale(
+                                    (currentScale) => currentScale + SCALE_STEP
+                                )
+                            }
+                            className="rounded-lg bg-white/15 px-3 py-2 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-white/25"
+                        >
+                            +
+                        </button>
+                        <button
+                            type="button"
+                            aria-label="확대 초기화"
+                            onClick={() => resetImageTransform()}
+                            className="rounded-lg bg-white/15 px-3 py-2 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-white/25"
+                        >
+                            Reset
+                        </button>
+                    </>
+                )}
+                <button
+                    type="button"
+                    aria-label="loop 토글"
+                    aria-pressed={loopEnabled}
+                    onClick={() => setLoopEnabled((value) => !value)}
+                    className={`rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap text-white transition-colors ${
+                        loopEnabled
+                            ? "bg-(--color-accent)"
+                            : "bg-white/15 hover:bg-white/25"
+                    }`}
+                >
+                    {loopEnabled ? "Loop On" : "Loop Off"}
+                </button>
             </div>
 
             {shouldShowFilmstrip && (

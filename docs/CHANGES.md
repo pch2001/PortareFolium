@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.29 (2026-04-19)
+
+### feat: lightbox control row + loop toggle + wide prev next hit-area
+
+- `src/components/ImageLightbox.tsx`: zoom control 버튼을 filmstrip 바로 위 control row로 이동
+- `src/components/ImageLightbox.tsx`: `Loop On/Off` toggle 추가 — prev/next, keyboard, swipe가 loop 모드에서 순환 이동
+- `src/components/ImageLightbox.tsx`: 좌우 prev/next를 lightbox 전체 높이를 덮는 넓은 rectangle hit-area로 변경
+
 ## v0.12.28 (2026-04-19)
 
 ### fix: ImageLightbox Hook 순서 오류와 runtime 검증 누락 보정
