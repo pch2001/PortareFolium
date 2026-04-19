@@ -1,6 +1,6 @@
 {
     "name": "portare-folium",
-    "version": "0.12.26",
+    "version": "0.12.27",
     "engines": {
         "node": ">=24.13.0"
     },
@@ -18,6 +18,7 @@
         "purge": "rm -rf .next",
         "reinstall": "rm -rf node_modules pnpm-lock.yaml && pnpm install",
         "prepare": "husky || true",
+        "backfill:lightbox-sidecars": "tsx scripts/backfill-lightbox-sidecars.ts",
         "r2:list": "wrangler r2 object list gvm1229-portfolio-images",
         "r2:put": "wrangler r2 object put gvm1229-portfolio-images"
     },

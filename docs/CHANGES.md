@@ -1,5 +1,15 @@
 # CHANGES
 
+## v0.12.27 (2026-04-19)
+
+### feat: lightbox sidecar backfill + YouTube E2E 추가
+
+- `src/components/ImageLightbox.tsx`: filmstrip runtime 원본 fallback 제거 — `thumb.webp` / `poster.webp` sidecar만 사용하도록 정리
+- `scripts/backfill-lightbox-sidecars.ts` 신규: 기존 `blog/` / `portfolio/` R2 자산에 `thumb.webp` / `poster.webp` sidecar를 영구 생성하는 backfill script 추가
+- `package.json`: `pnpm backfill:lightbox-sidecars` script 추가
+- `USER_TASKS.md` 신규: 운영 자산 backfill 실행 작업 기록
+- `e2e/content-rendering.spec.ts`: `/blog/console-engine-project-2-review` 기준 YouTube lightbox + play button 시나리오 추가
+
 ## v0.12.26 (2026-04-19)
 
 ### feat: lightbox 이미지 zoom + mobile pinch/drag 추가

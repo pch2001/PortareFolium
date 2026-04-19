@@ -65,7 +65,6 @@ function getImageFilmstripCandidates(src: string): string[] {
     if (isGifSource(src)) {
         list.push(replaceWithSidecar(src, "poster"));
     }
-    list.push(src);
     return list;
 }
 

@@ -135,6 +135,30 @@ test.describe("콘텐츠 렌더링", () => {
         await expect(dialog).toBeHidden();
     });
 
+    test("YouTube embed lightbox + play button", async ({ page }) => {
+        const response = await page.goto(
+            "/blog/console-engine-project-2-review"
+        );
+        if (!response || response.status() >= 400) return;
+
+        const youtubeTrigger = page.locator(
+            '.post-content [data-lightbox-open="youtube"]'
+        );
+        const count = await youtubeTrigger.count();
+        if (count === 0) return;
+
+        await youtubeTrigger.first().click();
+        const dialog = page.locator(
+            '[role="dialog"][aria-label="이미지 확대 보기"]'
+        );
+        await expect(dialog).toBeVisible();
+
+        const playButton = dialog.getByRole("button", { name: "영상 재생" });
+        await expect(playButton).toBeVisible();
+        await playButton.click();
+        await expect(dialog.locator("iframe")).toBeVisible();
+    });
+
     test("목차 (TOC) 생성", async ({ page }) => {
         test.skip(!blogSlug, "블로그 글 없음");
         await page.goto(blogSlug!);
