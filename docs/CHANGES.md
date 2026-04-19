@@ -1,5 +1,14 @@
 # CHANGES
 
+## v0.12.26 (2026-04-19)
+
+### feat: lightbox 이미지 zoom + mobile pinch/drag 추가
+
+- `src/components/ImageLightbox.tsx`: 이미지 전용 `+` / `-` / `Reset` zoom 버튼 추가
+- `src/components/ImageLightbox.tsx`: PC wheel zoom 추가
+- `src/components/ImageLightbox.tsx`: mobile pinch zoom + drag pan 추가
+- `src/components/ImageLightbox.tsx`: image 전환/닫기 시 transform state를 초기화하고, YouTube media에는 zoom/pan UI를 비활성화
+
 ## v0.12.25 (2026-04-19)
 
 ### feat: lightbox mixed media + blur 제거

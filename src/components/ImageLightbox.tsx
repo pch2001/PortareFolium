@@ -25,6 +25,9 @@ type ImageLightboxProps = {
 
 const FILMSTRIP_RADIUS = 5;
 const FILMSTRIP_WINDOW = FILMSTRIP_RADIUS * 2 + 1;
+const MAX_SCALE = 4;
+const MIN_SCALE = 1;
+const SCALE_STEP = 0.25;
 const SWIPE_THRESHOLD = 50;
 
 // filmstrip sidecar path 계산
@@ -43,6 +46,11 @@ function isGifSource(src: string): boolean {
 // YouTube thumbnail path 생성
 function getYoutubeThumbnail(videoId: string): string {
     return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+}
+
+// 값 clamp
+function clamp(value: number, min: number, max: number): number {
+    return Math.min(max, Math.max(min, value));
 }
 
 type FilmstripThumbnailProps = {
@@ -152,8 +160,64 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
     const [media, setMedia] = useState<LightboxMedia[]>([]);
     const [openIndex, setOpenIndex] = useState<number | null>(null);
     const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
+    const [scale, setScale] = useState(1);
+    const [translate, setTranslate] = useState({ x: 0, y: 0 });
     const mountedRef = useRef(false);
-    const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+    const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
+    const pinchRef = useRef<{ distance: number; startScale: number } | null>(
+        null
+    );
+    const panRef = useRef<{
+        startTranslateX: number;
+        startTranslateY: number;
+        x: number;
+        y: number;
+    } | null>(null);
+    const mediaFrameRef = useRef<HTMLDivElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+
+    const clampTranslate = useCallback(
+        (nextScale: number, nextTranslate: { x: number; y: number }) => {
+            const frame = mediaFrameRef.current;
+            if (!frame || nextScale <= 1) return { x: 0, y: 0 };
+
+            const { width, height } = frame.getBoundingClientRect();
+            const maxX = (width * nextScale - width) / 2;
+            const maxY = (height * nextScale - height) / 2;
+
+            return {
+                x: clamp(nextTranslate.x, -maxX, maxX),
+                y: clamp(nextTranslate.y, -maxY, maxY),
+            };
+        },
+        []
+    );
+
+    const resetImageTransform = useCallback(() => {
+        setScale(1);
+        setTranslate({ x: 0, y: 0 });
+        setIsDragging(false);
+        swipeStartRef.current = null;
+        pinchRef.current = null;
+        panRef.current = null;
+    }, []);
+
+    const applyScale = useCallback(
+        (updater: number | ((currentScale: number) => number)) => {
+            setScale((currentScale) => {
+                const rawScale =
+                    typeof updater === "function"
+                        ? updater(currentScale)
+                        : updater;
+                const nextScale = clamp(rawScale, MIN_SCALE, MAX_SCALE);
+                setTranslate((currentTranslate) =>
+                    clampTranslate(nextScale, currentTranslate)
+                );
+                return nextScale;
+            });
+        },
+        [clampTranslate]
+    );
 
     // 본문 media 스캔 + click target index 부여
     const scanMedia = useCallback(() => {
@@ -243,17 +307,20 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
     const close = useCallback(() => {
         setOpenIndex(null);
         setPlayingVideoId(null);
-    }, []);
+        resetImageTransform();
+    }, [resetImageTransform]);
 
     const goPrev = useCallback(() => {
         setOpenIndex((i) => (i == null || i <= 0 ? i : i - 1));
         setPlayingVideoId(null);
-    }, []);
+        resetImageTransform();
+    }, [resetImageTransform]);
 
     const goNext = useCallback(() => {
         setOpenIndex((i) => (i == null || i >= media.length - 1 ? i : i + 1));
         setPlayingVideoId(null);
-    }, [media.length]);
+        resetImageTransform();
+    }, [media.length, resetImageTransform]);
 
     // keyboard + body scroll lock
     useEffect(() => {
@@ -299,6 +366,11 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
     const caption =
         current.type === "image" ? current.alt?.trim() || "" : current.title;
 
+    useEffect(() => {
+        setPlayingVideoId(null);
+        resetImageTransform();
+    }, [openIndex, resetImageTransform]);
+
     return createPortal(
         <div
             role="dialog"
@@ -318,6 +390,48 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
             >
                 <X className="h-5 w-5" />
             </button>
+
+            {current.type === "image" && (
+                <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+                    <button
+                        type="button"
+                        aria-label="축소"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            applyScale(
+                                (currentScale) => currentScale - SCALE_STEP
+                            );
+                        }}
+                        className="rounded-lg bg-white/15 px-3 py-2 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-white/25"
+                    >
+                        -
+                    </button>
+                    <button
+                        type="button"
+                        aria-label="확대"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            applyScale(
+                                (currentScale) => currentScale + SCALE_STEP
+                            );
+                        }}
+                        className="rounded-lg bg-white/15 px-3 py-2 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-white/25"
+                    >
+                        +
+                    </button>
+                    <button
+                        type="button"
+                        aria-label="확대 초기화"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            resetImageTransform();
+                        }}
+                        className="rounded-lg bg-white/15 px-3 py-2 text-sm font-semibold whitespace-nowrap text-white transition-colors hover:bg-white/25"
+                    >
+                        Reset
+                    </button>
+                </div>
+            )}
 
             <button
                 type="button"
@@ -348,19 +462,105 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
             <div
                 className="flex flex-1 items-center justify-center px-16 py-8"
                 onClick={(e) => e.stopPropagation()}
+                onWheel={(e) => {
+                    if (current.type !== "image") return;
+                    e.preventDefault();
+                    applyScale(
+                        (currentScale) =>
+                            currentScale +
+                            (e.deltaY < 0 ? SCALE_STEP : -SCALE_STEP)
+                    );
+                }}
                 onTouchStart={(e) => {
+                    if (current.type !== "image") {
+                        const touch = e.touches[0];
+                        if (!touch) return;
+                        swipeStartRef.current = {
+                            x: touch.clientX,
+                            y: touch.clientY,
+                        };
+                        return;
+                    }
+
+                    if (e.touches.length === 2) {
+                        const [a, b] = [e.touches[0], e.touches[1]];
+                        if (!a || !b) return;
+                        const distance = Math.hypot(
+                            a.clientX - b.clientX,
+                            a.clientY - b.clientY
+                        );
+                        pinchRef.current = {
+                            distance,
+                            startScale: scale,
+                        };
+                        swipeStartRef.current = null;
+                        panRef.current = null;
+                        return;
+                    }
+
                     const touch = e.touches[0];
                     if (!touch) return;
-                    touchStartRef.current = {
+
+                    if (scale > 1) {
+                        panRef.current = {
+                            x: touch.clientX,
+                            y: touch.clientY,
+                            startTranslateX: translate.x,
+                            startTranslateY: translate.y,
+                        };
+                        setIsDragging(true);
+                        return;
+                    }
+
+                    swipeStartRef.current = {
                         x: touch.clientX,
                         y: touch.clientY,
                     };
                 }}
+                onTouchMove={(e) => {
+                    if (current.type !== "image") return;
+
+                    if (e.touches.length === 2 && pinchRef.current) {
+                        const [a, b] = [e.touches[0], e.touches[1]];
+                        if (!a || !b) return;
+                        const distance = Math.hypot(
+                            a.clientX - b.clientX,
+                            a.clientY - b.clientY
+                        );
+                        const nextScale =
+                            pinchRef.current.startScale *
+                            (distance / pinchRef.current.distance);
+                        applyScale(nextScale);
+                        return;
+                    }
+
+                    if (e.touches.length === 1 && panRef.current && scale > 1) {
+                        const touch = e.touches[0];
+                        if (!touch) return;
+                        const nextTranslate = {
+                            x:
+                                panRef.current.startTranslateX +
+                                (touch.clientX - panRef.current.x),
+                            y:
+                                panRef.current.startTranslateY +
+                                (touch.clientY - panRef.current.y),
+                        };
+                        setTranslate(clampTranslate(scale, nextTranslate));
+                    }
+                }}
                 onTouchEnd={(e) => {
+                    if (current.type === "image" && e.touches.length === 0) {
+                        pinchRef.current = null;
+                        panRef.current = null;
+                        setIsDragging(false);
+                    }
+
                     const touch = e.changedTouches[0];
-                    const start = touchStartRef.current;
-                    touchStartRef.current = null;
+                    const start = swipeStartRef.current;
+                    swipeStartRef.current = null;
                     if (!touch || !start) return;
+
+                    if (current.type === "image" && scale > 1) return;
 
                     const deltaX = touch.clientX - start.x;
                     const deltaY = touch.clientY - start.y;
@@ -380,14 +580,65 @@ export default function ImageLightbox({ contentSelector }: ImageLightboxProps) {
                     goNext();
                 }}
             >
-                <div className="relative flex max-h-[80vh] max-w-[80vw] items-center justify-center">
+                <div
+                    ref={mediaFrameRef}
+                    className="relative flex max-h-[80vh] max-w-[80vw] items-center justify-center"
+                >
                     {current.type === "image" ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                             key={current.src}
                             src={current.src}
                             alt={current.alt}
-                            className="relative max-h-[80vh] max-w-[80vw] object-contain"
+                            draggable={false}
+                            onMouseDown={(e) => {
+                                if (scale <= 1) return;
+                                panRef.current = {
+                                    x: e.clientX,
+                                    y: e.clientY,
+                                    startTranslateX: translate.x,
+                                    startTranslateY: translate.y,
+                                };
+                                setIsDragging(true);
+                            }}
+                            onMouseMove={(e) => {
+                                if (
+                                    !isDragging ||
+                                    !panRef.current ||
+                                    scale <= 1
+                                )
+                                    return;
+                                const nextTranslate = {
+                                    x:
+                                        panRef.current.startTranslateX +
+                                        (e.clientX - panRef.current.x),
+                                    y:
+                                        panRef.current.startTranslateY +
+                                        (e.clientY - panRef.current.y),
+                                };
+                                setTranslate(
+                                    clampTranslate(scale, nextTranslate)
+                                );
+                            }}
+                            onMouseUp={() => {
+                                panRef.current = null;
+                                setIsDragging(false);
+                            }}
+                            onMouseLeave={() => {
+                                panRef.current = null;
+                                setIsDragging(false);
+                            }}
+                            className={`relative max-h-[80vh] max-w-[80vw] object-contain select-none ${
+                                scale > 1
+                                    ? isDragging
+                                        ? "cursor-grabbing"
+                                        : "cursor-grab"
+                                    : ""
+                            }`}
+                            style={{
+                                transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
+                                transformOrigin: "center center",
+                            }}
                         />
                     ) : playingVideoId === current.videoId ? (
                         <div className="relative aspect-video w-[80vw] max-w-[1280px] overflow-hidden rounded-2xl bg-black">

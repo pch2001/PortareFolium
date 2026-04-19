@@ -76,3 +76,4 @@ Gantt Chart 패널 전면 재설계. CSV 업로드 방식을 폐기하고 Excel 
 - **v0.12.23**: lightbox v2 Sub-A~D 반영 — 모바일 swipe, gif `poster.webp`/filmstrip `thumb.webp` sidecar, sidecar cleanup 회귀 테스트, lightbox E2E 시나리오 추가
 - **v0.12.24**: Firefox/WebKit `content-rendering` lightbox E2E를 serial + lightbox-target helper + `force: true` 클릭으로 안정화
 - **v0.12.25**: lightbox mixed media 지원 — YouTube를 정적 thumbnail + play button 방식으로 포함, 기존 edge blur 레이어 제거
+- **v0.12.26**: lightbox 이미지 zoom 추가 — PC `+/-/Reset` 및 wheel, mobile pinch + drag pan 지원
