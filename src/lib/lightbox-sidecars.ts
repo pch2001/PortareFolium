@@ -14,6 +14,7 @@ export type LightboxSidecarBackfillSummary = {
     deletedPoster: number;
     errors: string[];
     processed: number;
+    rewrittenThumb: number;
     skipped: number;
     thumbCreated: number;
 };
@@ -74,6 +75,19 @@ async function exists(key: string): Promise<boolean> {
     } catch {
         return false;
     }
+}
+
+// GIF thumb가 animated인지 확인
+async function isAnimatedThumb(key: string): Promise<boolean> {
+    const object = await r2Client.send(
+        new GetObjectCommand({
+            Bucket: R2_BUCKET,
+            Key: key,
+        })
+    );
+    const buffer = await toBuffer(object.Body);
+    const metadata = await sharp(buffer, { animated: true }).metadata();
+    return (metadata.pages ?? 1) > 1;
 }
 
 // thumb buffer 생성
@@ -145,13 +159,18 @@ async function backfillKey(
 ): Promise<
     Pick<
         LightboxSidecarBackfillSummary,
-        "deletedPoster" | "processed" | "skipped" | "thumbCreated"
+        | "deletedPoster"
+        | "processed"
+        | "rewrittenThumb"
+        | "skipped"
+        | "thumbCreated"
     >
 > {
     if (!isSupportedImageKey(key) || isSidecarKey(key)) {
         return {
             deletedPoster: 0,
             processed: 0,
+            rewrittenThumb: 0,
             skipped: 1,
             thumbCreated: 0,
         };
@@ -163,10 +182,13 @@ async function backfillKey(
 
     const thumbExists = await exists(thumbKey);
     const posterExists = await exists(posterKey);
-    if (thumbExists && !posterExists) {
+    const needsThumbRewrite =
+        isGif && thumbExists ? await isAnimatedThumb(thumbKey) : false;
+    if (thumbExists && !posterExists && !needsThumbRewrite) {
         return {
             deletedPoster: 0,
             processed: 1,
+            rewrittenThumb: 0,
             skipped: 1,
             thumbCreated: 0,
         };
@@ -182,11 +204,16 @@ async function backfillKey(
 
     let thumbCreated = 0;
     let deletedPoster = 0;
+    let rewrittenThumb = 0;
 
-    if (!thumbExists) {
+    if (!thumbExists || needsThumbRewrite) {
         const thumbBuffer = await createThumb(buffer, isGif);
         await uploadSidecar(thumbKey, thumbBuffer);
-        thumbCreated = 1;
+        if (thumbExists) {
+            rewrittenThumb = 1;
+        } else {
+            thumbCreated = 1;
+        }
     }
 
     if (posterExists) {
@@ -197,6 +224,7 @@ async function backfillKey(
     return {
         deletedPoster,
         processed: 1,
+        rewrittenThumb,
         skipped: 0,
         thumbCreated,
     };
@@ -209,6 +237,7 @@ export async function runLightboxSidecarBackfill(
     const summary: LightboxSidecarBackfillSummary = {
         deletedPoster: 0,
         processed: 0,
+        rewrittenThumb: 0,
         skipped: 0,
         thumbCreated: 0,
         errors: [],
@@ -235,6 +264,7 @@ export async function runLightboxSidecarBackfill(
                 const result = await backfillKey(key);
                 summary.deletedPoster += result.deletedPoster;
                 summary.processed += result.processed;
+                summary.rewrittenThumb += result.rewrittenThumb;
                 summary.skipped += result.skipped;
                 summary.thumbCreated += result.thumbCreated;
             } catch (error) {

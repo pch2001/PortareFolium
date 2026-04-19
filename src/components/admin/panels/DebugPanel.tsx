@@ -242,6 +242,14 @@ export default function DebugPanel() {
                                     새로 생성된 <code>.thumb.webp</code> 수
                                 </p>
                                 <p>
+                                    rewrittenThumb=
+                                    {result.summary.rewrittenThumb}
+                                </p>
+                                <p className="text-xs text-green-700/90 dark:text-green-300/90">
+                                    기존 animated <code>.thumb.webp</code>를
+                                    정적인 첫 프레임 thumb로 다시 생성한 수
+                                </p>
+                                <p>
                                     deletedPoster=
                                     {result.summary.deletedPoster}
                                 </p>
