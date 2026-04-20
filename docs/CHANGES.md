@@ -1,5 +1,16 @@
 # CHANGES
 
+## v0.12.44 (2026-04-20)
+
+### fix: CI E2E Shiki test 400 복구 (R2 remotePatterns + dev 전용 404 허용)
+
+- Root cause (v0.12.43 진단 결과): `/_next/image?url=https%3A%2F%2Fpub-6da6469ff0b5484cb3fdd70f63dfaf6d.r2.dev%2Fblog%2F...&w=828&q=75` 가 400 반환. CI env에 `R2_PUBLIC_URL` 미주입 → `next.config.ts`의 `r2Hostname` null → Cloudflare R2 pub URL이 `images.remotePatterns` 허용 목록에 없어 Next.js image optimization이 validation 단계에서 reject. WebServer SSL handshake failure 로그도 동일 원인의 upstream fetch 실패
+- Secondary: `/_vercel/insights/script.js` 404 — @vercel/insights는 Vercel production 배포에서만 serve되는 script. dev/CI에서는 항상 404. assertion 탈락 유발
+- `next.config.ts`: `remotePatterns`에 `{ protocol: "https", hostname: "**.r2.dev" }` 추가. 모든 Cloudflare R2 pub subdomain을 상시 허용해 CI env 미주입 시에도 image optimization 통과
+- `e2e/content-rendering.spec.ts`: `ALLOWED_4XX_PATTERNS`에 `/_vercel/insights/` path pattern 추가. prod 전용 자원의 dev 404는 assertion 제외
+- `e2e/content-rendering.spec.ts`: `BROWSER_LEVEL_CONSOLE_NOISE`로 Chromium이 subresource 실패 시 중복 출력하는 "Failed to load resource" console error를 필터. response hook이 이미 URL 포함해 기록하므로 중복 방지
+- `package.json`: patch version `0.12.44`로 증가
+
 ## v0.12.43 (2026-04-20)
 
 ### test: E2E runtime error 수집에 http 4xx URL 포함

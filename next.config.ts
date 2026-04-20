@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
         remotePatterns: [
             { protocol: "https", hostname: "img.youtube.com" },
             { protocol: "https", hostname: "i.ytimg.com" },
+            // Cloudflare R2 pub-*.r2.dev 전 리전 허용 (CI에서 R2_PUBLIC_URL 미주입 시 fallback)
+            { protocol: "https", hostname: "**.r2.dev" },
             ...(r2Hostname
                 ? [{ protocol: "https" as const, hostname: r2Hostname }]
                 : []),
