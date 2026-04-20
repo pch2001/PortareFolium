@@ -41,21 +41,6 @@ async function getVisibleLightboxImage(page: Page) {
     return null;
 }
 
-// external CDN 및 prod 전용 자원 4xx는 assertion에서 제외
-const ALLOWED_4XX_PATTERNS = [
-    "fonts.googleapis.com",
-    "fonts.gstatic.com",
-    // @vercel/insights script는 prod 배포에서만 serve됨. dev/CI에서 404 정상
-    "/_vercel/insights/",
-];
-
-// 일부 console error는 browser-level subresource failure를 중복 보고
-// (예: "Failed to load resource: the server responded with a status of 404")
-// response hook이 이미 URL 포함해서 기록하므로 중복 제거
-const BROWSER_LEVEL_CONSOLE_NOISE = [
-    "Failed to load resource: the server responded with a status of",
-];
-
 // 브라우저 런타임 에러 수집
 function trackRuntimeErrors(page: Page) {
     const runtimeErrors: string[] = [];
@@ -64,24 +49,9 @@ function trackRuntimeErrors(page: Page) {
         runtimeErrors.push(`pageerror: ${error.message}`);
     });
 
-    page.on("response", (response) => {
-        const status = response.status();
-        if (status < 400) return;
-        const url = response.url();
-        if (ALLOWED_4XX_PATTERNS.some((pattern) => url.includes(pattern))) {
-            return;
-        }
-        runtimeErrors.push(`http ${status}: ${url}`);
-    });
-
     page.on("console", (message) => {
         if (message.type() !== "error") return;
-        const text = message.text();
-        // browser-level subresource failure 메시지는 response hook이 중복 기록
-        if (BROWSER_LEVEL_CONSOLE_NOISE.some((noise) => text.includes(noise))) {
-            return;
-        }
-        runtimeErrors.push(`console: ${text}`);
+        runtimeErrors.push(`console: ${message.text()}`);
     });
 
     return runtimeErrors;

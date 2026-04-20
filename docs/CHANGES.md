@@ -1,23 +1,13 @@
 # CHANGES
 
-## v0.12.44 (2026-04-20)
+## v0.12.45 (2026-04-20)
 
-### fix: CI E2E Shiki test 400 복구 (R2 remotePatterns + dev 전용 404 허용)
+### revert: v0.12.43~44 E2E debugging 제거 (CI R2 secret 주입으로 불필요)
 
-- Root cause (v0.12.43 진단 결과): `/_next/image?url=https%3A%2F%2Fpub-6da6469ff0b5484cb3fdd70f63dfaf6d.r2.dev%2Fblog%2F...&w=828&q=75` 가 400 반환. CI env에 `R2_PUBLIC_URL` 미주입 → `next.config.ts`의 `r2Hostname` null → Cloudflare R2 pub URL이 `images.remotePatterns` 허용 목록에 없어 Next.js image optimization이 validation 단계에서 reject. WebServer SSL handshake failure 로그도 동일 원인의 upstream fetch 실패
-- Secondary: `/_vercel/insights/script.js` 404 — @vercel/insights는 Vercel production 배포에서만 serve되는 script. dev/CI에서는 항상 404. assertion 탈락 유발
-- `next.config.ts`: `remotePatterns`에 `{ protocol: "https", hostname: "**.r2.dev" }` 추가. 모든 Cloudflare R2 pub subdomain을 상시 허용해 CI env 미주입 시에도 image optimization 통과
-- `e2e/content-rendering.spec.ts`: `ALLOWED_4XX_PATTERNS`에 `/_vercel/insights/` path pattern 추가. prod 전용 자원의 dev 404는 assertion 제외
-- `e2e/content-rendering.spec.ts`: `BROWSER_LEVEL_CONSOLE_NOISE`로 Chromium이 subresource 실패 시 중복 출력하는 "Failed to load resource" console error를 필터. response hook이 이미 URL 포함해 기록하므로 중복 방지
-- `package.json`: patch version `0.12.44`로 증가
-
-## v0.12.43 (2026-04-20)
-
-### test: E2E runtime error 수집에 http 4xx URL 포함
-
-- `e2e/content-rendering.spec.ts`: `trackRuntimeErrors`에 `page.on("response")` hook을 추가해 4xx/5xx status의 실제 URL을 `http <status>: <url>` 형식으로 `runtimeErrors`에 수집. Chromium console이 "Failed to load resource" 메시지에 URL을 포함하지 않는 문제를 보완해 CI failure log에서 문제 resource를 즉시 식별 가능
-- `e2e/content-rendering.spec.ts`: `ALLOWED_4XX_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"]` 허용 목록 도입 — external CDN transient 4xx는 assertion 실패에서 제외, 자체 자원의 4xx는 strict하게 유지해 frontend runtime gate 정책 유지
-- `package.json`: patch version `0.12.43`로 증가
+- Root cause 재확인: CI E2E에서 `/_next/image?url=<R2 pub URL>` 400 실패의 실제 원인은 GitHub Actions workflow에 `R2_PUBLIC_URL` secret이 주입되지 않아서 `next.config.ts`의 `r2Hostname`이 null이 되어 image optimization이 reject한 것. CI workflow env에 secret을 추가하는 것으로 해결됨
+- `e2e/content-rendering.spec.ts`: v0.12.43에 추가한 `page.on("response")` hook, `ALLOWED_4XX_PATTERNS`, `BROWSER_LEVEL_CONSOLE_NOISE`를 모두 제거하고 `trackRuntimeErrors`를 pageerror + console.error만 수집하는 원래 형태로 복원
+- `next.config.ts`: v0.12.44에 추가한 `{ hostname: "**.r2.dev" }` fallback pattern 제거. CI env에 `R2_PUBLIC_URL`이 주입되므로 기존 env-driven 로직만으로 충분
+- `package.json`: patch version `0.12.45`로 증가
 
 ## v0.12.42 (2026-04-20)
 
