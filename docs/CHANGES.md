@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.50 (2026-04-21)
+
+### docs: SQLite refuge 계획에 local server boundary 설명 추가
+
+- `PLAN_SQLITE_REFUGE.md`: "server 경유"가 Supabase가 아니라 Next.js local server runtime 경유임을 명시
+- `PLAN_SQLITE_REFUGE.md`: refuge mode write flow를 브라우저 → Route Handler / Server Action → local SQLite 구조로 문서화
+- `package.json`: patch version `0.12.50`로 증가
+
 ## v0.12.49 (2026-04-21)
 
 ### fix: CI E2E에서 R2 pub URL 400을 env-driven으로 허용
