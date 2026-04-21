@@ -1,5 +1,20 @@
 # CHANGES
 
+## v0.12.48 (2026-04-21)
+
+### docs: SQLite refuge 계획에 editor_states / gantt_chart_archives 포함
+
+- `PLAN_SQLITE_REFUGE.md`: `editor_states`, `gantt_chart_archives`를 Release 1 SQLite refuge 대상 테이블로 승격
+- `PLAN_SQLITE_REFUGE.md`: `EditorStatePreservation`, `GanttChartPanel` 관련 지원 write scope, journal identity key, conflict baseline, replay policy, 테스트 계획, acceptance criteria 반영
+- `package.json`: patch version `0.12.48`로 증가
+
+## v0.12.47 (2026-04-20)
+
+### docs: SQLite refuge 구현 계획 문서 추가
+
+- `PLAN_SQLITE_REFUGE.md`: local SQLite refuge mode의 release 1 계획 추가. supported surface, degraded surface, activation contract, guarded push-back, expanded test plan, acceptance criteria를 문서화
+- `package.json`: patch version `0.12.47`로 증가
+
 ## v0.12.46 (2026-04-20)
 
 ### fix: Vercel Analytics / SpeedInsights를 Vercel env에서만 render
