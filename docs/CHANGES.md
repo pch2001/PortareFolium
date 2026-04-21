@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.52 (2026-04-21)
+
+### perf: R2 image upload immutable cache header + robots aggressive bot 차단
+
+- `src/app/api/upload-image/route.ts`: R2 `PutObjectCommand`에 `CacheControl: "public, max-age=31536000, immutable"` 추가. UUID 기반 파일명은 재업로드되지 않는 immutable asset이므로 1년 edge cache + immutable directive로 안전. Cloudflare edge cache hit ratio 최상향 → R2 Class B op (GET/HEAD) 호출 회수 최소화 → `.r2.dev` 환경에서 abuse bombardment cost 감소
+- `src/app/robots.ts`: SEO 비공헌 + R2 op 소모 위험 있는 aggressive crawler 13종(`SemrushBot`, `AhrefsBot`, `DotBot`, `MJ12bot`, `PetalBot`, `DataForSeoBot`, `Bytespider`, `GPTBot`, `ClaudeBot`, `anthropic-ai`, `CCBot`, `Amazonbot`, `meta-externalagent`) disallow rule 추가. Google/NAVER 등 정상 crawler는 영향 없음
+- `package.json`: patch version `0.12.52`로 증가
+
 ## v0.12.51 (2026-04-21)
 
 ### chore: GitHub Actions E2E workflow 제거 + local pre-push gate 전환
