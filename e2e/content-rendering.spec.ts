@@ -41,6 +41,24 @@ async function getVisibleLightboxImage(page: Page) {
     return null;
 }
 
+// R2 pub-*.r2.dev 는 CI runner IP에서 Cloudflare abuse filter로 차단됨
+// /_next/image optimization이 upstream fetch 실패로 400 반환 → 해당 pattern만 허용
+// custom domain 전환 시 이 entry 제거 예정
+function getR2ImageAllowPattern(): string | null {
+    const raw = process.env.R2_PUBLIC_URL;
+    if (!raw) return null;
+    try {
+        const host = new URL(raw).hostname;
+        return `/_next/image?url=${encodeURIComponent(`https://${host}`)}`;
+    } catch {
+        return null;
+    }
+}
+
+const ALLOWED_4XX_PATTERNS = [getR2ImageAllowPattern()].filter(
+    (pattern): pattern is string => pattern !== null
+);
+
 // 브라우저 런타임 에러 수집
 function trackRuntimeErrors(page: Page) {
     const runtimeErrors: string[] = [];
@@ -51,7 +69,27 @@ function trackRuntimeErrors(page: Page) {
 
     page.on("console", (message) => {
         if (message.type() !== "error") return;
-        runtimeErrors.push(`console: ${message.text()}`);
+        const text = message.text();
+        // Chromium이 subresource 실패 시 뿌리는 generic console error는 URL 미포함
+        // response hook이 이미 URL 기반으로 판단 + 필요시 기록하므로 중복 제거
+        if (
+            text.includes(
+                "Failed to load resource: the server responded with a status of"
+            )
+        ) {
+            return;
+        }
+        runtimeErrors.push(`console: ${text}`);
+    });
+
+    page.on("response", (response) => {
+        const status = response.status();
+        if (status < 400) return;
+        const url = response.url();
+        if (ALLOWED_4XX_PATTERNS.some((pattern) => url.includes(pattern))) {
+            return;
+        }
+        runtimeErrors.push(`http ${status}: ${url}`);
     });
 
     return runtimeErrors;

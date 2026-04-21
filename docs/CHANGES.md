@@ -1,5 +1,15 @@
 # CHANGES
 
+## v0.12.49 (2026-04-21)
+
+### fix: CI E2E에서 R2 pub URL 400을 env-driven으로 허용
+
+- Root cause: Cloudflare R2 `pub-*.r2.dev` public URL이 GitHub Actions runner IP range를 abuse filter로 차단. Next.js `/_next/image` optimization이 R2 upstream fetch 실패 (ECONNRESET) → browser 400 반환 → E2E strict console-error assertion fail. Local / Vercel prod는 영향 없음 (origin IP abuse filter 비해당)
+- `e2e/content-rendering.spec.ts`: `getR2ImageAllowPattern()` helper 추가. `process.env.R2_PUBLIC_URL` 에서 hostname 추출 → `/_next/image?url=https%3A%2F%2F<encoded-host>` pattern을 `ALLOWED_4XX_PATTERNS`로 생성. CI secret / local `.env.local` 동일 env 활용. env 미주입 시 strict 유지
+- `e2e/content-rendering.spec.ts`: `trackRuntimeErrors`에 `page.on("response")` hook 재도입해 4xx URL을 ALLOWED pattern 기준으로 필터. Chromium generic "Failed to load resource" console error는 URL 미포함이므로 중복 제거
+- 장기 계획: R2 custom domain 전환 시 abuse filter 우회되므로 이 ALLOWED entry 삭제 예정. 개인 portfolio 규모에선 `.r2.dev` 유지로 충분
+- `package.json`: patch version `0.12.49`로 증가
+
 ## v0.12.48 (2026-04-21)
 
 ### docs: SQLite refuge 계획에 editor_states / gantt_chart_archives 포함
