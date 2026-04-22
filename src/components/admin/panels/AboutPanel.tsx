@@ -3,10 +3,7 @@
 // about_data 테이블 편집 + 프로필 이미지 업로드 + Job Field별 소개 관리
 import { useEffect, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase";
-import {
-    revalidateHome,
-    revalidateResume,
-} from "@/app/admin/actions/revalidate";
+import { saveAboutPanel } from "@/app/admin/actions/about";
 import { uploadImage } from "@/lib/image-upload";
 import type {
     AboutData,
@@ -216,7 +213,6 @@ export default function AboutPanel() {
     };
 
     const handleSave = async () => {
-        if (!browserClient) return;
         setSaving(true);
         setStatus(null);
 
@@ -249,53 +245,22 @@ export default function AboutPanel() {
             ) as AboutData["competencySections"],
         };
 
-        // resume_data.basics.image 업데이트 (단일 출처)
-        if (resumeRowId && resumeFullData) {
-            const mergedResume = {
-                ...resumeFullData,
-                basics: {
-                    ...resumeFullData.basics,
-                    image: profileImage.trim() || undefined,
-                },
-            };
-            await browserClient
-                .from("resume_data")
-                .update({ data: mergedResume })
-                .eq("id", resumeRowId);
-        }
+        const result = await saveAboutPanel({
+            aboutData: data,
+            aboutRowId: rowId,
+            profileImage,
+            resumeRowId,
+            resumeFullData,
+            githubUrl: github,
+        });
 
-        let err;
-        if (rowId) {
-            ({ error: err } = await browserClient
-                .from("about_data")
-                .update({ data })
-                .eq("id", rowId));
-        } else {
-            const res = await browserClient
-                .from("about_data")
-                .insert({ data })
-                .select("id")
-                .single();
-            err = res.error;
-            if (res.data) setRowId(res.data.id);
-        }
-
-        // github_url site_config 동기화
-        await browserClient
-            .from("site_config")
-            .upsert(
-                [{ key: "github_url", value: JSON.stringify(github.trim()) }],
-                { onConflict: "key" }
-            );
-
-        if (!err) {
-            await revalidateHome();
-            await revalidateResume();
+        if (result.success) {
+            if (result.aboutRowId) setRowId(result.aboutRowId);
         }
         setSaving(false);
         setStatus(
-            err
-                ? { type: "error", msg: err.message }
+            !result.success
+                ? { type: "error", msg: result.error }
                 : {
                       type: "success",
                       msg: "저장됐습니다. About 페이지에 즉시 반영됩니다.",

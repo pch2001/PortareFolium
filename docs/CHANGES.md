@@ -1,5 +1,15 @@
 # CHANGES
 
+## v0.12.54 (2026-04-22)
+
+### refactor: About/Resume 저장 경계를 NextAuth server action으로 이동
+
+- `src/app/admin/actions/about.ts` 신규: About 저장을 server action 경계로 이동. `about_data`, `resume_data.basics.image`, `site_config.github_url` 저장을 관리자 세션으로 보호
+- `src/app/admin/actions/resume.ts` 신규: Resume 저장과 `resume_layout`, `resume_section_layout` 저장을 server action 경계로 이동
+- `src/components/admin/panels/AboutPanel.tsx`: browserClient 직접 write 제거, `saveAboutPanel()` 사용으로 전환
+- `src/components/admin/panels/ResumePanel.tsx`: 수동 저장, auto-save, layout 저장을 `saveResumePanel()` / `saveResumeTheme()` 호출로 전환
+- `package.json`: patch version `0.12.54`로 증가
+
 ## v0.12.53 (2026-04-21)
 
 ### feat: Supabase Auth 제거용 NextAuth Google OAuth 기반 1차 전환

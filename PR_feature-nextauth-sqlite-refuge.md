@@ -7,6 +7,7 @@ feature/nextauth-sqlite-refuge → main: NextAuth 전환과 SQLite refuge 기반
 - NextAuth Google OAuth 기반 관리자 세션 골격 추가
 - legacy Supabase 이메일/비밀번호 로그인은 `/admin/migrate` 전용 1회 브리지로 제한
 - R2 admin route와 민감 server action을 NextAuth 관리자 세션으로 보호
+- About / Resume 저장을 server action 경계로 이동
 
 ## Changed Files
 
@@ -35,6 +36,10 @@ feature/nextauth-sqlite-refuge → main: NextAuth 전환과 SQLite refuge 기반
 - `src/app/admin/actions/agent-tokens.ts`
 - `src/app/admin/actions/snapshots.ts`
 - `src/app/admin/actions/lightbox-sidecars.ts`
+- `src/app/admin/actions/about.ts`
+- `src/app/admin/actions/resume.ts`
+- `src/components/admin/panels/AboutPanel.tsx`
+- `src/components/admin/panels/ResumePanel.tsx`
 
 ### test
 - `src/__tests__/admin-auth.test.ts`

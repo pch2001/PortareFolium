@@ -3,10 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase";
 import { normalizeJobFieldValue } from "@/lib/job-field";
-import {
-    revalidateHome,
-    revalidateResume,
-} from "@/app/admin/actions/revalidate";
+import { saveResumePanel, saveResumeTheme } from "@/app/admin/actions/resume";
 import { uploadImage } from "@/lib/image-upload";
 import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { matchesJobField } from "@/lib/job-field";
@@ -369,18 +366,18 @@ export default function ResumePanel() {
 
     // 자동 저장 (기존 row가 있을 때만)
     const autoSave = async () => {
-        if (!browserClient || !resumeData || !rowId) return;
+        if (!resumeData || !rowId) return;
         try {
-            const { error } = await browserClient
-                .from("resume_data")
-                .update({ data: resumeData as any })
-                .eq("id", rowId);
-            if (!error) {
+            const result = await saveResumePanel({
+                resumeData,
+                rowId,
+                resumeLayout,
+                resumeSectionLayout,
+            });
+            if (result.success) {
                 savedDataRef.current = JSON.stringify(resumeData);
                 setIsDirty(false);
                 setSavedAt(new Date());
-                await revalidateResume();
-                await revalidateHome();
             }
         } catch {}
     };
@@ -388,52 +385,25 @@ export default function ResumePanel() {
     useAutoSave(isDirty, rowId !== null, autoSave);
 
     const handleSave = async () => {
-        if (!browserClient || !resumeData) return;
+        if (!resumeData) return;
         setSaving(true);
         setStatus(null);
 
         try {
-            let err;
-            if (rowId) {
-                const res = await browserClient
-                    .from("resume_data")
-                    .update({ data: resumeData as any })
-                    .eq("id", rowId);
-                err = res.error;
-            } else {
-                const res = await browserClient
-                    .from("resume_data")
-                    .insert({ lang: "ko", data: resumeData as any })
-                    .select("id")
-                    .single();
-                err = res.error;
-                if (res.data) setRowId(res.data.id);
-            }
-
-            if (err) throw err;
-
-            // resume_layout site_config 저장
-            const { error: layoutErr } = await browserClient
-                .from("site_config")
-                .upsert({ key: "resume_layout", value: resumeLayout });
-            if (layoutErr) throw layoutErr;
-
-            // resume_section_layout site_config 저장
-            const { error: sectionLayoutErr } = await browserClient
-                .from("site_config")
-                .upsert({
-                    key: "resume_section_layout",
-                    value: resumeSectionLayout as unknown as object,
-                });
-            if (sectionLayoutErr) throw sectionLayoutErr;
+            const result = await saveResumePanel({
+                resumeData,
+                rowId,
+                resumeLayout,
+                resumeSectionLayout,
+            });
+            if (!result.success) throw new Error(result.error);
+            if (result.rowId) setRowId(result.rowId);
 
             savedDataRef.current = JSON.stringify(resumeData);
             setIsDirty(false);
             setSavedAt(new Date());
             setInitialSectionLayout(resumeSectionLayout);
             initialSectionLayoutRef.current = resumeSectionLayout;
-            await revalidateResume();
-            await revalidateHome();
             setStatus({
                 type: "success",
                 msg: "저장됐습니다. 이력서 페이지에 즉시 반영됩니다.",
@@ -446,18 +416,14 @@ export default function ResumePanel() {
     };
 
     const saveLayout = async (layout: ResumeLayout) => {
-        if (!browserClient) return;
-        const { error } = await browserClient
-            .from("site_config")
-            .upsert({ key: "resume_layout", value: layout });
-        if (error) {
+        const result = await saveResumeTheme(layout);
+        if (!result.success) {
             setStatus({
                 type: "error",
-                msg: `레이아웃 저장 실패: ${error.message}`,
+                msg: `레이아웃 저장 실패: ${result.error}`,
             });
         } else {
             setSavedAt(new Date());
-            await revalidateResume();
         }
     };
 
