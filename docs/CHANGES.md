@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.62 (2026-04-22)
+
+### refactor: TagsPanel write 경계를 server action으로 이동
+
+- `src/app/admin/actions/tags.ts` 신규: tags 목록/카테고리 목록 조회, 태그 저장/삭제, 카테고리 rename/delete를 관리자 server action으로 이동
+- `src/components/admin/panels/TagsPanel.tsx`: browserClient 직접 write 제거, TagsPanel read/write를 server action 호출 기반으로 전환
+- `package.json`: patch version `0.12.62`로 증가
+
 ## v0.12.61 (2026-04-22)
 
 ### refactor: SiteConfigPanel write 경계를 server action으로 이동
