@@ -1,0 +1,152 @@
+"use server";
+
+import { requireAdminSession } from "@/lib/server-admin";
+import { serverClient } from "@/lib/supabase";
+
+const MAX_AUTO_SNAPSHOTS = 5;
+
+type EditorSnapshotRow = {
+    id: string;
+    label: string;
+    content: string;
+    created_at: string;
+};
+
+type EditorSnapshot = {
+    id: string;
+    label: string;
+    content: string;
+    savedAt: string;
+};
+
+const mapSnapshot = (row: EditorSnapshotRow): EditorSnapshot => ({
+    id: row.id,
+    label: row.label,
+    content: row.content,
+    savedAt: row.created_at,
+});
+
+async function listSnapshots(
+    entityType: string,
+    entitySlug: string
+): Promise<EditorSnapshot[]> {
+    if (!serverClient) return [];
+    const { data } = await serverClient
+        .from("editor_states")
+        .select("id, label, content, created_at")
+        .eq("entity_type", entityType)
+        .eq("entity_slug", entitySlug)
+        .order("created_at", { ascending: false });
+
+    return ((data as EditorSnapshotRow[] | null) ?? []).map(mapSnapshot);
+}
+
+// editor_states 초기 정리 + Initial snapshot 보장
+export async function initializeEditorSnapshots(
+    entityType: string,
+    entitySlug: string,
+    currentContent: string
+): Promise<EditorSnapshot[]> {
+    await requireAdminSession();
+    if (!serverClient) return [];
+
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    await serverClient
+        .from("editor_states")
+        .delete()
+        .eq("entity_type", entityType)
+        .eq("entity_slug", entitySlug)
+        .in("label", ["Initial", "Auto-save"])
+        .lt("created_at", cutoff);
+
+    if (currentContent) {
+        await serverClient
+            .from("editor_states")
+            .delete()
+            .eq("entity_type", entityType)
+            .eq("entity_slug", entitySlug)
+            .eq("label", "Initial");
+
+        await serverClient.from("editor_states").insert({
+            entity_type: entityType,
+            entity_slug: entitySlug,
+            label: "Initial",
+            content: currentContent,
+        });
+    }
+
+    return listSnapshots(entityType, entitySlug);
+}
+
+// editor_states 단건 추가
+export async function createEditorSnapshot(
+    entityType: string,
+    entitySlug: string,
+    label: "Auto-save" | "Bookmark" | "Initial",
+    content: string
+): Promise<EditorSnapshot[]> {
+    await requireAdminSession();
+    if (!serverClient) return [];
+
+    await serverClient.from("editor_states").insert({
+        entity_type: entityType,
+        entity_slug: entitySlug,
+        label,
+        content,
+    });
+
+    if (label === "Auto-save") {
+        const { data } = await serverClient
+            .from("editor_states")
+            .select("id")
+            .eq("entity_type", entityType)
+            .eq("entity_slug", entitySlug)
+            .eq("label", "Auto-save")
+            .order("created_at", { ascending: true });
+
+        const ids = ((data as { id: string }[] | null) ?? []).map(
+            (row) => row.id
+        );
+        const overflow = ids.slice(
+            0,
+            Math.max(0, ids.length - MAX_AUTO_SNAPSHOTS)
+        );
+        for (const id of overflow) {
+            await serverClient.from("editor_states").delete().eq("id", id);
+        }
+    }
+
+    return listSnapshots(entityType, entitySlug);
+}
+
+// editor_states 단건 삭제
+export async function deleteEditorSnapshot(
+    entityType: string,
+    entitySlug: string,
+    id: string
+): Promise<EditorSnapshot[]> {
+    await requireAdminSession();
+    if (!serverClient) return [];
+
+    await serverClient.from("editor_states").delete().eq("id", id);
+    return listSnapshots(entityType, entitySlug);
+}
+
+// editor_states label 기준 bulk delete
+export async function deleteEditorSnapshotsByLabel(
+    entityType: string,
+    entitySlug: string,
+    label: "Auto-save" | "Bookmark"
+): Promise<EditorSnapshot[]> {
+    await requireAdminSession();
+    if (!serverClient) return [];
+
+    await serverClient
+        .from("editor_states")
+        .delete()
+        .eq("entity_type", entityType)
+        .eq("entity_slug", entitySlug)
+        .eq("label", label);
+
+    return listSnapshots(entityType, entitySlug);
+}

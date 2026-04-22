@@ -1,5 +1,17 @@
 # CHANGES
 
+## v0.12.59 (2026-04-22)
+
+### refactor: editor_states / BooksSubPanel 경계 이관과 revalidate 보강
+
+- `src/app/admin/actions/editor-states.ts` 신규: `editor_states` 초기화, 저장, 삭제, bulk delete를 server action으로 이동
+- `src/components/admin/EditorStatePreservation.tsx`: browserClient 직접 CRUD 제거, server action 호출 기반으로 전환
+- `src/app/admin/actions/books.ts` 신규: BooksSubPanel bootstrap, 저장, 삭제, publish/featured 토글을 server action으로 이동
+- `src/components/admin/panels/BooksSubPanel.tsx`: browserClient 기반 `books` CRUD 제거, server action 호출 기반으로 전환
+- `src/app/admin/actions/posts.ts`, `src/app/admin/actions/portfolio.ts`: delete/batch/featured/reorder 이후 대상 route revalidate 보강
+- `src/components/admin/panels/PortfolioPanel.tsx`: featured 토글 호출 시 slug 전달로 revalidate 연계
+- `package.json`: patch version `0.12.59`로 증가
+
 ## v0.12.58 (2026-04-22)
 
 ### fix: /api/run-migrations를 관리자 세션으로 보호

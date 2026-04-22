@@ -4,7 +4,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import type { Editor } from "@tiptap/react";
-import { browserClient } from "@/lib/supabase";
+import {
+    createEditorSnapshot,
+    deleteEditorSnapshot,
+    deleteEditorSnapshotsByLabel,
+    initializeEditorSnapshots,
+} from "@/app/admin/actions/editor-states";
 import { getCleanMarkdown } from "@/lib/tiptap-markdown";
 import { triggerSnapshotCleanup } from "@/lib/snapshot-cleanup";
 import StatePreviewModal from "@/components/admin/StatePreviewModal";
@@ -33,135 +38,6 @@ interface EditorStatePreservationProps {
 
 const MAX_AUTO_SNAPSHOTS = 5;
 const AUTOSAVE_INTERVAL = 5 * 60 * 1000; // 5분
-
-// Supabase에서 snapshot 로드
-async function loadSnapshots(
-    entityType: string,
-    entitySlug: string
-): Promise<EditorSnapshot[]> {
-    if (!browserClient) return [];
-    try {
-        const { data } = await browserClient
-            .from("editor_states")
-            .select("id, entity_type, entity_slug, label, content, created_at")
-            .eq("entity_type", entityType)
-            .eq("entity_slug", entitySlug)
-            .order("created_at", { ascending: false });
-        return (data ?? []).map((row) => ({
-            id: row.id,
-            content: row.content,
-            savedAt: row.created_at,
-            label: row.label,
-        }));
-    } catch {
-        return [];
-    }
-}
-
-// Supabase에 snapshot 저장
-async function saveSnapshot(
-    entityType: string,
-    entitySlug: string,
-    label: string,
-    content: string
-): Promise<EditorSnapshot | null> {
-    if (!browserClient) return null;
-    try {
-        const { data } = await browserClient
-            .from("editor_states")
-            .insert({
-                entity_type: entityType,
-                entity_slug: entitySlug,
-                label,
-                content,
-            })
-            .select("id, label, content, created_at")
-            .single();
-        if (!data) return null;
-        return {
-            id: data.id,
-            content: data.content,
-            savedAt: data.created_at,
-            label: data.label,
-        };
-    } catch {
-        return null;
-    }
-}
-
-// snapshot 삭제
-async function deleteSnapshotById(id: string): Promise<void> {
-    if (!browserClient) return;
-    try {
-        await browserClient.from("editor_states").delete().eq("id", id);
-    } catch {
-        // best-effort
-    }
-}
-
-// 만료된 Initial + Auto 정리 (24시간 초과)
-async function cleanupExpired(
-    entityType: string,
-    entitySlug: string
-): Promise<void> {
-    if (!browserClient) return;
-    try {
-        const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        await browserClient
-            .from("editor_states")
-            .delete()
-            .eq("entity_type", entityType)
-            .eq("entity_slug", entitySlug)
-            .in("label", ["Initial", "Auto-save"])
-            .lt("created_at", cutoff);
-    } catch {
-        // best-effort
-    }
-}
-
-// Auto-save FIFO eviction (max 5)
-async function evictOldAutoSaves(
-    entityType: string,
-    entitySlug: string
-): Promise<void> {
-    if (!browserClient) return;
-    try {
-        const { data } = await browserClient
-            .from("editor_states")
-            .select("id")
-            .eq("entity_type", entityType)
-            .eq("entity_slug", entitySlug)
-            .eq("label", "Auto-save")
-            .order("created_at", { ascending: true });
-        if (!data || data.length <= MAX_AUTO_SNAPSHOTS) return;
-        const toDelete = data.slice(0, data.length - MAX_AUTO_SNAPSHOTS);
-        for (const row of toDelete) {
-            await browserClient.from("editor_states").delete().eq("id", row.id);
-        }
-    } catch {
-        // best-effort
-    }
-}
-
-// Initial upsert (기존 Initial 삭제 후 새 Initial 생성)
-async function upsertInitial(
-    entityType: string,
-    entitySlug: string,
-    content: string
-): Promise<EditorSnapshot | null> {
-    if (!browserClient) return null;
-    try {
-        await browserClient
-            .from("editor_states")
-            .delete()
-            .eq("entity_type", entityType)
-            .eq("entity_slug", entitySlug)
-            .eq("label", "Initial");
-        return saveSnapshot(entityType, entitySlug, "Initial", content);
-    } catch {
-        return null;
-    }
-}
 
 export default function EditorStatePreservation({
     editor,
@@ -214,16 +90,15 @@ export default function EditorStatePreservation({
         initialSaved.current = true;
 
         const init = async () => {
-            await cleanupExpired(entityType, entitySlug);
-            if (currentContent) {
-                await upsertInitial(entityType, entitySlug, currentContent);
-            }
-            const loaded = await loadSnapshots(entityType, entitySlug);
+            const loaded = await initializeEditorSnapshots(
+                entityType,
+                entitySlug,
+                currentContent
+            );
             setSnapshots(loaded);
-            // cleanupExpired/upsertInitial이 snapshot을 지웠을 수 있으므로 cleanup
             fireCleanup();
         };
-        init();
+        void init();
     }, [editor, entityType, entitySlug, currentContent]);
 
     // 5분 간격 Auto-save (최대 5개, FIFO eviction)
@@ -234,19 +109,14 @@ export default function EditorStatePreservation({
             const md = getCleanMarkdown(editor);
             if (!md) return;
 
-            const snap = await saveSnapshot(
+            const loaded = await createEditorSnapshot(
                 entityType,
                 entitySlug,
                 "Auto-save",
                 md
             );
-            await evictOldAutoSaves(entityType, entitySlug);
-            if (snap) {
-                const loaded = await loadSnapshots(entityType, entitySlug);
-                setSnapshots(loaded);
-                // evictOldAutoSaves가 FIFO eviction한 경우 cleanup
-                fireCleanup();
-            }
+            setSnapshots(loaded);
+            fireCleanup();
         }, AUTOSAVE_INTERVAL);
 
         return () => clearInterval(id);
@@ -268,11 +138,13 @@ export default function EditorStatePreservation({
         const md = getCleanMarkdown(editor);
         if (!md) return;
 
-        const snap = await saveSnapshot(entityType, entitySlug, "Bookmark", md);
-        if (snap) {
-            const loaded = await loadSnapshots(entityType, entitySlug);
-            setSnapshots(loaded);
-        }
+        const loaded = await createEditorSnapshot(
+            entityType,
+            entitySlug,
+            "Bookmark",
+            md
+        );
+        setSnapshots(loaded);
     }, [editor, entityType, entitySlug]);
 
     // Revert 처리
@@ -288,8 +160,11 @@ export default function EditorStatePreservation({
     // Snapshot 삭제 (Initial 제외)
     const handleDelete = useCallback(
         async (id: string) => {
-            await deleteSnapshotById(id);
-            const loaded = await loadSnapshots(entityType, entitySlug);
+            const loaded = await deleteEditorSnapshot(
+                entityType,
+                entitySlug,
+                id
+            );
             setSnapshots(loaded);
             fireCleanup();
         },
@@ -299,15 +174,15 @@ export default function EditorStatePreservation({
     // 섹션 전체 삭제 (Auto-save 또는 Bookmark)
     const handleDeleteAll = useCallback(
         async (label: "Auto-save" | "Bookmark") => {
-            const toDelete = snapshots.filter((s) => s.label === label);
-            for (const snap of toDelete) {
-                await deleteSnapshotById(snap.id);
-            }
-            const loaded = await loadSnapshots(entityType, entitySlug);
+            const loaded = await deleteEditorSnapshotsByLabel(
+                entityType,
+                entitySlug,
+                label
+            );
             setSnapshots(loaded);
             fireCleanup();
         },
-        [snapshots, entityType, entitySlug, fireCleanup]
+        [entityType, entitySlug, fireCleanup]
     );
 
     // badge label 표시 텍스트

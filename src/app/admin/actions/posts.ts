@@ -189,8 +189,15 @@ export async function deletePostById(
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
+    const { data: target } = await serverClient
+        .from("posts")
+        .select("slug")
+        .eq("id", id)
+        .single();
+
     const { error } = await serverClient.from("posts").delete().eq("id", id);
     if (error) return { success: false, error: error.message };
+    if (target?.slug) await revalidatePost(target.slug);
     return { success: true };
 }
 
@@ -227,6 +234,14 @@ export async function batchSetPostPublished(
         .update({ published: publish })
         .in("id", ids);
     if (error) return { success: false, error: error.message };
+
+    const { data } = await serverClient
+        .from("posts")
+        .select("slug")
+        .in("id", ids);
+    for (const row of data ?? []) {
+        await revalidatePost(row.slug);
+    }
     return { success: true };
 }
 
@@ -244,5 +259,13 @@ export async function batchSetPostJobField(
         .update({ job_field: [jobField] })
         .in("id", ids);
     if (error) return { success: false, error: error.message };
+
+    const { data } = await serverClient
+        .from("posts")
+        .select("slug")
+        .in("id", ids);
+    for (const row of data ?? []) {
+        await revalidatePost(row.slug);
+    }
     return { success: true };
 }

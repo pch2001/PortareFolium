@@ -471,7 +471,7 @@ export default function PortfolioPanel({
                 return;
             }
         }
-        await setPortfolioFeatured(item.id, !item.featured);
+        await setPortfolioFeatured(item.id, item.slug, !item.featured);
         void loadItems();
     };
 

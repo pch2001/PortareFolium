@@ -145,11 +145,18 @@ export async function deletePortfolioItemById(
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
+    const { data: target } = await serverClient
+        .from("portfolio_items")
+        .select("slug")
+        .eq("id", id)
+        .single();
+
     const { error } = await serverClient
         .from("portfolio_items")
         .delete()
         .eq("id", id);
     if (error) return { success: false, error: error.message };
+    if (target?.slug) await revalidatePortfolioItem(target.slug);
     return { success: true };
 }
 
@@ -175,6 +182,7 @@ export async function setPortfolioPublished(
 // Featured 토글
 export async function setPortfolioFeatured(
     id: string,
+    slug: string,
     featured: boolean
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
@@ -185,6 +193,7 @@ export async function setPortfolioFeatured(
         .update({ featured })
         .eq("id", id);
     if (error) return { success: false, error: error.message };
+    await revalidatePortfolioItem(slug);
     return { success: true };
 }
 
@@ -196,11 +205,17 @@ export async function reorderFeaturedPortfolioItems(
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
     for (const update of updates) {
+        const { data: target } = await serverClient
+            .from("portfolio_items")
+            .select("slug")
+            .eq("id", update.id)
+            .single();
         const { error } = await serverClient
             .from("portfolio_items")
             .update({ order_idx: update.order_idx })
             .eq("id", update.id);
         if (error) return { success: false, error: error.message };
+        if (target?.slug) await revalidatePortfolioItem(target.slug);
     }
     return { success: true };
 }
@@ -219,6 +234,14 @@ export async function batchSetPortfolioPublished(
         .update({ published: publish })
         .in("id", ids);
     if (error) return { success: false, error: error.message };
+
+    const { data } = await serverClient
+        .from("portfolio_items")
+        .select("slug")
+        .in("id", ids);
+    for (const row of data ?? []) {
+        await revalidatePortfolioItem(row.slug);
+    }
     return { success: true };
 }
 
@@ -230,11 +253,17 @@ export async function batchSetPortfolioJobField(
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
     for (const update of updates) {
+        const { data: target } = await serverClient
+            .from("portfolio_items")
+            .select("slug")
+            .eq("id", update.id)
+            .single();
         const { error } = await serverClient
             .from("portfolio_items")
             .update({ data: update.data })
             .eq("id", update.id);
         if (error) return { success: false, error: error.message };
+        if (target?.slug) await revalidatePortfolioItem(target.slug);
     }
     return { success: true };
 }
