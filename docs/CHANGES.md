@@ -1,5 +1,16 @@
 # CHANGES
 
+## v0.12.67 (2026-04-22)
+
+### fix: authenticated E2E auth fixture 안정화와 PDF export race 제거
+
+- `src/auth.ts`, `src/types/next-auth.d.ts`: E2E credentials 로그인 뒤 JWT `isAdmin` 상태가 세션 갱신 때 유지되도록 `authProvider` 추적 추가
+- `e2e/auth.setup.ts`: `/admin` 진입 검증을 정확히 수정하고 `/resume`, `/portfolio` authenticated route 사전 컴파일 추가
+- `e2e/admin-auth-migration.spec.ts`: env 의존 legacy login skip 제거, deterministic login 화면 검증으로 교체
+- `e2e/authenticated/admin-editor-viewport.spec.ts`, `e2e/authenticated/pdf-export.spec.ts`: skip 제거, authenticated UI를 실제로 assert하도록 수정
+- `e2e/authenticated/pdf-export.spec.ts`: serial 실행, modal open 재시도, runtime error 수집으로 `/resume` cold-start race를 안정화
+- `package.json`: patch version `0.12.67`로 증가
+
 ## v0.12.66 (2026-04-22)
 
 ### docs: NextAuth 전환 후 수동 작업 체크리스트 추가

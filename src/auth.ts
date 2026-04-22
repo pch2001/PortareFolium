@@ -74,8 +74,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             const nextEmail =
                 typeof user?.email === "string" ? user.email : token.email;
             token.email = nextEmail;
+            if (account?.provider) {
+                token.authProvider = account.provider;
+            }
             token.isAdmin =
-                account?.provider === "e2e-credentials"
+                token.authProvider === "e2e-credentials"
                     ? true
                     : isAdminEmail(nextEmail);
             return token;
