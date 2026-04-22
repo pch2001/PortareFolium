@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { isAdminSession } from "@/lib/admin-auth";
 import { serverClient } from "@/lib/supabase";
 import { getPendingMigrations } from "@/lib/migrations";
 
 export async function POST() {
+    const session = await auth();
+    if (!isAdminSession(session)) {
+        return NextResponse.json({ error: "인증 필요" }, { status: 401 });
+    }
+
     if (!serverClient) {
         return NextResponse.json(
             { error: "서버 클라이언트가 설정되지 않았습니다" },

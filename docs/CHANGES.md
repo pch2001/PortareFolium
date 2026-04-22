@@ -1,5 +1,12 @@
 # CHANGES
 
+## v0.12.58 (2026-04-22)
+
+### fix: /api/run-migrations를 관리자 세션으로 보호
+
+- `src/app/api/run-migrations/route.ts`: service-role 기반 마이그레이션 실행 전에 NextAuth 관리자 세션을 검증하도록 변경
+- `package.json`: patch version `0.12.58`로 증가
+
 ## v0.12.57 (2026-04-22)
 
 ### refactor: PortfolioPanel data plane을 server action 경계로 이동
