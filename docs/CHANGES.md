@@ -1,5 +1,14 @@
 # CHANGES
 
+## v0.12.56 (2026-04-22)
+
+### fix: 공개 로그인 버튼 제거 후 /admin/login 수동 진입만 허용
+
+- `src/components/UserMenu.tsx`: 미인증 상태에서 공개 로그인 버튼을 render하지 않도록 변경
+- `AGENTS.md`: `PLAN_*.md`, `PR_*.md`는 기본적으로 commit 대상에서 제외하는 지침 추가
+- planning markdown: git 추적 대상에서 제거
+- `package.json`: patch version `0.12.56`로 증가
+
 ## v0.12.55 (2026-04-22)
 
 ### refactor: PostsPanel data plane을 server action 경계로 이동

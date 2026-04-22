@@ -8,6 +8,7 @@
 !README.md
 PROMPT_*.md
 prompt/
+backup/
 KEDITOR-0.7.21/
 
 # Dependencies

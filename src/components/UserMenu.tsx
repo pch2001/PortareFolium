@@ -3,10 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { browserClient } from "@/lib/supabase";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { LogOut, Settings } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
-import { isAdminEmail } from "@/lib/admin-auth";
 
 // 프로필 이미지 placeholder
 const PLACEHOLDER_IMG = "/avatar-placeholder.svg";
@@ -15,9 +13,7 @@ export default function UserMenu() {
     const [profileImg, setProfileImg] = useState<string>(PLACEHOLDER_IMG);
     const [open, setOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const [legacyAuthed, setLegacyAuthed] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
-    const pathname = usePathname();
     const { data: session, status } = useSession();
     const isAuthed = status === "authenticated" && session?.user?.isAdmin;
 
@@ -26,14 +22,6 @@ export default function UserMenu() {
         setMounted(true);
         if (!isAuthed) return;
         void loadProfileImage();
-    }, [isAuthed]);
-
-    useEffect(() => {
-        if (!browserClient || isAuthed) return;
-        browserClient.auth.getUser().then(({ data }) => {
-            const legacyEmail = data.user?.email ?? null;
-            setLegacyAuthed(Boolean(legacyEmail && isAdminEmail(legacyEmail)));
-        });
     }, [isAuthed]);
 
     // resume_data에서 프로필 이미지 fetch (sessionStorage cache)
@@ -75,20 +63,9 @@ export default function UserMenu() {
         );
     }
 
-    // 미인증: 로그인 버튼
+    // 미인증: 버튼 숨김
     if (!isAuthed) {
-        return (
-            <Link
-                href={
-                    legacyAuthed
-                        ? "/admin/migrate"
-                        : `/admin/login?returnUrl=${encodeURIComponent(pathname)}`
-                }
-                className="rounded-lg bg-(--color-accent) px-3 py-1.5 text-sm font-medium text-(--color-on-accent) transition-opacity hover:opacity-90"
-            >
-                {legacyAuthed ? "계정 전환" : "로그인"}
-            </Link>
-        );
+        return null;
     }
 
     // 인증됨: 프로필 이미지 + 드롭다운
