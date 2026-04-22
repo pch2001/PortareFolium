@@ -108,6 +108,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Concisely document what changes you have done in the docs/CHANGES.md file. This is to keep track of changes at a glance.
 - Automatically increment the 3rd version number (patch version) in `package.json` whenever there is a change.
 - Only update the 1st (major) and 2nd (minor) version numbers if explicitly requested by the user.
+- Planning-only 문서 작업 (`PLAN_*.md`, 조사 메모, planning refinement, branch preparation, AGENTS.md planning directive 추가) 에서는 `package.json` version과 `docs/CHANGES.md`를 변경하지 않는다. 버전 bump와 CHANGES 기록은 실제 구현/수정 diff가 시작된 뒤에만 수행한다.
 
 ### Comment Formatting Constraints
 
