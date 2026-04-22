@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.55 (2026-04-22)
+
+### refactor: PostsPanel data plane을 server action 경계로 이동
+
+- `src/app/admin/actions/posts.ts` 신규: PostsPanel bootstrap 조회, 저장, 삭제, publish 토글, batch publish/job_field 변경, TOC style 저장을 server action으로 통합
+- `src/components/admin/panels/PostsPanel.tsx`: browserClient 기반 posts/site_config/editor_states 직접 CRUD 제거, server action 호출 기반으로 전환
+- `package.json`: patch version `0.12.55`로 증가
+
 ## v0.12.54 (2026-04-22)
 
 ### refactor: About/Resume 저장 경계를 NextAuth server action으로 이동
