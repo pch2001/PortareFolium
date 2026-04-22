@@ -6,6 +6,22 @@ import path from "path";
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
 
 const authFile = ".auth/user.json";
+const e2eServerMode =
+    process.env.E2E_SERVER_MODE ?? (process.env.CI ? "start" : "dev");
+
+if (e2eServerMode === "start" && !process.env.NEXTAUTH_SECRET) {
+    process.env.NEXTAUTH_SECRET = "e2e-nextauth-secret";
+}
+
+const baseURL =
+    process.env.BASE_URL ||
+    (e2eServerMode === "start"
+        ? "http://127.0.0.1:3100"
+        : "http://localhost:3000");
+const webServerCommand =
+    e2eServerMode === "start"
+        ? "pnpm exec next start -H 127.0.0.1 -p 3100"
+        : "pnpm dev";
 
 export default defineConfig({
     testDir: "./e2e",
@@ -16,7 +32,7 @@ export default defineConfig({
     workers: process.env.CI ? 1 : undefined,
     reporter: process.env.CI ? "github" : "html",
     use: {
-        baseURL: process.env.BASE_URL || "http://localhost:3000",
+        baseURL,
         trace: "on-first-retry",
         screenshot: "only-on-failure",
     },
@@ -84,10 +100,10 @@ export default defineConfig({
         },
     ],
     webServer: {
-        // CI: 빌드 결과물 서빙 (빠름), 로컬: dev 서버
-        command: process.env.CI ? "pnpm start" : "pnpm dev",
-        url: "http://localhost:3000",
-        reuseExistingServer: !process.env.CI,
+        // push gate: build + start, 수동 로컬 실행: dev
+        command: webServerCommand,
+        url: baseURL,
+        reuseExistingServer: e2eServerMode !== "start",
         timeout: 120_000,
     },
 });
