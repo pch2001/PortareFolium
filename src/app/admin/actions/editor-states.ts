@@ -150,3 +150,39 @@ export async function deleteEditorSnapshotsByLabel(
 
     return listSnapshots(entityType, entitySlug);
 }
+
+// slug rename 시 snapshot content folder prefix 치환
+export async function rewriteEditorSnapshotUrls(
+    entityType: string,
+    entitySlug: string,
+    oldFolder: string,
+    newFolder: string
+): Promise<void> {
+    await requireAdminSession();
+    if (!serverClient || oldFolder === newFolder) return;
+
+    const { data } = await serverClient
+        .from("editor_states")
+        .select("id, content")
+        .eq("entity_type", entityType)
+        .eq("entity_slug", entitySlug);
+
+    const needle = `/${oldFolder}/`;
+    const replacement = `/${newFolder}/`;
+    const updates = ((data as { id: string; content: string }[] | null) ?? [])
+        .filter(
+            (row) =>
+                typeof row.content === "string" && row.content.includes(needle)
+        )
+        .map((row) => ({
+            id: row.id,
+            content: row.content.replaceAll(needle, replacement),
+        }));
+
+    for (const update of updates) {
+        await serverClient
+            .from("editor_states")
+            .update({ content: update.content })
+            .eq("id", update.id);
+    }
+}

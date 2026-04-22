@@ -11,11 +11,9 @@ import {
     extractKeysFromText,
     baseKey,
 } from "@/lib/orphan-cleanup";
-import {
-    rewriteSnapshotUrls,
-    maybeCleanupOnOpen,
-} from "@/lib/snapshot-cleanup";
+import { maybeCleanupOnOpen } from "@/lib/snapshot-cleanup";
 import { toSlug } from "@/lib/slug";
+import { rewriteEditorSnapshotUrls } from "@/app/admin/actions/editor-states";
 import {
     batchSetPostJobField,
     batchSetPostPublished,
@@ -315,7 +313,7 @@ export default function PostsPanel({
         setTransferring(true);
         try {
             await moveStorageFolder(`blog/${oldSlug}`, `blog/${newSlug}`);
-            await rewriteSnapshotUrls(
+            await rewriteEditorSnapshotUrls(
                 "post",
                 oldSlug,
                 `blog/${oldSlug}`,

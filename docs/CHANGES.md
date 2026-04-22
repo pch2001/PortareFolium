@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.63 (2026-04-22)
+
+### fix: snapshot slug rewrite를 server action 경계로 이동
+
+- `src/app/admin/actions/editor-states.ts`: slug rename 시 `editor_states.content` folder prefix 치환 action 추가
+- `src/components/admin/panels/PostsPanel.tsx`, `src/components/admin/panels/PortfolioPanel.tsx`: browser-side `rewriteSnapshotUrls()` 대신 server action 호출로 변경
+- `package.json`: patch version `0.12.63`로 증가
+
 ## v0.12.62 (2026-04-22)
 
 ### refactor: TagsPanel write 경계를 server action으로 이동

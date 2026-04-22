@@ -11,11 +11,9 @@ import {
     extractKeysFromText,
     baseKey,
 } from "@/lib/orphan-cleanup";
-import {
-    rewriteSnapshotUrls,
-    maybeCleanupOnOpen,
-} from "@/lib/snapshot-cleanup";
+import { maybeCleanupOnOpen } from "@/lib/snapshot-cleanup";
 import { toSlug } from "@/lib/slug";
+import { rewriteEditorSnapshotUrls } from "@/app/admin/actions/editor-states";
 import {
     batchSetPortfolioJobField,
     batchSetPortfolioPublished,
@@ -353,7 +351,7 @@ export default function PortfolioPanel({
                 `portfolio/${oldSlug}`,
                 `portfolio/${newSlug}`
             );
-            await rewriteSnapshotUrls(
+            await rewriteEditorSnapshotUrls(
                 "portfolio",
                 oldSlug,
                 `portfolio/${oldSlug}`,
