@@ -4,6 +4,28 @@ import { useEffect, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import type { getAdminCredentialSetup } from "@/lib/admin-credentials";
 
+const ENV_DESCRIPTIONS: Record<string, { purpose: string; setup: string }> = {
+    AUTH_ADMIN_EMAIL: {
+        purpose: "관리자 로그인에 사용할 이메일",
+        setup: "Vercel 또는 .env.local에 실제 관리자 이메일 1개 입력",
+    },
+    AUTH_ADMIN_PASSWORD_HASH: {
+        purpose: "관리자 비밀번호를 평문 대신 저장하는 scrypt hash",
+        setup: "아래 예시 명령으로 hash 생성 후 그대로 env에 입력",
+    },
+    NEXTAUTH_SECRET: {
+        purpose: "로그인 세션과 쿠키 암호화에 쓰는 secret",
+        setup: "충분히 긴 랜덤 문자열을 생성해 env에 입력",
+    },
+};
+
+const COMMANDS = {
+    AUTH_ADMIN_PASSWORD_HASH:
+        "node -e \"const { randomBytes, scryptSync } = require('crypto'); const salt = randomBytes(16).toString('hex'); const hash = scryptSync('YOUR_PASSWORD', salt, 64).toString('hex'); console.log('scrypt$' + salt + '$' + hash)\"",
+    NEXTAUTH_SECRET:
+        "node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
+} as const;
+
 export default function LoginForm({
     siteName = "",
     returnUrl,
@@ -17,6 +39,7 @@ export default function LoginForm({
     const [password, setPassword] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
     const { data: session, status } = useSession();
     const setupReady = setupState.missingEnvKeys.length === 0;
 
@@ -50,8 +73,18 @@ export default function LoginForm({
         window.location.href = result?.url || returnUrl || "/admin";
     };
 
+    // 명령 clipboard 복사
+    const handleCopyCommand = async (key: keyof typeof COMMANDS) => {
+        try {
+            await navigator.clipboard.writeText(COMMANDS[key]);
+            setCopiedCommand(key);
+        } catch {
+            setError("명령 복사에 실패했습니다.");
+        }
+    };
+
     return (
-        <div className="relative flex min-h-screen items-center justify-center bg-(--color-surface) px-4">
+        <div className="tablet:items-center tablet:py-12 relative flex min-h-screen items-start justify-center bg-(--color-surface) px-4 py-8">
             {/* 배경 글로우 */}
             <div
                 aria-hidden="true"
@@ -100,24 +133,126 @@ export default function LoginForm({
                                     이 사이트는 아래 env가 있어야 관리자
                                     로그인을 사용할 수 있습니다.
                                 </p>
-                                <ul className="list-disc space-y-1 pl-5 font-mono text-xs">
+                                <ul className="space-y-2 text-xs">
                                     {setupState.missingEnvKeys.map((key) => (
-                                        <li key={key}>{key}</li>
+                                        <li
+                                            key={key}
+                                            className="rounded-lg border border-amber-200 bg-white/70 px-3 py-2 dark:border-amber-800 dark:bg-black/10"
+                                        >
+                                            <p className="font-mono font-semibold">
+                                                {key}
+                                            </p>
+                                            <p className="mt-1 text-[11px] text-amber-800/90 dark:text-amber-200/90">
+                                                용도:{" "}
+                                                {ENV_DESCRIPTIONS[key]
+                                                    ?.purpose ??
+                                                    "관리자 로그인에 필요한 환경변수"}
+                                            </p>
+                                            <p className="mt-1 text-[11px] text-amber-800/90 dark:text-amber-200/90">
+                                                설정:{" "}
+                                                {ENV_DESCRIPTIONS[key]?.setup ??
+                                                    "환경변수에 값을 추가"}
+                                            </p>
+                                        </li>
                                     ))}
                                 </ul>
                                 <div className="space-y-1 text-xs">
                                     <p className="font-semibold">
-                                        password hash 생성 예시
+                                        `AUTH_ADMIN_PASSWORD_HASH` 생성 명령
                                     </p>
-                                    <code className="block overflow-x-auto rounded-lg bg-black/80 px-3 py-2 text-[11px] text-white">
-                                        {
-                                            "node -e \"const { randomBytes, scryptSync } = require('crypto'); const salt = randomBytes(16).toString('hex'); const hash = scryptSync('YOUR_PASSWORD', salt, 64).toString('hex'); console.log('scrypt$' + salt + '$' + hash)\""
-                                        }
-                                    </code>
+                                    <div className="space-y-2">
+                                        <code className="block overflow-x-auto rounded-lg bg-black/80 px-3 py-2 text-[11px] text-white">
+                                            {COMMANDS.AUTH_ADMIN_PASSWORD_HASH}
+                                        </code>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                void handleCopyCommand(
+                                                    "AUTH_ADMIN_PASSWORD_HASH"
+                                                )
+                                            }
+                                            disabled={
+                                                copiedCommand ===
+                                                "AUTH_ADMIN_PASSWORD_HASH"
+                                            }
+                                            className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-(--color-accent) px-3 py-2 text-[11px] font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-100"
+                                        >
+                                            {copiedCommand ===
+                                            "AUTH_ADMIN_PASSWORD_HASH" ? (
+                                                <>
+                                                    <svg
+                                                        className="h-3.5 w-3.5"
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2"
+                                                    >
+                                                        <path
+                                                            d="M20 6L9 17l-5-5"
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                        />
+                                                    </svg>
+                                                    복사됨
+                                                </>
+                                            ) : (
+                                                "복사"
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="space-y-1 text-xs">
+                                    <p className="font-semibold">
+                                        `NEXTAUTH_SECRET` 생성 명령
+                                    </p>
+                                    <div className="space-y-2">
+                                        <code className="block overflow-x-auto rounded-lg bg-black/80 px-3 py-2 text-[11px] text-white">
+                                            {COMMANDS.NEXTAUTH_SECRET}
+                                        </code>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                void handleCopyCommand(
+                                                    "NEXTAUTH_SECRET"
+                                                )
+                                            }
+                                            disabled={
+                                                copiedCommand ===
+                                                "NEXTAUTH_SECRET"
+                                            }
+                                            className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-(--color-accent) px-3 py-2 text-[11px] font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-100"
+                                        >
+                                            {copiedCommand ===
+                                            "NEXTAUTH_SECRET" ? (
+                                                <>
+                                                    <svg
+                                                        className="h-3.5 w-3.5"
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2"
+                                                    >
+                                                        <path
+                                                            d="M20 6L9 17l-5-5"
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                        />
+                                                    </svg>
+                                                    복사됨
+                                                </>
+                                            ) : (
+                                                "복사"
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
                                 <p className="text-xs">
                                     Vercel 사용 시 Project Settings →
                                     Environment Variables에 값을 추가 후 재배포
+                                </p>
+                                <p className="text-xs">
+                                    로컬 개발 시 프로젝트 루트의 `.env.local`
+                                    파일에 같은 값을 추가
                                 </p>
                             </div>
                         )}
