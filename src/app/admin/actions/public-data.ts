@@ -37,7 +37,8 @@ export async function searchPublicContent(
     const safeJobField = sanitizePublicJobField(jobField);
     if (safeJobField === null) return [];
 
-    const postQuery = serverClient
+    // let 바인딩으로 조건부 체이닝 가능하게 함
+    let postQuery = serverClient
         .from("posts")
         .select("slug, title")
         .eq("published", true)
@@ -46,10 +47,12 @@ export async function searchPublicContent(
         .limit(5);
 
     if (safeJobField) {
-        postQuery.or(`job_field.eq.${safeJobField},job_field.is.null`);
+        postQuery = postQuery.or(
+            `job_field.eq.${safeJobField},job_field.is.null`
+        );
     }
 
-    const portfolioQuery = serverClient
+    let portfolioQuery = serverClient
         .from("portfolio_items")
         .select("slug, title")
         .eq("published", true)
@@ -58,7 +61,9 @@ export async function searchPublicContent(
         .limit(5);
 
     if (safeJobField) {
-        portfolioQuery.or(`job_field.eq.${safeJobField},job_field.is.null`);
+        portfolioQuery = portfolioQuery.or(
+            `job_field.eq.${safeJobField},job_field.is.null`
+        );
     }
 
     const [postsRes, portfolioRes] = await Promise.all([

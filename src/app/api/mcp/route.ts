@@ -5,13 +5,7 @@ import {
     recordMcpInvalidAttempt,
 } from "@/lib/mcp-rate-limit";
 import { MCP_TOOLS, dispatchTool } from "@/lib/mcp-tools";
-
-// 요청 IP 추출 (forwarded header 우선)
-function getRequestIp(req: NextRequest): string {
-    const forwardedFor = req.headers.get("x-forwarded-for");
-    const realIp = req.headers.get("x-real-ip");
-    return forwardedFor?.split(",")[0]?.trim() || realIp?.trim() || "unknown";
-}
+import { getRequestIpFromHeaders } from "@/lib/request-ip";
 
 // Bearer 토큰 추출
 function extractBearer(req: NextRequest): string | null {
@@ -27,7 +21,7 @@ async function authenticate(
     | { ok: true; agent: { id: string; label: string } }
     | { ok: false; throttled: boolean; retryAfterSec: number }
 > {
-    const ip = getRequestIp(req);
+    const ip = getRequestIpFromHeaders(req.headers);
     const state = getMcpRateLimitState(ip);
     if (state.blocked) {
         return {

@@ -38,8 +38,10 @@ export default function AboutPanel() {
     const [imageUploading, setImageUploading] = useState(false);
     // resume_data 행 참조 (basics.image 단일 출처)
     const [resumeRowId, setResumeRowId] = useState<string | null>(null);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [resumeFullData, setResumeFullData] = useState<any>(null);
+    const [resumeFullData, setResumeFullData] = useState<Record<
+        string,
+        unknown
+    > | null>(null);
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [github, setGithub] = useState("");

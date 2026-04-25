@@ -37,6 +37,7 @@ export class R2PathPolicyError extends Error {
 }
 
 // prefix가 allowlist에 매칭되는지
+// value === p 분기는 prefix 형식 입력용이며 key path에서는 실제로 도달하지 않는 dead branch
 function matchesAllowedPrefix(value: string): boolean {
     return ALLOWED_PREFIXES.some((p) => value === p || value.startsWith(p));
 }

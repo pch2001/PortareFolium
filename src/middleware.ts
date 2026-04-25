@@ -7,8 +7,8 @@ const SESSION_COOKIE_NAMES = [
     "__Secure-authjs.session-token",
 ];
 
-// admin server action / API route는 각자 requireAdminSession()으로 검증.
-// 이 middleware는 unauthenticated 요청을 빠르게 차단하는 defense-in-depth layer.
+// 이 middleware는 session cookie가 없는 요청만 차단함 (unauthenticated 트래픽 필터)
+// admin 권한 검증은 각 server action / API route에서 requireAdminSession()이 담당
 export function middleware(req: NextRequest) {
     const hasSessionCookie = SESSION_COOKIE_NAMES.some((name) =>
         req.cookies.get(name)

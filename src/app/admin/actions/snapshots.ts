@@ -40,10 +40,10 @@ export async function listSnapshots(limit = 30): Promise<DatabaseSnapshot[]> {
 
 // Snapshot 생성
 export async function createSnapshot(): Promise<
-    DatabaseSnapshot | { error: string }
+    DatabaseSnapshot | { success: false; error: string }
 > {
     await requireAdminSession();
-    if (!serverClient) return { error: "serverClient 없음" };
+    if (!serverClient) return { success: false, error: "serverClient 없음" };
 
     const { data, error } = await serverClient
         .rpc("create_database_snapshot")
@@ -51,7 +51,7 @@ export async function createSnapshot(): Promise<
 
     if (error) {
         console.error(`[snapshots.ts::createSnapshot] ${error.message}`);
-        return { error: error.message };
+        return { success: false, error: error.message };
     }
 
     return data as DatabaseSnapshot;

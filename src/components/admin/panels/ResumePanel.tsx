@@ -66,7 +66,11 @@ function normalizeSkills(resume: Resume): Resume {
                     jobField: kw.jobField ?? catJobField,
                     level: (kw as { level?: string }).level ?? catLevel,
                 }));
-                const { jobField: _jf, level: _lv, ...rest } = legacy as any;
+                const {
+                    jobField: _jf,
+                    level: _lv,
+                    ...rest
+                } = legacy as Record<string, unknown>;
                 return { ...rest, keywords: migrated };
             }),
         },
@@ -181,7 +185,7 @@ function SectionEmojiSelector({
                     <div className="absolute top-10 left-0 z-50 shadow-xl">
                         <Picker
                             data={data}
-                            onEmojiSelect={(e: any) => {
+                            onEmojiSelect={(e: { native: string }) => {
                                 onChange(e.native);
                                 setShowPicker(false);
                             }}
@@ -240,7 +244,7 @@ export default function ResumePanel() {
     );
     const [editingCareerPhaseKeywords, setEditingCareerPhaseKeywords] =
         useState<string>("");
-    const [backupData, setBackupData] = useState<any>(null);
+    const [backupData, setBackupData] = useState<Resume | null>(null);
     // 드래그 소스 추적 (type: 'work' | 'project', idx: 원래 인덱스)
     const dragSrcRef = useRef<{ type: string; idx: number } | null>(null);
 
@@ -327,7 +331,11 @@ export default function ResumePanel() {
                 setIsDirty(false);
                 setSavedAt(new Date());
             }
-        } catch {}
+        } catch (e) {
+            console.error(
+                `[ResumePanel::autoSave] ${e instanceof Error ? e.message : String(e)}`
+            );
+        }
     };
 
     useAutoSave(isDirty, rowId !== null, autoSave);
@@ -356,8 +364,11 @@ export default function ResumePanel() {
                 type: "success",
                 msg: "저장됐습니다. 이력서 페이지에 즉시 반영됩니다.",
             });
-        } catch (e: any) {
-            setStatus({ type: "error", msg: `저장 실패: ${e.message}` });
+        } catch (e) {
+            setStatus({
+                type: "error",
+                msg: `저장 실패: ${e instanceof Error ? e.message : String(e)}`,
+            });
         } finally {
             setSaving(false);
         }
@@ -397,10 +408,10 @@ export default function ResumePanel() {
                 basics: { ...resumeData.basics, image: url },
             });
             setStatus({ type: "success", msg: "이미지가 업로드되었습니다." });
-        } catch (err: any) {
+        } catch (err) {
             setStatus({
                 type: "error",
-                msg: `이미지 업로드 실패: ${err.message}`,
+                msg: `이미지 업로드 실패: ${err instanceof Error ? err.message : String(err)}`,
             });
         } finally {
             setUploadingImage(false);

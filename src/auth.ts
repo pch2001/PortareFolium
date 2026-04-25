@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import { headers } from "next/headers";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { getRequestIpFromHeaders } from "@/lib/request-ip";
 import { getAdminAuthVersion } from "@/lib/admin-auth-version";
 import {
     clearAdminLoginFailures,
@@ -30,12 +31,7 @@ const providers = [
             }
 
             const headerStore = await headers();
-            const forwardedFor = headerStore.get("x-forwarded-for");
-            const realIp = headerStore.get("x-real-ip");
-            const ip =
-                forwardedFor?.split(",")[0]?.trim() ||
-                realIp?.trim() ||
-                "unknown";
+            const ip = getRequestIpFromHeaders(headerStore);
             const email =
                 typeof credentials?.email === "string"
                     ? credentials.email
