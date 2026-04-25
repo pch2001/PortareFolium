@@ -227,8 +227,16 @@ export default function EditorStatePreservation({
 
                 {/* Revert 확인 UI */}
                 {confirmRevertId === snap.id ? (
-                    <div className="flex flex-col gap-2 text-xs">
-                        <span className="text-amber-600 dark:text-amber-400">
+                    <div
+                        role="alertdialog"
+                        aria-modal="true"
+                        aria-describedby={`revert-desc-${snap.id}`}
+                        className="flex flex-col gap-2 text-xs"
+                    >
+                        <span
+                            id={`revert-desc-${snap.id}`}
+                            className="text-amber-600 dark:text-amber-400"
+                        >
                             현재 내용이 이 스냅샷으로 대체됩니다.
                             계속하시겠습니까?
                         </span>
@@ -248,8 +256,16 @@ export default function EditorStatePreservation({
                         </div>
                     </div>
                 ) : confirmDeleteId === snap.id ? (
-                    <div className="flex flex-col gap-2 text-xs">
-                        <span className="text-red-600 dark:text-red-400">
+                    <div
+                        role="alertdialog"
+                        aria-modal="true"
+                        aria-describedby={`delete-desc-${snap.id}`}
+                        className="flex flex-col gap-2 text-xs"
+                    >
+                        <span
+                            id={`delete-desc-${snap.id}`}
+                            className="text-red-600 dark:text-red-400"
+                        >
                             이 스냅샷을 삭제하시겠습니까?
                         </span>
                         <div className="flex gap-2">
@@ -358,8 +374,16 @@ export default function EditorStatePreservation({
                             <div className="flex flex-col gap-2">
                                 {autoSnapshots.map(renderSnapshotCard)}
                                 {confirmBulkDeleteAuto ? (
-                                    <div className="flex flex-col gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs dark:border-red-800 dark:bg-red-900/20">
-                                        <span className="text-red-600 dark:text-red-400">
+                                    <div
+                                        role="alertdialog"
+                                        aria-modal="true"
+                                        aria-describedby="bulk-delete-auto-desc"
+                                        className="flex flex-col gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs dark:border-red-800 dark:bg-red-900/20"
+                                    >
+                                        <span
+                                            id="bulk-delete-auto-desc"
+                                            className="text-red-600 dark:text-red-400"
+                                        >
                                             자동 저장된 스냅샷을 모두
                                             삭제하시겠습니까?
                                         </span>
@@ -416,8 +440,16 @@ export default function EditorStatePreservation({
                             <div className="flex flex-col gap-2">
                                 {manualSnapshots.map(renderSnapshotCard)}
                                 {confirmBulkDeleteManual ? (
-                                    <div className="flex flex-col gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs dark:border-red-800 dark:bg-red-900/20">
-                                        <span className="text-red-600 dark:text-red-400">
+                                    <div
+                                        role="alertdialog"
+                                        aria-modal="true"
+                                        aria-describedby="bulk-delete-manual-desc"
+                                        className="flex flex-col gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs dark:border-red-800 dark:bg-red-900/20"
+                                    >
+                                        <span
+                                            id="bulk-delete-manual-desc"
+                                            className="text-red-600 dark:text-red-400"
+                                        >
                                             수동 저장된 스냅샷을 모두
                                             삭제하시겠습니까?
                                         </span>

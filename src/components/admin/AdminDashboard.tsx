@@ -22,6 +22,23 @@ import type { TabId } from "@/components/admin/AdminSidebar";
 // 비활동 제한 시간 (1시간)
 const INACTIVITY_LIMIT_MS = 60 * 60 * 1000;
 
+// 자동 로그아웃 경고 시점 (1분 전)
+const WARN_BEFORE_MS = 60 * 1000;
+
+// 자체 높이를 관리하는 패널 목록
+const PANELS_OWN_HEIGHT = new Set<TabId>([
+    "posts",
+    "portfolio",
+    "gantt-chart",
+    "resume",
+    "migrations",
+    "snapshots",
+    "agent-tokens",
+    "prompts",
+    "debug",
+    "config",
+]);
+
 // 활동 감지 이벤트 목록
 const ACTIVITY_EVENTS = ["mousemove", "keydown", "click", "scroll"] as const;
 
@@ -75,17 +92,8 @@ export default function AdminDashboard() {
     const [sidebarVisible, setSidebarVisible] = useState(true);
     const [remainingMs, setRemainingMs] = useState(INACTIVITY_LIMIT_MS);
     const lastActivityRef = useRef(Date.now());
-    const panelOwnsHeight =
-        activeTab === "posts" ||
-        activeTab === "portfolio" ||
-        activeTab === "gantt-chart" ||
-        activeTab === "resume" ||
-        activeTab === "migrations" ||
-        activeTab === "snapshots" ||
-        activeTab === "agent-tokens" ||
-        activeTab === "prompts" ||
-        activeTab === "debug" ||
-        activeTab === "config";
+    const warnedRef = useRef(false);
+    const panelOwnsHeight = PANELS_OWN_HEIGHT.has(activeTab);
 
     useEffect(() => {
         const suffix = editPath ? `/${editPath}` : "";
@@ -109,7 +117,19 @@ export default function AdminDashboard() {
             window.addEventListener(e, refreshActivity, { passive: true })
         );
 
+        // 탭이 보일 때 활동 시간 리셋 (숨겨진 동안 타이머 누적 방지)
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                lastActivityRef.current = Date.now();
+                warnedRef.current = false;
+            }
+        };
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
         const tick = setInterval(async () => {
+            // 탭이 숨겨진 상태면 자동 로그아웃 보류
+            if (document.visibilityState === "hidden") return;
+
             const elapsed = Date.now() - lastActivityRef.current;
             const remaining = INACTIVITY_LIMIT_MS - elapsed;
             if (remaining <= 0) {
@@ -117,6 +137,17 @@ export default function AdminDashboard() {
                 await signOut({ callbackUrl: "/admin/login" });
             } else {
                 setRemainingMs(remaining);
+                // 만료 1분 전 경고 (1회)
+                if (remaining <= WARN_BEFORE_MS && !warnedRef.current) {
+                    warnedRef.current = true;
+                    const extend = window.confirm(
+                        "1분 후 비활동으로 자동 로그아웃됩니다. 세션을 연장하시겠습니까?"
+                    );
+                    if (extend) {
+                        lastActivityRef.current = Date.now();
+                        warnedRef.current = false;
+                    }
+                }
             }
         }, 1000);
 
@@ -124,6 +155,10 @@ export default function AdminDashboard() {
             clearInterval(tick);
             ACTIVITY_EVENTS.forEach((e) =>
                 window.removeEventListener(e, refreshActivity)
+            );
+            document.removeEventListener(
+                "visibilitychange",
+                handleVisibilityChange
             );
         };
     }, []);
@@ -177,15 +212,7 @@ export default function AdminDashboard() {
                 <div className="flex flex-1 flex-col overflow-hidden">
                     <main
                         className={`tablet:p-4 laptop:p-6 flex-1 p-2 ${
-                            activeTab === "posts" ||
-                            activeTab === "gantt-chart" ||
-                            activeTab === "resume" ||
-                            activeTab === "migrations" ||
-                            activeTab === "snapshots" ||
-                            activeTab === "agent-tokens" ||
-                            activeTab === "prompts" ||
-                            activeTab === "debug" ||
-                            activeTab === "config"
+                            PANELS_OWN_HEIGHT.has(activeTab)
                                 ? "overflow-hidden"
                                 : "overflow-y-auto"
                         }`}

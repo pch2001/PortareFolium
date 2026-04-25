@@ -275,18 +275,29 @@ export default function LoginForm({
                             <p className="text-sm font-semibold text-(--color-foreground)">
                                 관리자 로그인
                             </p>
+                            {/* 스크린리더용 숨김 레이블 */}
+                            <label htmlFor="admin-email" className="sr-only">
+                                이메일
+                            </label>
                             <input
+                                id="admin-email"
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="admin@example.com"
+                                autoComplete="email"
                                 className="w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:ring-2 focus:ring-(--color-accent)/30 focus:outline-none"
                             />
+                            <label htmlFor="admin-password" className="sr-only">
+                                비밀번호
+                            </label>
                             <input
+                                id="admin-password"
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
+                                autoComplete="current-password"
                                 className="w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:ring-2 focus:ring-(--color-accent)/30 focus:outline-none"
                             />
                             <button
