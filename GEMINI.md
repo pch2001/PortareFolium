@@ -1,4 +1,4 @@
-# CLAUDE.md
+# GEMINI.md
 
 이 파일은 redirect 다. 모든 directive 와 prompt 는 `AGENTS.md` 와 `.agents/` 폴더에서 관리한다.
 

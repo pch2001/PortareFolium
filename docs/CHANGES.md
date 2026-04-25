@@ -1,5 +1,20 @@
 # CHANGES
 
+## v0.12.95 (2026-04-26)
+
+### feat: shared agent directive 폴더 .agents/ 도입
+
+- `.agents/directives/` 신규: 사용자 custom directive (`01-behavior.md` ~ `05-architecture.md`) — Claude Code / Codex / Gemini 가 모두 참조하는 canonical 위치
+- `.agents/directives/omc/` 신규: `.claude/rules/` 의 commit-tracked snapshot — OMC plugin 갱신 분 자동 흡수
+- `scripts/sync-omc-directives.mjs` 신규: `.claude/rules/*.md` → `.agents/directives/omc/*.md` 일방향 sync
+- `package.json`: `postinstall` + `sync-omc` 스크립트 추가 — 설치 직후 자동 sync
+- `.husky/pre-commit`: sync 실행 + `.agents/directives/omc` 자동 stage 단계 추가
+- `.gitignore`: `.claude/rules/` 등록, `GEMINI.md` whitelist 추가
+- `AGENTS.md`: 새 `.agents/` 경로를 가리키는 manifest 형태로 refactor
+- `CLAUDE.md`, `GEMINI.md`: AGENTS.md 로 redirect 하는 1줄 파일
+- 기존 untracked `agents/` 폴더는 `.agents/directives/` 로 이동
+- `package.json`: patch version `0.12.95`로 증가
+
 ## v0.12.94 (2026-04-26)
 
 ### docs: SECURITY 가이드 추가

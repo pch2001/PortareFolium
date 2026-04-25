@@ -5,6 +5,7 @@
 /*.md
 !AGENTS.md
 !CLAUDE.md
+!GEMINI.md
 !README.md
 PROMPT_*.md
 prompt/
@@ -56,3 +57,6 @@ test-results/
 # OMC
 .omc
 .omx
+
+# OMC plugin이 관리하는 rule 디렉토리. .agents/directives/omc/ 가 snapshot으로 추적.
+.claude/rules/

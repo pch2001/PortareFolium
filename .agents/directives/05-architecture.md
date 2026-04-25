@@ -1,0 +1,47 @@
+# 05. Architecture & Pitfalls
+
+## Project Structure
+
+**Project:** `portare-folium` — Next.js 16 App Router 기반 개인 포트폴리오 사이트
+**Stack:** Next.js 16 (App Router) + React 19, Tailwind CSS v4, Supabase (PostgreSQL), Cloudflare R2, Vercel, pnpm 10, Vitest/Playwright, NextAuth v5, Tiptap, MCP.
+
+## Key Conventions
+
+- **Server Component**: 데이터 fetch + 정적 렌더링.
+- **Client Component** (`"use client"`): 인터랙션 필요한 컴포넌트 (모든 admin 패널).
+- `serverClient`: service_role 키 — API route / Server Component 전용. 절대 클라이언트 번들 포함 금지.
+- `browserClient`: anon 키 + RLS — Client Component 전용.
+- **DB 마이그레이션**: `src/lib/migrations.ts`의 `MIGRATIONS` 배열로 관리. 서버 시작 시 자동 실행.
+- **컬러 스킴**: 21개 런타임 전환 가능. `data-color-scheme` attribute 기반, DB 저장 (localStorage 미사용).
+- **Admin 저장 바**: `AdminSaveBar.tsx` — `createPortal`로 `#admin-save-bar-slot`에 렌더링.
+- **페이지 레벨 ISR**: 모든 콘텐츠 페이지 `export const revalidate = false`. On-Demand `revalidatePath`로만 갱신.
+
+## PDF Export (`data-pdf-block`) Convention
+
+- `PdfPreviewModal.tsx`의 `paginateBlocks()`가 `data-pdf-block` / `data-pdf-block-item` attribute를 기준으로 페이지 분할 처리.
+- **모든 시맨틱 블록**(`<section>`, `<header>`, `<article>`, 개별 entry `<div>`)에 `data-pdf-block` 추가 필수.
+- **grid 카드**에는 `data-pdf-block-item` 사용.
+- 부모/자식 중첩 시 부모는 자동으로 pagination 제외.
+- **프리뷰 overlay 규칙**: 페이지 구분선은 반드시 `previewRef` DOM 외부에 absolute-positioned overlay로 렌더링. dashed line 위쪽에 배치할 것.
+
+## Known Pitfalls
+
+- **`unstable_cache` 클로저 패턴 금지**: `unstable_cache(() => fn(arg), [key])()` 사용 금지. 모듈 레벨에서 `const cached = unstable_cache(fn, ['key'])` 선언 후 호출.
+- **`renderToString` 컨텍스트에서 `next/image` 금지**: MDX 렌더링 시 plain `<img>` (`MarkdownImage`) 사용.
+- **MDX 콘텐츠 내 `next/image` import**: `renderMarkdown`에서 정규식으로 제거하고 `components`에 등록해 대체.
+- **JSX 속성값의 `[`/`]` backslash-escape**: tiptap-markdown 이슈. `getCleanMarkdown`, `mdx-directive-converter.ts` 등을 통해 unescape 처리 필수.
+- **JSX 속성값의 `$` 가 inline math로 오인되는 문제**: split 정규식(`/(```[\s\S]*?```|<[A-Z]\w*[\s\S]*?\/>|\$\$[\s\S]*?\$\$|\$(?!\$)[^
+$]+?\$)/g`)에 self-closing JSX 태그 패턴 포함 필수.
+- **MDX 렌더 에러 진단**: `src/lib/markdown.tsx`의 catch 블록 확인.
+
+## MCP Agent Guide
+
+**Endpoint:** `https://gvm1229-portfolio.vercel.app/api/mcp`
+**인증:** `Authorization: Bearer <token>` 헤더 필수.
+
+- **Protocol**: JSON-RPC 2.0.
+- 진입 시 반드시 `method: "tools/list"` 먼저 호출.
+- `job_field`는 `"web"` 또는 `"game"`.
+- `published: false`가 기본값. 명시적 요청 없이 `true` 설정 금지.
+- 긴 `content`는 파일로 작성 후 `fs.readFileSync`로 읽어 전달.
+- `update_resume` 호출 전 `get_resume`으로 전체 데이터 확인 후 deep-merge.
