@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import type { getAdminCredentialSetup } from "@/lib/admin-credentials";
+import { getSafeAdminReturnUrl } from "@/lib/admin-return-url";
 
 const ENV_DESCRIPTIONS: Record<string, { purpose: string; setup: string }> = {
     AUTH_ADMIN_EMAIL: {
@@ -44,12 +45,13 @@ export default function LoginForm({
     const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
     const { data: session, status } = useSession();
     const setupReady = setupState.missingEnvKeys.length === 0;
+    const safeReturnUrl = getSafeAdminReturnUrl(returnUrl);
 
     // 이미 로그인된 유저 → 랜딩 페이지로 리다이렉트
     useEffect(() => {
         if (status !== "authenticated" || !session?.user?.isAdmin) return;
-        window.location.href = returnUrl || "/admin";
-    }, [returnUrl, session, status]);
+        window.location.href = safeReturnUrl;
+    }, [safeReturnUrl, session, status]);
 
     // admin credentials 로그인
     const handleAdminSubmit = async (e: React.FormEvent) => {
@@ -65,14 +67,14 @@ export default function LoginForm({
             email,
             password,
             redirect: false,
-            callbackUrl: returnUrl || "/admin",
+            callbackUrl: safeReturnUrl,
         });
         if (result?.error) {
             setError("관리자 계정 로그인에 실패했습니다.");
             setLoading(false);
             return;
         }
-        window.location.href = result?.url || returnUrl || "/admin";
+        window.location.href = safeReturnUrl;
     };
 
     // 명령 clipboard 복사

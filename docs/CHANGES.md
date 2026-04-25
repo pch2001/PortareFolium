@@ -1,5 +1,14 @@
 # CHANGES
 
+## v0.12.81 (2026-04-25)
+
+### fix: admin 로그인 returnUrl redirect 제한
+
+- `src/lib/admin-return-url.ts` 신규: admin 로그인 후 이동 경로를 `/admin` 하위 relative path로만 정규화
+- `src/app/admin/login/page.tsx`, `src/components/admin/LoginForm.tsx`: 검증된 returnUrl만 redirect와 credentials callback에 사용
+- `src/__tests__/admin-return-url.test.ts`: 외부 URL, protocol-relative URL 차단 회귀 테스트 추가
+- `package.json`: patch version `0.12.81`로 증가
+
 ## v0.12.80 (2026-04-25)
 
 ### fix: 로그인 setup 상태의 secret 노출 차단
