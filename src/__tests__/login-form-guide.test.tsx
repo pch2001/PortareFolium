@@ -24,9 +24,6 @@ describe("login form env guide", () => {
                 siteName="PortareFolium"
                 showDetailedSetupGuide
                 setupState={{
-                    adminEmail: "",
-                    passwordHash: "",
-                    nextAuthSecret: "",
                     missingEnvKeys: [
                         "AUTH_ADMIN_EMAIL",
                         "AUTH_ADMIN_PASSWORD_HASH",
@@ -79,9 +76,6 @@ describe("login form env guide", () => {
                 siteName="PortareFolium"
                 showDetailedSetupGuide={false}
                 setupState={{
-                    adminEmail: "",
-                    passwordHash: "",
-                    nextAuthSecret: "",
                     missingEnvKeys: [
                         "AUTH_ADMIN_EMAIL",
                         "AUTH_ADMIN_PASSWORD_HASH",

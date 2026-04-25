@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.80 (2026-04-25)
+
+### fix: 로그인 setup 상태의 secret 노출 차단
+
+- `src/lib/admin-credentials.ts`: client로 전달되는 setup 상태에서 `AUTH_ADMIN_PASSWORD_HASH`, `NEXTAUTH_SECRET`, 관리자 이메일 원문 제거
+- `src/__tests__/login-form-guide.test.tsx`: LoginForm fixture를 공개 가능한 `missingEnvKeys`만 넘기도록 갱신
+- `package.json`: patch version `0.12.80`로 증가
+
 ## v0.12.79 (2026-04-25)
 
 ### fix: credentials 관리자 인증 보안 hardening
