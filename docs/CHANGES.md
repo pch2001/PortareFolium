@@ -1,5 +1,12 @@
 # CHANGES
 
+## v0.12.78 (2026-04-25)
+
+### test: 로그인 페이지 env 안내 회귀 테스트 추가
+
+- `src/__tests__/login-form-guide.test.tsx`: 누락 env 안내, 변수별 설명, 생성 명령, full width 복사 버튼, 클릭 후 `복사됨` 비활성 상태를 검증하는 회귀 테스트 추가
+- `package.json`: patch version `0.12.78`로 증가
+
 ## v0.12.77 (2026-04-24)
 
 ### fix: 로그인 페이지 명령 복사 버튼을 full width로 조정
