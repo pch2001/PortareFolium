@@ -1,5 +1,14 @@
 # CHANGES
 
+## v0.12.92 (2026-04-26)
+
+### fix: MCP 엔드포인트 인증 및 invalid token throttle
+
+- `src/lib/mcp-rate-limit.ts` 신규: in-memory IP 기반 invalid attempt 카운터 — 5분 window 내 30회 초과 시 5분 차단
+- `src/app/api/mcp/route.ts`: GET 응답도 Bearer 인증 필수, 401/429 응답을 JSON-RPC 에러로 통일하고 invalid token 시도를 IP 기반으로 throttle
+- `src/__tests__/mcp-rate-limit.test.ts`: 차단/리셋 회귀 테스트 추가
+- `package.json`: patch version `0.12.92`로 증가
+
 ## v0.12.91 (2026-04-26)
 
 ### chore: AUTH_SECRET 컨벤션 정렬 + trustHost 운영 노트
