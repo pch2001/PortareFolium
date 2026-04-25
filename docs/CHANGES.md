@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.86 (2026-04-25)
+
+### fix: admin 로그인 rate limit 정책 조정
+
+- `src/lib/admin-login-rate-limit.ts`: 관리자 로그인 실패 허용 횟수를 10회로 늘리고 차단 시간을 10분으로 단축
+- `src/__tests__/admin-login-rate-limit.test.ts`: 9회 실패는 허용하고 10회 실패부터 10분 차단되는 정책으로 회귀 테스트 갱신
+- `package.json`: patch version `0.12.86`로 증가
+
 ## v0.12.85 (2026-04-25)
 
 ### fix: admin 로그인 rate limit 공유 저장소 추가

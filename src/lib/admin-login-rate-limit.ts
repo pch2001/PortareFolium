@@ -8,8 +8,8 @@ type LoginAttemptState = {
 };
 
 const WINDOW_MS = 10 * 60 * 1000;
-const MAX_ATTEMPTS = 5;
-const BLOCK_MS = 15 * 60 * 1000;
+const MAX_ATTEMPTS = 10;
+const BLOCK_MS = 10 * 60 * 1000;
 
 const attemptStore = new Map<string, LoginAttemptState>();
 

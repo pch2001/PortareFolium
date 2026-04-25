@@ -20,13 +20,20 @@ describe("admin login rate limit", () => {
 
     it("실패 횟수 초과 시 일시 차단", async () => {
         const now = Date.now();
-        for (let i = 0; i < 5; i += 1) {
+        for (let i = 0; i < 9; i += 1) {
             await recordAdminLoginFailure(key, now + i);
         }
 
-        const state = await getAdminLoginRateLimitState(key, now + 5);
+        expect((await getAdminLoginRateLimitState(key, now + 9)).blocked).toBe(
+            false
+        );
+
+        await recordAdminLoginFailure(key, now + 10);
+
+        const state = await getAdminLoginRateLimitState(key, now + 11);
         expect(state.blocked).toBe(true);
-        expect(state.retryAfterMs).toBeGreaterThan(0);
+        expect(state.retryAfterMs).toBeLessThanOrEqual(10 * 60 * 1000);
+        expect(state.retryAfterMs).toBeGreaterThan(9 * 60 * 1000);
     });
 
     it("성공 시 실패 기록 정리", async () => {
