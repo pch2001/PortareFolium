@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.93 (2026-04-26)
+
+### feat: admin route middleware gate
+
+- `src/middleware.ts` 신규: NextAuth session cookie 부재 시 `/admin/(?!login)` + `/api/upload-image|storage-ops|run-migrations` 요청을 401/redirect로 차단
+- 실제 권한 검증은 기존 `requireAdminSession()` / `isAdminSession()`에서 수행하며 middleware는 unauthenticated 요청을 빠르게 차단하는 defense-in-depth layer
+- `package.json`: patch version `0.12.93`로 증가
+
 ## v0.12.92 (2026-04-26)
 
 ### fix: MCP 엔드포인트 인증 및 invalid token throttle
