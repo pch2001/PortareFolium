@@ -44,23 +44,30 @@ export async function getAboutBootstrap(): Promise<AboutBootstrap> {
         };
     }
 
-    const [{ data: aboutRow }, { data: resumeRow }, { data: configs }] =
-        await Promise.all([
-            serverClient
-                .from("about_data")
-                .select("id, data")
-                .limit(1)
-                .single(),
-            serverClient
-                .from("resume_data")
-                .select("id, data")
-                .eq("lang", "ko")
-                .single(),
-            serverClient
-                .from("site_config")
-                .select("key, value")
-                .in("key", ["job_fields", "github_url"]),
-        ]);
+    const [
+        { data: aboutRow, error: aboutError },
+        { data: resumeRow, error: resumeError },
+        { data: configs, error: configsError },
+    ] = await Promise.all([
+        serverClient.from("about_data").select("id, data").limit(1).single(),
+        serverClient
+            .from("resume_data")
+            .select("id, data")
+            .eq("lang", "ko")
+            .single(),
+        serverClient
+            .from("site_config")
+            .select("key, value")
+            .in("key", ["job_fields", "github_url"]),
+    ]);
+
+    // 쿼리 오류 로깅 (UI 렌더링은 계속 진행)
+    if (aboutError)
+        console.error(`[about.ts::getAboutBootstrap] ${aboutError.message}`);
+    if (resumeError)
+        console.error(`[about.ts::getAboutBootstrap] ${resumeError.message}`);
+    if (configsError)
+        console.error(`[about.ts::getAboutBootstrap] ${configsError.message}`);
 
     let githubUrl = "";
     let jobFields: { id: string; name: string; emoji: string }[] = [];

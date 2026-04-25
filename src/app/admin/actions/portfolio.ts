@@ -56,10 +56,10 @@ export async function getPortfolioPanelBootstrap() {
     }
 
     const [
-        { data: itemsData },
-        { data: stateData },
-        { data: jobFieldsRow },
-        { data: activeJobFieldRow },
+        { data: itemsData, error: itemsError },
+        { data: stateData, error: stateError },
+        { data: jobFieldsRow, error: jobFieldsError },
+        { data: activeJobFieldRow, error: activeJobFieldError },
     ] = await Promise.all([
         serverClient
             .from("portfolio_items")
@@ -81,6 +81,24 @@ export async function getPortfolioPanelBootstrap() {
             .eq("key", "job_field")
             .single(),
     ]);
+
+    // 쿼리 오류 로깅 (UI 렌더링은 계속 진행)
+    if (itemsError)
+        console.error(
+            `[portfolio.ts::getPortfolioPanelBootstrap] ${itemsError.message}`
+        );
+    if (stateError)
+        console.error(
+            `[portfolio.ts::getPortfolioPanelBootstrap] ${stateError.message}`
+        );
+    if (jobFieldsError)
+        console.error(
+            `[portfolio.ts::getPortfolioPanelBootstrap] ${jobFieldsError.message}`
+        );
+    if (activeJobFieldError)
+        console.error(
+            `[portfolio.ts::getPortfolioPanelBootstrap] ${activeJobFieldError.message}`
+        );
 
     const stateCounts: Record<string, number> = {};
     for (const row of stateData ?? []) {
@@ -204,19 +222,32 @@ export async function reorderFeaturedPortfolioItems(
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
-    for (const update of updates) {
-        const { data: target } = await serverClient
-            .from("portfolio_items")
-            .select("slug")
-            .eq("id", update.id)
-            .single();
-        const { error } = await serverClient
-            .from("portfolio_items")
-            .update({ order_idx: update.order_idx })
-            .eq("id", update.id);
-        if (error) return { success: false, error: error.message };
-        if (target?.slug) await revalidatePortfolioItem(target.slug);
-    }
+    const ids = updates.map((u) => u.id);
+
+    // 슬러그 일괄 조회
+    const { data: slugRows } = await serverClient
+        .from("portfolio_items")
+        .select("id, slug")
+        .in("id", ids);
+    const slugById = Object.fromEntries(
+        (slugRows ?? []).map((r) => [r.id, r.slug])
+    );
+
+    // 업데이트 병렬 실행
+    const results = await Promise.all(
+        updates.map(({ id, order_idx }) =>
+            serverClient!
+                .from("portfolio_items")
+                .update({ order_idx })
+                .eq("id", id)
+        )
+    );
+    const firstError = results.find((r) => r.error)?.error;
+    if (firstError) return { success: false, error: firstError.message };
+
+    // revalidate 병렬 실행
+    const slugs = ids.map((id) => slugById[id]).filter(Boolean);
+    await Promise.all(slugs.map((slug) => revalidatePortfolioItem(slug)));
     return { success: true };
 }
 
@@ -252,18 +283,24 @@ export async function batchSetPortfolioJobField(
     await requireAdminSession();
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
-    for (const update of updates) {
-        const { data: target } = await serverClient
-            .from("portfolio_items")
-            .select("slug")
-            .eq("id", update.id)
-            .single();
-        const { error } = await serverClient
-            .from("portfolio_items")
-            .update({ data: update.data })
-            .eq("id", update.id);
-        if (error) return { success: false, error: error.message };
-        if (target?.slug) await revalidatePortfolioItem(target.slug);
-    }
+    const ids = updates.map((u) => u.id);
+
+    // 업데이트 병렬 실행
+    const results = await Promise.all(
+        updates.map(({ id, data }) =>
+            serverClient!.from("portfolio_items").update({ data }).eq("id", id)
+        )
+    );
+    const firstError = results.find((r) => r.error)?.error;
+    if (firstError) return { success: false, error: firstError.message };
+
+    // 슬러그 일괄 조회 후 revalidate 병렬 실행
+    const { data: slugRows } = await serverClient
+        .from("portfolio_items")
+        .select("slug")
+        .in("id", ids);
+    await Promise.all(
+        (slugRows ?? []).map((r) => revalidatePortfolioItem(r.slug))
+    );
     return { success: true };
 }

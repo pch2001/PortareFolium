@@ -65,11 +65,11 @@ export async function getPostsPanelBootstrap(): Promise<PostsPanelBootstrap> {
     }
 
     const [
-        { data: postsData },
-        { data: stateData },
-        { data: jobFieldsRow },
-        { data: activeJobFieldRow },
-        { data: tocStylesRow },
+        { data: postsData, error: postsError },
+        { data: stateData, error: stateError },
+        { data: jobFieldsRow, error: jobFieldsError },
+        { data: activeJobFieldRow, error: activeJobFieldError },
+        { data: tocStylesRow, error: tocStylesError },
     ] = await Promise.all([
         serverClient
             .from("posts")
@@ -96,6 +96,28 @@ export async function getPostsPanelBootstrap(): Promise<PostsPanelBootstrap> {
             .eq("key", "post_toc_styles")
             .single(),
     ]);
+
+    // 쿼리 오류 로깅 (UI 렌더링은 계속 진행)
+    if (postsError)
+        console.error(
+            `[posts.ts::getPostsPanelBootstrap] ${postsError.message}`
+        );
+    if (stateError)
+        console.error(
+            `[posts.ts::getPostsPanelBootstrap] ${stateError.message}`
+        );
+    if (jobFieldsError)
+        console.error(
+            `[posts.ts::getPostsPanelBootstrap] ${jobFieldsError.message}`
+        );
+    if (activeJobFieldError)
+        console.error(
+            `[posts.ts::getPostsPanelBootstrap] ${activeJobFieldError.message}`
+        );
+    if (tocStylesError)
+        console.error(
+            `[posts.ts::getPostsPanelBootstrap] ${tocStylesError.message}`
+        );
 
     const stateCounts: Record<string, number> = {};
     for (const row of stateData ?? []) {
@@ -239,9 +261,7 @@ export async function batchSetPostPublished(
         .from("posts")
         .select("slug")
         .in("id", ids);
-    for (const row of data ?? []) {
-        await revalidatePost(row.slug);
-    }
+    await Promise.all((data ?? []).map((row) => revalidatePost(row.slug)));
     return { success: true };
 }
 
@@ -264,8 +284,6 @@ export async function batchSetPostJobField(
         .from("posts")
         .select("slug")
         .in("id", ids);
-    for (const row of data ?? []) {
-        await revalidatePost(row.slug);
-    }
+    await Promise.all((data ?? []).map((row) => revalidatePost(row.slug)));
     return { success: true };
 }
