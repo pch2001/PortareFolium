@@ -3,6 +3,12 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { auth } from "@/auth";
 import { isAdminSession } from "@/lib/admin-auth";
 import { r2Client, R2_BUCKET, R2_PUBLIC_URL } from "@/lib/r2";
+import {
+    MAX_UPLOAD_BYTES,
+    R2PathPolicyError,
+    assertSafeR2Key,
+    resolveImageContentType,
+} from "@/lib/r2-path-policy";
 
 export async function POST(req: NextRequest) {
     const session = await auth();
@@ -18,6 +24,29 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "file, path 필수" }, { status: 400 });
     }
 
+    try {
+        assertSafeR2Key(path, "path");
+    } catch (err) {
+        const message =
+            err instanceof R2PathPolicyError ? err.message : "잘못된 경로";
+        return NextResponse.json({ error: message }, { status: 400 });
+    }
+
+    if (file.size > MAX_UPLOAD_BYTES) {
+        return NextResponse.json(
+            { error: `파일 크기 한도 초과 (${MAX_UPLOAD_BYTES} bytes)` },
+            { status: 413 }
+        );
+    }
+
+    const contentType = resolveImageContentType(path);
+    if (!contentType) {
+        return NextResponse.json(
+            { error: "허용되지 않은 파일 확장자" },
+            { status: 400 }
+        );
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
 
     // UUID 파일명 = immutable asset으로 1년 cache + immutable directive
@@ -27,7 +56,7 @@ export async function POST(req: NextRequest) {
             Bucket: R2_BUCKET,
             Key: path,
             Body: buffer,
-            ContentType: file.type || "application/octet-stream",
+            ContentType: contentType,
             CacheControl: "public, max-age=31536000, immutable",
         })
     );

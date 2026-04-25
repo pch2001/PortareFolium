@@ -1,5 +1,15 @@
 # CHANGES
 
+## v0.12.87 (2026-04-26)
+
+### fix: R2 storage 경로 검증 강화
+
+- `src/lib/r2-path-policy.ts` 신규: content prefix allowlist (`portfolio/`, `blog/`, `books/`, `about/`, `resume/`, `misc/`) + segment charset/traversal 검증 + 이미지 확장자 → MIME 결정 + 업로드 size cap 정의
+- `src/app/api/upload-image/route.ts`: path를 `assertSafeR2Key`로 검증하고 client `file.type` 대신 확장자 기반 ContentType 사용, `MAX_UPLOAD_BYTES` 초과 시 413 반환
+- `src/app/api/storage-ops/route.ts`: list/move/delete prefix와 delete-keys 항목을 policy 헬퍼로 검증해 빈 prefix·traversal·non-allowlist 경로 차단
+- `src/__tests__/r2-path-policy.test.ts`: allowlist/거부 케이스 회귀 테스트 추가
+- `package.json`: patch version `0.12.87`로 증가
+
 ## v0.12.86 (2026-04-25)
 
 ### fix: admin 로그인 rate limit 정책 조정

@@ -7,6 +7,18 @@ import {
 import { auth } from "@/auth";
 import { isAdminSession } from "@/lib/admin-auth";
 import { r2Client, R2_BUCKET } from "@/lib/r2";
+import {
+    R2PathPolicyError,
+    assertSafeR2Key,
+    assertSafeR2Prefix,
+} from "@/lib/r2-path-policy";
+
+// policy 위반 시 400 응답 헬퍼
+function policyErrorResponse(err: unknown) {
+    const message =
+        err instanceof R2PathPolicyError ? err.message : "잘못된 경로";
+    return NextResponse.json({ error: message }, { status: 400 });
+}
 
 // R2 prefix 하위 파일 목록
 async function listFiles(prefix: string): Promise<string[]> {
@@ -73,16 +85,32 @@ export async function POST(req: NextRequest) {
     const { action } = body as { action: string };
 
     if (action === "list") {
+        try {
+            assertSafeR2Prefix(body.prefix, "prefix");
+        } catch (err) {
+            return policyErrorResponse(err);
+        }
         const files = await listFiles(body.prefix);
         return NextResponse.json({ files });
     }
 
     if (action === "move") {
+        try {
+            assertSafeR2Prefix(body.oldPrefix, "oldPrefix");
+            assertSafeR2Prefix(body.newPrefix, "newPrefix");
+        } catch (err) {
+            return policyErrorResponse(err);
+        }
         await moveFolder(body.oldPrefix, body.newPrefix);
         return NextResponse.json({ ok: true });
     }
 
     if (action === "delete") {
+        try {
+            assertSafeR2Prefix(body.prefix, "prefix");
+        } catch (err) {
+            return policyErrorResponse(err);
+        }
         await deleteFolder(body.prefix);
         return NextResponse.json({ ok: true });
     }
@@ -95,6 +123,11 @@ export async function POST(req: NextRequest) {
             : [];
         if (keys.length === 0) {
             return NextResponse.json({ ok: true, deleted: 0 });
+        }
+        try {
+            for (const k of keys) assertSafeR2Key(k, "key");
+        } catch (err) {
+            return policyErrorResponse(err);
         }
         // S3 DeleteObjects 배치 한도 1000
         let deleted = 0;
