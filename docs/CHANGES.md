@@ -1,5 +1,15 @@
 # CHANGES
 
+## v0.12.79 (2026-04-25)
+
+### fix: credentials 관리자 인증 보안 hardening
+
+- `src/auth.ts`: production에서 `NEXTAUTH_SECRET` fallback 제거, JWT session `maxAge`/`updateAge` 명시, admin auth version mismatch 시 기존 세션 무효화
+- `src/lib/admin-login-rate-limit.ts` 신규: 관리자 로그인 실패 횟수 기반 in-memory rate limit 추가
+- `src/app/admin/login/page.tsx`, `src/components/admin/LoginForm.tsx`: production에서는 상세 secret/hash 생성 명령을 숨기고 최소 setup guide만 노출
+- `src/__tests__/admin-login-rate-limit.test.ts`, `src/__tests__/admin-auth-version.test.ts`, `src/__tests__/login-form-guide.test.tsx`: rate limit, auth version fingerprint, production setup guide 축소 회귀 테스트 추가
+- `package.json`: patch version `0.12.79`로 증가
+
 ## v0.12.78 (2026-04-25)
 
 ### test: 로그인 페이지 env 안내 회귀 테스트 추가

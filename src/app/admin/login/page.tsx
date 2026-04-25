@@ -42,6 +42,7 @@ export default async function AdminLoginPage({
             siteName={siteName}
             returnUrl={returnUrl}
             setupState={setupState}
+            showDetailedSetupGuide={process.env.NODE_ENV !== "production"}
         />
     );
 }

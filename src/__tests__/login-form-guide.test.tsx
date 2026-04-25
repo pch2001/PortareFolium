@@ -22,6 +22,7 @@ describe("login form env guide", () => {
         render(
             <LoginForm
                 siteName="PortareFolium"
+                showDetailedSetupGuide
                 setupState={{
                     adminEmail: "",
                     passwordHash: "",
@@ -70,5 +71,32 @@ describe("login form env guide", () => {
                 screen.getByRole("button", { name: /복사됨/i })
             ).toBeDisabled();
         });
+    });
+
+    it("production 안내에서는 생성 명령을 숨김", () => {
+        render(
+            <LoginForm
+                siteName="PortareFolium"
+                showDetailedSetupGuide={false}
+                setupState={{
+                    adminEmail: "",
+                    passwordHash: "",
+                    nextAuthSecret: "",
+                    missingEnvKeys: [
+                        "AUTH_ADMIN_EMAIL",
+                        "AUTH_ADMIN_PASSWORD_HASH",
+                        "NEXTAUTH_SECRET",
+                    ],
+                }}
+            />
+        );
+
+        expect(
+            screen.queryByText(/`AUTH_ADMIN_PASSWORD_HASH` 생성 명령/i)
+        ).not.toBeInTheDocument();
+        expect(
+            screen.queryByText(/`NEXTAUTH_SECRET` 생성 명령/i)
+        ).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "복사" })).toBeNull();
     });
 });

@@ -13,5 +13,6 @@ declare module "next-auth/jwt" {
     interface JWT {
         isAdmin?: boolean;
         authProvider?: string;
+        adminAuthVersion?: string;
     }
 }

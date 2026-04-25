@@ -30,10 +30,12 @@ export default function LoginForm({
     siteName = "",
     returnUrl,
     setupState,
+    showDetailedSetupGuide = true,
 }: {
     siteName?: string;
     returnUrl?: string;
     setupState: ReturnType<typeof getAdminCredentialSetup>;
+    showDetailedSetupGuide?: boolean;
 }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -156,96 +158,103 @@ export default function LoginForm({
                                         </li>
                                     ))}
                                 </ul>
-                                <div className="space-y-1 text-xs">
-                                    <p className="font-semibold">
-                                        `AUTH_ADMIN_PASSWORD_HASH` 생성 명령
-                                    </p>
-                                    <div className="space-y-2">
-                                        <code className="block overflow-x-auto rounded-lg bg-black/80 px-3 py-2 text-[11px] text-white">
-                                            {COMMANDS.AUTH_ADMIN_PASSWORD_HASH}
-                                        </code>
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                void handleCopyCommand(
-                                                    "AUTH_ADMIN_PASSWORD_HASH"
-                                                )
-                                            }
-                                            disabled={
-                                                copiedCommand ===
-                                                "AUTH_ADMIN_PASSWORD_HASH"
-                                            }
-                                            className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-(--color-accent) px-3 py-2 text-[11px] font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-100"
-                                        >
-                                            {copiedCommand ===
-                                            "AUTH_ADMIN_PASSWORD_HASH" ? (
-                                                <>
-                                                    <svg
-                                                        className="h-3.5 w-3.5"
-                                                        viewBox="0 0 24 24"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2"
-                                                    >
-                                                        <path
-                                                            d="M20 6L9 17l-5-5"
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                        />
-                                                    </svg>
-                                                    복사됨
-                                                </>
-                                            ) : (
-                                                "복사"
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="space-y-1 text-xs">
-                                    <p className="font-semibold">
-                                        `NEXTAUTH_SECRET` 생성 명령
-                                    </p>
-                                    <div className="space-y-2">
-                                        <code className="block overflow-x-auto rounded-lg bg-black/80 px-3 py-2 text-[11px] text-white">
-                                            {COMMANDS.NEXTAUTH_SECRET}
-                                        </code>
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                void handleCopyCommand(
-                                                    "NEXTAUTH_SECRET"
-                                                )
-                                            }
-                                            disabled={
-                                                copiedCommand ===
-                                                "NEXTAUTH_SECRET"
-                                            }
-                                            className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-(--color-accent) px-3 py-2 text-[11px] font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-100"
-                                        >
-                                            {copiedCommand ===
-                                            "NEXTAUTH_SECRET" ? (
-                                                <>
-                                                    <svg
-                                                        className="h-3.5 w-3.5"
-                                                        viewBox="0 0 24 24"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2"
-                                                    >
-                                                        <path
-                                                            d="M20 6L9 17l-5-5"
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                        />
-                                                    </svg>
-                                                    복사됨
-                                                </>
-                                            ) : (
-                                                "복사"
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
+                                {showDetailedSetupGuide && (
+                                    <>
+                                        <div className="space-y-1 text-xs">
+                                            <p className="font-semibold">
+                                                `AUTH_ADMIN_PASSWORD_HASH` 생성
+                                                명령
+                                            </p>
+                                            <div className="space-y-2">
+                                                <code className="block overflow-x-auto rounded-lg bg-black/80 px-3 py-2 text-[11px] text-white">
+                                                    {
+                                                        COMMANDS.AUTH_ADMIN_PASSWORD_HASH
+                                                    }
+                                                </code>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        void handleCopyCommand(
+                                                            "AUTH_ADMIN_PASSWORD_HASH"
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        copiedCommand ===
+                                                        "AUTH_ADMIN_PASSWORD_HASH"
+                                                    }
+                                                    className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-(--color-accent) px-3 py-2 text-[11px] font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-100"
+                                                >
+                                                    {copiedCommand ===
+                                                    "AUTH_ADMIN_PASSWORD_HASH" ? (
+                                                        <>
+                                                            <svg
+                                                                className="h-3.5 w-3.5"
+                                                                viewBox="0 0 24 24"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                strokeWidth="2"
+                                                            >
+                                                                <path
+                                                                    d="M20 6L9 17l-5-5"
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                />
+                                                            </svg>
+                                                            복사됨
+                                                        </>
+                                                    ) : (
+                                                        "복사"
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1 text-xs">
+                                            <p className="font-semibold">
+                                                `NEXTAUTH_SECRET` 생성 명령
+                                            </p>
+                                            <div className="space-y-2">
+                                                <code className="block overflow-x-auto rounded-lg bg-black/80 px-3 py-2 text-[11px] text-white">
+                                                    {COMMANDS.NEXTAUTH_SECRET}
+                                                </code>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        void handleCopyCommand(
+                                                            "NEXTAUTH_SECRET"
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        copiedCommand ===
+                                                        "NEXTAUTH_SECRET"
+                                                    }
+                                                    className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-(--color-accent) px-3 py-2 text-[11px] font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-100"
+                                                >
+                                                    {copiedCommand ===
+                                                    "NEXTAUTH_SECRET" ? (
+                                                        <>
+                                                            <svg
+                                                                className="h-3.5 w-3.5"
+                                                                viewBox="0 0 24 24"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                strokeWidth="2"
+                                                            >
+                                                                <path
+                                                                    d="M20 6L9 17l-5-5"
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                />
+                                                            </svg>
+                                                            복사됨
+                                                        </>
+                                                    ) : (
+                                                        "복사"
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                                 <p className="text-xs">
                                     Vercel 사용 시 Project Settings →
                                     Environment Variables에 값을 추가 후 재배포

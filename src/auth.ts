@@ -1,5 +1,12 @@
 import NextAuth from "next-auth";
+import { headers } from "next/headers";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { getAdminAuthVersion } from "@/lib/admin-auth-version";
+import {
+    clearAdminLoginFailures,
+    getAdminLoginRateLimitState,
+    recordAdminLoginFailure,
+} from "@/lib/admin-login-rate-limit";
 import { verifyAdminCredentials } from "@/lib/admin-credentials";
 
 const providers = [
@@ -11,6 +18,13 @@ const providers = [
             password: { label: "Password", type: "password" },
         },
         async authorize(credentials) {
+            const headerStore = await headers();
+            const forwardedFor = headerStore.get("x-forwarded-for");
+            const realIp = headerStore.get("x-real-ip");
+            const ip =
+                forwardedFor?.split(",")[0]?.trim() ||
+                realIp?.trim() ||
+                "unknown";
             const email =
                 typeof credentials?.email === "string"
                     ? credentials.email
@@ -24,10 +38,18 @@ const providers = [
                 return null;
             }
 
-            if (!verifyAdminCredentials(email, password)) {
+            const rateLimitKey = `${ip}:${email.trim().toLowerCase()}`;
+            const rateLimitState = getAdminLoginRateLimitState(rateLimitKey);
+            if (rateLimitState.blocked) {
                 return null;
             }
 
+            if (!verifyAdminCredentials(email, password)) {
+                recordAdminLoginFailure(rateLimitKey);
+                return null;
+            }
+
+            clearAdminLoginFailures(rateLimitKey);
             return {
                 id: "admin-user",
                 email,
@@ -38,13 +60,19 @@ const providers = [
 ];
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-    secret: process.env.NEXTAUTH_SECRET || "local-dev-nextauth-secret",
+    secret:
+        process.env.NEXTAUTH_SECRET ||
+        (process.env.NODE_ENV === "development"
+            ? "local-dev-nextauth-secret"
+            : undefined),
     trustHost: true,
     pages: {
         signIn: "/admin/login",
     },
     session: {
         strategy: "jwt",
+        maxAge: 60 * 60 * 4,
+        updateAge: 60 * 30,
     },
     providers,
     callbacks: {
@@ -52,13 +80,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return account?.provider === "admin-credentials";
         },
         async jwt({ token, user, account }) {
+            const authVersion = getAdminAuthVersion();
             const nextEmail =
                 typeof user?.email === "string" ? user.email : token.email;
             token.email = nextEmail;
             if (account?.provider) {
                 token.authProvider = account.provider;
             }
-            token.isAdmin = token.authProvider === "admin-credentials";
+            if (account?.provider === "admin-credentials") {
+                token.adminAuthVersion = authVersion;
+            }
+            token.isAdmin =
+                token.authProvider === "admin-credentials" &&
+                token.adminAuthVersion === authVersion;
             return token;
         },
         async session({ session, token }) {
