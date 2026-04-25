@@ -8,7 +8,10 @@ import {
     getAdminLoginRateLimitState,
     recordAdminLoginFailure,
 } from "@/lib/admin-login-rate-limit";
-import { verifyAdminCredentials } from "@/lib/admin-credentials";
+import {
+    isAdminCredentialSetupComplete,
+    verifyAdminCredentials,
+} from "@/lib/admin-credentials";
 
 const providers = [
     CredentialsProvider({
@@ -19,6 +22,11 @@ const providers = [
             password: { label: "Password", type: "password" },
         },
         async authorize(credentials) {
+            // env 미완료면 rate counter 소모 없이 즉시 실패
+            if (!isAdminCredentialSetupComplete()) {
+                return null;
+            }
+
             const headerStore = await headers();
             const forwardedFor = headerStore.get("x-forwarded-for");
             const realIp = headerStore.get("x-real-ip");
@@ -65,11 +73,7 @@ const providers = [
 ];
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-    secret:
-        process.env.NEXTAUTH_SECRET ||
-        (process.env.NODE_ENV === "development"
-            ? "local-dev-nextauth-secret"
-            : undefined),
+    secret: process.env.NEXTAUTH_SECRET,
     trustHost: true,
     pages: {
         signIn: "/admin/login",

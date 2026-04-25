@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.88 (2026-04-26)
+
+### fix: NEXTAUTH_SECRET fallback 제거 + admin 로그인 setup gate
+
+- `src/auth.ts`: dev 환경 hard-coded secret fallback을 제거하고 `NEXTAUTH_SECRET` 미설정 시 NextAuth가 부팅 단계에서 실패하도록 변경
+- `src/auth.ts`: `authorize()` 진입부에서 `isAdminCredentialSetupComplete()` 검사 후 env 미완료면 rate limit counter 소모 없이 즉시 null 반환
+- `package.json`: patch version `0.12.88`로 증가
+
 ## v0.12.87 (2026-04-26)
 
 ### fix: R2 storage 경로 검증 강화
