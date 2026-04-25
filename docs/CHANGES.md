@@ -1,5 +1,13 @@
 # CHANGES
 
+## v0.12.84 (2026-04-25)
+
+### fix: production dependency audit 취약점 해소
+
+- `package.json`: `dompurify`, `hono`, `fast-xml-parser`, `uuid`, `postcss` 취약 버전이 설치되지 않도록 pnpm overrides 추가
+- `pnpm-lock.yaml`: production dependency audit가 통과하는 patched transitive dependency 버전으로 갱신
+- `package.json`: patch version `0.12.84`로 증가
+
 ## v0.12.83 (2026-04-25)
 
 ### fix: public search jobField filter 검증 추가
