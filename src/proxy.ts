@@ -7,9 +7,10 @@ const SESSION_COOKIE_NAMES = [
     "__Secure-authjs.session-token",
 ];
 
-// 이 middleware는 session cookie가 없는 요청만 차단함 (unauthenticated 트래픽 필터)
+// 이 proxy는 session cookie가 없는 요청만 차단함 (unauthenticated 트래픽 필터)
 // admin 권한 검증은 각 server action / API route에서 requireAdminSession()이 담당
-export function middleware(req: NextRequest) {
+// Next.js 16: middleware → proxy 파일 컨벤션 마이그레이션
+export function proxy(req: NextRequest) {
     const hasSessionCookie = SESSION_COOKIE_NAMES.some((name) =>
         req.cookies.get(name)
     );

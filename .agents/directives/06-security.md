@@ -42,7 +42,7 @@
 
 ### Routes
 
-- `/admin/(?!login)` + `/api/upload-image|storage-ops|run-migrations` 는 `src/middleware.ts` 에서 session cookie 부재 시 401/redirect
+- `/admin/(?!login)` + `/api/upload-image|storage-ops|run-migrations` 는 `src/proxy.ts` (Next.js 16 proxy 파일 컨벤션) 에서 session cookie 부재 시 401/redirect
 - 실제 admin 권한 검증은 server action / API route 의 `requireAdminSession()` / `isAdminSession()` 에서 수행 (defense-in-depth 2단)
 
 ### Deployment assumptions
@@ -70,8 +70,8 @@
 
 ### Authorization & route gating
 
-11. **Middleware + per-route 이중 검증** — `src/middleware.ts` 에서 session cookie 부재 시 redirect/401, 실제 권한 검증은 server action / API route 에서 `requireAdminSession()` 으로. middleware 의 forged cookie 우회를 server-side check 가 막음.
-12. **신규 admin route / action 작성 시** — 반드시 `requireAdminSession()` 호출. middleware 만으로 부족. server action 은 RPC-like 직접 호출 가능하므로 entry 별 gate 필수.
+11. **Proxy + per-route 이중 검증** — `src/proxy.ts` 에서 session cookie 부재 시 redirect/401, 실제 권한 검증은 server action / API route 에서 `requireAdminSession()` 으로. proxy 의 forged cookie 우회를 server-side check 가 막음.
+12. **신규 admin route / action 작성 시** — 반드시 `requireAdminSession()` 호출. proxy 만으로 부족. server action 은 RPC-like 직접 호출 가능하므로 entry 별 gate 필수.
 13. **API endpoint 모든 method 인증** — GET 도 단순 health 라도 Bearer 필수 (MCP). 의도적 unauthenticated 가 아닌 한 default deny.
 
 ### Input validation
