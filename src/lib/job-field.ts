@@ -53,6 +53,25 @@ export function normalizeJobFieldList(
         .filter(Boolean);
 }
 
+// 저장/렌더링용 job field 목록 정규화 + 중복 제거
+export function normalizeUniqueJobFieldList(
+    value: string | string[] | null | undefined
+): string[] {
+    return Array.from(new Set(normalizeJobFieldList(value)));
+}
+
+// site_config.job_fields가 중복 id를 포함해도 React key와 선택지를 안정화한다.
+export function dedupeJobFieldsById<T extends { id: string }>(
+    fields: T[]
+): T[] {
+    const seen = new Set<string>();
+    return fields.filter((field) => {
+        if (seen.has(field.id)) return false;
+        seen.add(field.id);
+        return true;
+    });
+}
+
 // 신규 생성 기본 job field 목록 생성
 export function getInitialJobFieldSelection(
     activeJobField: string | null | undefined

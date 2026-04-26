@@ -1,6 +1,9 @@
 "use client";
 
-import { normalizeJobFieldList } from "@/lib/job-field";
+import {
+    dedupeJobFieldsById,
+    normalizeUniqueJobFieldList,
+} from "@/lib/job-field";
 export type JobFieldItem = { id: string; name: string; emoji?: string };
 
 // job field 다중 선택 toggle 버튼 그룹
@@ -13,14 +16,15 @@ export function JobFieldSelector({
     fields: JobFieldItem[];
     onChange: (v: string[]) => void;
 }) {
-    const selected = normalizeJobFieldList(value);
+    const selected = normalizeUniqueJobFieldList(value);
+    const fieldOptions = dedupeJobFieldsById(fields);
     return (
         <div className="flex flex-col space-y-1">
             <label className="text-sm font-medium text-(--color-muted)">
                 직무 분야
             </label>
             <div className="flex flex-wrap gap-2">
-                {fields.map((f) => {
+                {fieldOptions.map((f) => {
                     const checked = selected.includes(f.id);
                     return (
                         <button
@@ -42,7 +46,7 @@ export function JobFieldSelector({
                         </button>
                     );
                 })}
-                {fields.length === 0 && (
+                {fieldOptions.length === 0 && (
                     <span className="text-sm text-(--color-muted)">
                         등록된 직무 분야 없음
                     </span>
@@ -60,12 +64,13 @@ export function JobFieldBadges({
     value: string | string[] | null | undefined;
     fields: JobFieldItem[];
 }) {
-    const ids = normalizeJobFieldList(value);
+    const ids = normalizeUniqueJobFieldList(value);
+    const fieldOptions = dedupeJobFieldsById(fields);
     if (ids.length === 0) return null;
     return (
         <div className="flex flex-wrap gap-2">
             {ids.map((id) => {
-                const f = fields.find((jf) => jf.id === id);
+                const f = fieldOptions.find((jf) => jf.id === id);
                 return (
                     <span
                         key={id}

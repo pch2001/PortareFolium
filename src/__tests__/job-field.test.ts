@@ -2,8 +2,10 @@ import { describe, it, expect } from "vitest";
 import {
     filterByJobField,
     matchesJobField,
+    dedupeJobFieldsById,
     normalizeJobFieldValue,
     normalizeJobFieldList,
+    normalizeUniqueJobFieldList,
     getInitialJobFieldSelection,
 } from "@/lib/job-field";
 import {
@@ -142,6 +144,30 @@ describe("normalizeJobFieldList", () => {
     it("null/undefined는 빈 배열", () => {
         expect(normalizeJobFieldList(null)).toEqual([]);
         expect(normalizeJobFieldList(undefined)).toEqual([]);
+    });
+});
+
+describe("normalizeUniqueJobFieldList", () => {
+    it("정규화 후 중복된 직무 분야 id를 제거", () => {
+        expect(normalizeUniqueJobFieldList(['"game"', "game", "web"])).toEqual([
+            "game",
+            "web",
+        ]);
+    });
+});
+
+describe("dedupeJobFieldsById", () => {
+    it("중복 id가 있는 job field 선택지를 첫 항목 기준으로 안정화", () => {
+        expect(
+            dedupeJobFieldsById([
+                { id: "game", name: "Game" },
+                { id: "game", name: "Game duplicate" },
+                { id: "web", name: "Web" },
+            ])
+        ).toEqual([
+            { id: "game", name: "Game" },
+            { id: "web", name: "Web" },
+        ]);
     });
 });
 

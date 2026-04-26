@@ -43,8 +43,9 @@ import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { useKeyboardSave } from "@/lib/hooks/useKeyboardSave";
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
 import {
+    dedupeJobFieldsById,
     getInitialJobFieldSelection,
-    normalizeJobFieldList,
+    normalizeUniqueJobFieldList,
     normalizeJobFieldValue,
 } from "@/lib/job-field";
 import {
@@ -189,7 +190,7 @@ export default function PostsPanel({
         const result = await getPostsPanelBootstrap();
         setPosts(result.posts);
         setStateCounts(result.stateCounts);
-        setJobFields(result.jobFields);
+        setJobFields(dedupeJobFieldsById(result.jobFields));
         setActiveJobField(normalizeJobFieldValue(result.activeJobField));
         setPostTocStyles(result.postTocStyles);
         setLoading(false);
@@ -240,7 +241,7 @@ export default function PostsPanel({
             .map((t) => t.trim())
             .filter(Boolean),
         job_field: form.jobField.length
-            ? normalizeJobFieldList(form.jobField)
+            ? normalizeUniqueJobFieldList(form.jobField)
             : null,
         thumbnail: form.thumbnail || null,
         content: form.content,
@@ -271,7 +272,7 @@ export default function PostsPanel({
                 .slice(0, 16),
             category: post.category ?? "",
             tags: post.tags.join(", "),
-            jobField: normalizeJobFieldList(jf),
+            jobField: normalizeUniqueJobFieldList(jf),
             thumbnail: post.thumbnail ?? "",
             content: post.content,
             published: post.published,
@@ -679,7 +680,7 @@ export default function PostsPanel({
             if (filterJobField) {
                 const jf = p.job_field;
                 if (!jf) return false;
-                const arr = Array.isArray(jf) ? jf : [jf];
+                const arr = normalizeUniqueJobFieldList(jf);
                 if (!arr.includes(filterJobField)) return false;
             }
             if (filterSearch) {
@@ -1035,9 +1036,9 @@ export default function PostsPanel({
                                                 />
                                                 {post.tags
                                                     .slice(0, 3)
-                                                    .map((t) => (
+                                                    .map((t, index) => (
                                                         <span
-                                                            key={t}
+                                                            key={`${t}-${index}`}
                                                             className="rounded-lg bg-(--color-tag-bg) px-2 py-0.5 text-xs text-(--color-tag-fg)"
                                                         >
                                                             {t}

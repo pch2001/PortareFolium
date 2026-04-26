@@ -10,7 +10,7 @@ import {
 } from "@/app/admin/actions/site-config";
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
-import { normalizeJobFieldValue } from "@/lib/job-field";
+import { dedupeJobFieldsById, normalizeJobFieldValue } from "@/lib/job-field";
 import { Button } from "@/components/ui/button";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,30 @@ type JobFieldItem = {
     name: string;
     emoji: string;
 };
+
+function parseSiteConfigValue(value: unknown): unknown {
+    if (typeof value !== "string") return value;
+    try {
+        return JSON.parse(value) as unknown;
+    } catch {
+        return value;
+    }
+}
+
+function isJobFieldItem(value: unknown): value is JobFieldItem {
+    if (!value || typeof value !== "object") return false;
+    const item = value as Partial<JobFieldItem>;
+    return (
+        typeof item.id === "string" &&
+        typeof item.name === "string" &&
+        typeof item.emoji === "string"
+    );
+}
+
+function normalizeJobFields(value: unknown): JobFieldItem[] {
+    if (!Array.isArray(value)) return [];
+    return dedupeJobFieldsById(value.filter(isJobFieldItem));
+}
 
 export default function SiteConfigPanel() {
     const { confirm } = useConfirmDialog();
@@ -76,10 +100,7 @@ export default function SiteConfigPanel() {
                     a.key === "site_name" ? -1 : 1
                 );
                 for (const row of ordered) {
-                    const v =
-                        typeof row.value === "string"
-                            ? JSON.parse(row.value)
-                            : row.value;
+                    const v = parseSiteConfigValue(row.value);
                     if (row.key === "color_scheme") {
                         setColorScheme(v as ColorScheme);
                         document.documentElement.setAttribute(
@@ -108,7 +129,7 @@ export default function SiteConfigPanel() {
                     if (row.key === "job_field")
                         setActiveJobField(normalizeJobFieldValue(v as string));
                     if (row.key === "job_fields")
-                        setJobFields(v as JobFieldItem[]);
+                        setJobFields(normalizeJobFields(v));
                     if (row.key === "site_name" && typeof v === "string") {
                         setSeoConfig((prev) => ({ ...prev, defaultTitle: v }));
                     }
@@ -182,7 +203,7 @@ export default function SiteConfigPanel() {
             return;
         }
 
-        setJobFields(result.jobFields);
+        setJobFields(dedupeJobFieldsById(result.jobFields));
         setActiveJobField(result.activeJobField);
         setNewName("");
         setNewEmoji("✨");
@@ -204,7 +225,7 @@ export default function SiteConfigPanel() {
             return;
         }
 
-        setJobFields(result.jobFields);
+        setJobFields(dedupeJobFieldsById(result.jobFields));
         setActiveJobField(result.activeJobField);
         setStatus({ type: "success", msg: "직무 분야가 삭제됐습니다" });
     };

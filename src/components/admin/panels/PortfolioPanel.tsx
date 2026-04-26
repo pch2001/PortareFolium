@@ -47,8 +47,9 @@ import { useAutoSave } from "@/lib/hooks/useAutoSave";
 import { useKeyboardSave } from "@/lib/hooks/useKeyboardSave";
 import { useUnsavedWarning } from "@/lib/hooks/useUnsavedWarning";
 import {
+    dedupeJobFieldsById,
     getInitialJobFieldSelection,
-    normalizeJobFieldList,
+    normalizeUniqueJobFieldList,
     normalizeJobFieldValue,
 } from "@/lib/job-field";
 import {
@@ -150,7 +151,7 @@ function itemToForm(item: PortfolioItem): ItemForm {
         accomplishments: Array.isArray(d.accomplishments)
             ? (d.accomplishments as string[]).join("\n")
             : "",
-        jobField: normalizeJobFieldList(
+        jobField: normalizeUniqueJobFieldList(
             d.jobField as string | string[] | null | undefined
         ),
         meta_title: item.meta_title ?? "",
@@ -234,7 +235,7 @@ export default function PortfolioPanel({
         const result = await getPortfolioPanelBootstrap();
         setItems(result.items);
         setStateCounts(result.stateCounts);
-        setJobFields(result.jobFields);
+        setJobFields(dedupeJobFieldsById(result.jobFields));
         setActiveJobField(normalizeJobFieldValue(result.activeJobField));
         setLoading(false);
     };
@@ -280,7 +281,7 @@ export default function PortfolioPanel({
         order_idx: form.order_idx,
         published: form.published,
         job_field: form.jobField.length
-            ? normalizeJobFieldList(form.jobField)
+            ? normalizeUniqueJobFieldList(form.jobField)
             : null,
         data: {
             startDate: form.startDate || undefined,
@@ -297,7 +298,7 @@ export default function PortfolioPanel({
                       .filter(Boolean)
                 : undefined,
             jobField: form.jobField.length
-                ? normalizeJobFieldList(form.jobField)
+                ? normalizeUniqueJobFieldList(form.jobField)
                 : undefined,
         },
         meta_title: form.meta_title || null,
@@ -752,7 +753,7 @@ export default function PortfolioPanel({
             if (filterJobField) {
                 const jf = item.data?.jobField as string | string[] | undefined;
                 if (!jf) return false;
-                const arr = Array.isArray(jf) ? jf : [jf];
+                const arr = normalizeUniqueJobFieldList(jf);
                 if (!arr.includes(filterJobField)) return false;
             }
             if (filterSearch) {
@@ -1203,14 +1204,16 @@ export default function PortfolioPanel({
                                                     }
                                                     fields={jobFields}
                                                 />
-                                                {tags.slice(0, 3).map((t) => (
-                                                    <span
-                                                        key={t}
-                                                        className="rounded-lg bg-(--color-tag-bg) px-2 py-0.5 text-xs text-(--color-tag-fg)"
-                                                    >
-                                                        {t}
-                                                    </span>
-                                                ))}
+                                                {tags
+                                                    .slice(0, 3)
+                                                    .map((t, index) => (
+                                                        <span
+                                                            key={`${t}-${index}`}
+                                                            className="rounded-lg bg-(--color-tag-bg) px-2 py-0.5 text-xs text-(--color-tag-fg)"
+                                                        >
+                                                            {t}
+                                                        </span>
+                                                    ))}
                                                 {tags.length > 3 && (
                                                     <span className="text-xs text-(--color-muted)">
                                                         +{tags.length - 3}
