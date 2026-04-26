@@ -1,4 +1,5 @@
 import { scryptSync, timingSafeEqual } from "node:crypto";
+import { getLocalSqliteRefugeAuthSecret } from "@/lib/local-sqlite-refuge-admin";
 
 const PASSWORD_HASH_PREFIX = "scrypt";
 
@@ -9,7 +10,9 @@ type AdminCredentialSetup = {
 // AUTH_SECRET 우선, NEXTAUTH_SECRET fallback
 export function getAuthSecret(): string {
     return (
-        (process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? "") as string
+        (process.env.AUTH_SECRET ??
+            process.env.NEXTAUTH_SECRET ??
+            getLocalSqliteRefugeAuthSecret()) as string
     ).trim();
 }
 

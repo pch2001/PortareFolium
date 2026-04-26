@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "@/styles/global.css";
 import "katex/dist/katex.min.css";
 import { getSiteConfig } from "@/lib/queries";
@@ -8,6 +9,10 @@ import AuthSessionProvider from "@/components/AuthSessionProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
+import {
+    createLocalSqliteRefugeAdminSession,
+    isLocalSqliteRefugeAdminBypassAllowed,
+} from "@/lib/local-sqlite-refuge-admin";
 
 export const revalidate = 3600;
 
@@ -48,6 +53,12 @@ export default async function RootLayout({
     const validScheme = VALID_SCHEMES.includes(colorScheme)
         ? colorScheme
         : "blue";
+    const headerStore = await headers();
+    const localRefugeSession = isLocalSqliteRefugeAdminBypassAllowed({
+        host: headerStore.get("host"),
+    })
+        ? createLocalSqliteRefugeAdminSession()
+        : null;
 
     return (
         <html
@@ -65,7 +76,9 @@ export default async function RootLayout({
                 />
             </head>
             <body className="min-h-screen bg-(--color-surface) text-(--color-foreground) transition-colors">
-                <AuthSessionProvider>{children}</AuthSessionProvider>
+                <AuthSessionProvider session={localRefugeSession}>
+                    {children}
+                </AuthSessionProvider>
                 <Toaster />
                 <ColoredTableColorSync />
                 {process.env.VERCEL && (

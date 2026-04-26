@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { auth } from "@/auth";
 import { isAdminSession } from "@/lib/admin-auth";
+import { getEffectiveAdminSession } from "@/lib/server-admin";
 import PortfolioView from "@/components/PortfolioView";
 import PdfExportButton from "@/components/PdfExportButton";
 import { serverClient } from "@/lib/supabase";
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 };
 
 export default async function PortfolioPage() {
-    const session = await auth();
+    const session = await getEffectiveAdminSession();
     const initialAuthed = isAdminSession(session);
     let jobField = process.env.NEXT_PUBLIC_JOB_FIELD ?? "game";
     if (serverClient) {

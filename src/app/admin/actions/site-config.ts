@@ -378,9 +378,8 @@ export async function saveSiteConfig(
     if (!serverClient) return { success: false, error: "serverClient 없음" };
 
     try {
-        const rows = [
+        const rows: { key: string; value: unknown }[] = [
             { key: "color_scheme", value: JSON.stringify(input.colorScheme) },
-            { key: "plain_mode", value: input.plainMode },
             {
                 key: "site_name",
                 value: JSON.stringify(input.seoConfig.defaultTitle),
@@ -392,11 +391,15 @@ export async function saveSiteConfig(
                     default_og_image: input.seoConfig.defaultOgImage,
                 },
             },
+        ];
+
+        rows.push(
+            { key: "plain_mode", value: input.plainMode },
             {
                 key: "github_url",
                 value: JSON.stringify(input.githubUrl.trim()),
-            },
-        ];
+            }
+        );
 
         const { error } = await serverClient
             .from("site_config")

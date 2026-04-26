@@ -8,6 +8,10 @@ test.describe("Admin login", () => {
 
     test("admin login 화면에 credentials 로그인 폼 표시", async ({ page }) => {
         await page.goto("/admin/login");
+        if (page.url().match(/\/admin(?:#.*)?$/)) {
+            await expect(page.getByText(/admin 대시보드/i)).toBeVisible();
+            return;
+        }
         await expect(
             page.getByText(/email\/password 기반 관리자 로그인/i)
         ).toBeVisible();

@@ -17,7 +17,7 @@ import AgentTokensPanel from "@/components/admin/panels/AgentTokensPanel";
 import SnapshotsPanel from "@/components/admin/panels/SnapshotsPanel";
 import PromptLibraryPanel from "@/components/admin/panels/PromptLibraryPanel";
 import DebugPanel from "@/components/admin/panels/DebugPanel";
-import type { TabId } from "@/components/admin/AdminSidebar";
+import { REFUGE_ADMIN_TABS, type TabId } from "@/components/admin/AdminSidebar";
 
 // 비활동 제한 시간 (1시간)
 const INACTIVITY_LIMIT_MS = 60 * 60 * 1000;
@@ -59,21 +59,33 @@ const VALID_TABS: TabId[] = [
 ];
 
 // hash에서 tab + editPath 추출 (예: "posts/edit/my-slug" → { tab: "posts", editPath: "edit/my-slug" })
-function parseHash(raw: string): { tab: TabId; editPath: string } {
+function parseHash(
+    raw: string,
+    allowedTabs: readonly TabId[] = VALID_TABS
+): { tab: TabId; editPath: string } {
     const hash = raw.replace("#", "");
     const slashIdx = hash.indexOf("/");
     const tabPart = slashIdx === -1 ? hash : hash.slice(0, slashIdx);
     const editPath = slashIdx === -1 ? "" : hash.slice(slashIdx + 1);
-    const tab = VALID_TABS.includes(tabPart as TabId)
+    const tab = allowedTabs.includes(tabPart as TabId)
         ? (tabPart as TabId)
         : "posts";
     return { tab, editPath };
 }
 
-export default function AdminDashboard() {
+type AdminDashboardProps = {
+    refugeMode?: boolean;
+};
+
+export default function AdminDashboard({
+    refugeMode = false,
+}: AdminDashboardProps) {
+    const allowedTabs: readonly TabId[] = refugeMode
+        ? REFUGE_ADMIN_TABS
+        : VALID_TABS;
     const [activeTab, setActiveTab] = useState<TabId>(() => {
         if (typeof window !== "undefined") {
-            return parseHash(window.location.hash).tab;
+            return parseHash(window.location.hash, allowedTabs).tab;
         }
         return "posts";
     });
@@ -81,7 +93,7 @@ export default function AdminDashboard() {
     // 초기 editPath (새로고침 시 편집 상태 복원용)
     const [editPath, setEditPath] = useState(() => {
         if (typeof window !== "undefined") {
-            return parseHash(window.location.hash).editPath;
+            return parseHash(window.location.hash, allowedTabs).editPath;
         }
         return "";
     });
@@ -100,13 +112,13 @@ export default function AdminDashboard() {
         window.history.replaceState(null, "", `#${activeTab}${suffix}`);
 
         const handleHashChange = () => {
-            const parsed = parseHash(window.location.hash);
+            const parsed = parseHash(window.location.hash, allowedTabs);
             setActiveTab(parsed.tab);
             setEditPath(parsed.editPath);
         };
         window.addEventListener("hashchange", handleHashChange);
         return () => window.removeEventListener("hashchange", handleHashChange);
-    }, [activeTab, editPath]);
+    }, [activeTab, allowedTabs, editPath]);
 
     // 비활동 타이머: 1초마다 남은 시간 갱신, 만료 시 자동 로그아웃
     useEffect(() => {
@@ -170,6 +182,7 @@ export default function AdminDashboard() {
 
     // 탭 클릭 핸들러
     const handleTabClick = (tabId: TabId) => {
+        if (!allowedTabs.includes(tabId)) return;
         if (activeTab === tabId) {
             setTabKey((prev) => prev + 1);
         } else {
@@ -207,6 +220,7 @@ export default function AdminDashboard() {
                     open={sidebarOpen}
                     onClose={() => setSidebarOpen(false)}
                     visible={sidebarVisible}
+                    refugeMode={refugeMode}
                 />
 
                 <div className="flex flex-1 flex-col overflow-hidden">
@@ -254,7 +268,10 @@ export default function AdminDashboard() {
                                 <ResumePanel key={`resume-${tabKey}`} />
                             )}
                             {activeTab === "migrations" && (
-                                <MigrationsPanel key={`migrations-${tabKey}`} />
+                                <MigrationsPanel
+                                    key={`migrations-${tabKey}`}
+                                    refugeMode={refugeMode}
+                                />
                             )}
                             {activeTab === "snapshots" && (
                                 <SnapshotsPanel key={`snapshots-${tabKey}`} />
@@ -284,6 +301,7 @@ export default function AdminDashboard() {
                 open={commandOpen}
                 onOpenChange={setCommandOpen}
                 onNavigate={handleTabClick}
+                refugeMode={refugeMode}
             />
         </div>
     );

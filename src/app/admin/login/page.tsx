@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import LoginForm from "@/components/admin/LoginForm";
 import { isAdminSession } from "@/lib/admin-auth";
 import { getAdminCredentialSetup } from "@/lib/admin-credentials";
 import { getSafeAdminReturnUrl } from "@/lib/admin-return-url";
+import { getEffectiveAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
 
 export const metadata: Metadata = {
@@ -20,7 +20,7 @@ export default async function AdminLoginPage({
 }) {
     const { returnUrl } = await searchParams;
     const safeReturnUrl = getSafeAdminReturnUrl(returnUrl);
-    const session = await auth();
+    const session = await getEffectiveAdminSession();
     if (isAdminSession(session)) {
         redirect(safeReturnUrl);
     }
