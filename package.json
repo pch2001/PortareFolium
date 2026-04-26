@@ -1,6 +1,6 @@
 {
     "name": "portare-folium",
-    "version": "0.12.101",
+    "version": "0.12.103",
     "engines": {
         "node": ">=24.13.0"
     },
@@ -22,7 +22,10 @@
         "sync-omc": "node scripts/sync-omc-directives.mjs",
         "backfill:lightbox-sidecars": "tsx scripts/backfill-lightbox-sidecars.ts",
         "r2:list": "wrangler r2 object list gvm1229-portfolio-images",
-        "r2:put": "wrangler r2 object put gvm1229-portfolio-images"
+        "r2:put": "wrangler r2 object put gvm1229-portfolio-images",
+        "refuge:pull": "tsx scripts/refuge-pull.ts",
+        "refuge:deactivate": "tsx scripts/refuge-deactivate.ts",
+        "refuge:push": "tsx scripts/refuge-push.ts"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.1030.0",

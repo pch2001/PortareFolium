@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { isAdminSession } from "@/lib/admin-auth";
 import AdminDashboard from "@/components/admin/AdminDashboard";
+import { isSqliteRefugeMode } from "@/lib/refuge/mode";
 
 export const metadata: Metadata = {
     title: "Admin",
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 export default async function AdminPage() {
     const session = await auth();
     if (isAdminSession(session)) {
-        return <AdminDashboard />;
+        return <AdminDashboard refugeMode={isSqliteRefugeMode()} />;
     }
     redirect("/admin/login?returnUrl=/admin");
 }

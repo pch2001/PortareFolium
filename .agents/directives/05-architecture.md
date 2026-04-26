@@ -21,13 +21,13 @@
 ## Project Structure
 
 **Project:** `portare-folium` — Next.js 16 App Router 기반 개인 포트폴리오 사이트
-**Stack:** Next.js 16 (App Router) + React 19, Tailwind CSS v4, Supabase (PostgreSQL), Cloudflare R2, Vercel, pnpm 10, Vitest/Playwright, NextAuth v5, Tiptap, MCP.
+**Stack:** Next.js 16 (App Router) + React 19, Tailwind CSS v4, Supabase (PostgreSQL) + SQLite refuge fallback, Cloudflare R2, Vercel, pnpm 10, Vitest/Playwright, NextAuth v5, Tiptap, MCP.
 
 ## Key Conventions
 
 - **Server Component**: 데이터 fetch + 정적 렌더링.
 - **Client Component** (`"use client"`): 인터랙션 필요한 컴포넌트 (모든 admin 패널).
-- `serverClient`: service_role 키 — API route / Server Component 전용. 절대 클라이언트 번들 포함 금지.
+- `serverClient`: service_role 키 — API route / Server Component 전용. 절대 클라이언트 번들 포함 금지. `.local/refuge/mode.json` 이 `sqlite-refuge` 일 때는 supported table read/write 를 로컬 SQLite refuge client 로 라우팅.
 - `browserClient`: anon 키 + RLS — Client Component 전용.
 - **DB 마이그레이션**: `src/lib/migrations.ts`의 `MIGRATIONS` 배열로 관리. 서버 시작 시 자동 실행.
 - **컬러 스킴**: 21개 런타임 전환 가능. `data-color-scheme` attribute 기반, DB 저장 (localStorage 미사용).

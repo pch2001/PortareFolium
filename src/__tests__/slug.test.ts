@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { toSlug, uniqueSlug } from "@/lib/slug";
+import { toSlug } from "@/lib/slug";
+import { uniqueSlug } from "@/lib/slug-server";
 
 // Supabase mock
 vi.mock("@/lib/supabase", () => ({

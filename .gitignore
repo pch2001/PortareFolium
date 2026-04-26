@@ -26,6 +26,9 @@ vendor/
 # Dependencies
 node_modules/
 
+# Local refuge artifacts
+.local/
+
 # Build output
 dist/
 .next/

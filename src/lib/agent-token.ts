@@ -1,4 +1,5 @@
 import { createHash } from "crypto";
+import { isSqliteRefugeMode } from "@/lib/refuge/mode";
 import { serverClient } from "@/lib/supabase";
 
 // 토큰 → SHA-256 해시 변환
@@ -13,7 +14,7 @@ const LAST_USED_THROTTLE_MS = 60 * 1000;
 export async function validateAgentToken(
     token: string
 ): Promise<{ id: string; label: string } | null> {
-    if (!serverClient) return null;
+    if (!serverClient || isSqliteRefugeMode()) return null;
 
     const hash = hashToken(token);
     const nowIso = new Date().toISOString();
@@ -48,7 +49,7 @@ export async function issueToken(
     label: string,
     durationMin: number
 ): Promise<string | null> {
-    if (!serverClient) return null;
+    if (!serverClient || isSqliteRefugeMode()) return null;
 
     const { randomBytes } = await import("crypto");
     const raw = `pf_agent_${randomBytes(32).toString("hex")}`;
@@ -70,7 +71,7 @@ export async function issueToken(
 
 // 토큰 폐기
 export async function revokeToken(id: string): Promise<boolean> {
-    if (!serverClient) return false;
+    if (!serverClient || isSqliteRefugeMode()) return false;
 
     const { error } = await serverClient
         .from("ai_agent_tokens")
@@ -92,7 +93,7 @@ export async function listTokens(): Promise<
         created_at: string;
     }[]
 > {
-    if (!serverClient) return [];
+    if (!serverClient || isSqliteRefugeMode()) return [];
 
     const { data } = await serverClient
         .from("ai_agent_tokens")
