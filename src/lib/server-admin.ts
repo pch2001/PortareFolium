@@ -1,25 +1,8 @@
 import { auth } from "@/auth";
 import { isAdminSession } from "@/lib/admin-auth";
-import {
-    createLocalSqliteRefugeAdminSession,
-    isLocalSqliteRefugeAdminBypassAllowed,
-} from "@/lib/local-sqlite-refuge-admin";
 
-async function getRequestHost(): Promise<string | null> {
-    const { headers } = await import("next/headers");
-    return (await headers()).get("host");
-}
-
-// Auth.js session과 local-only SQLite refuge admin bypass를 합친 server-side 권한 source.
+// Auth.js session을 server-side 권한 source로 사용한다.
 export async function getEffectiveAdminSession() {
-    if (
-        isLocalSqliteRefugeAdminBypassAllowed({
-            host: await getRequestHost(),
-        })
-    ) {
-        return createLocalSqliteRefugeAdminSession();
-    }
-
     return auth();
 }
 

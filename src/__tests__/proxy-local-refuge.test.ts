@@ -8,13 +8,12 @@ function request(path: string): NextRequest {
     });
 }
 
-describe("proxy local sqlite refuge bypass", () => {
+describe("proxy local sqlite refuge auth", () => {
     afterEach(() => {
         vi.unstubAllEnvs();
     });
 
-    it("allows explicit local next start refuge bypass", () => {
-        vi.stubEnv("SQLITE_REFUGE_ADMIN_BYPASS", "local-dev-only");
+    it("local refuge start opt-in still redirects to login without a session cookie", () => {
         vi.stubEnv("SQLITE_REFUGE_ALLOW_LOCAL_START", "local-dev-only");
         vi.stubEnv("NODE_ENV", "production");
         vi.stubEnv("VERCEL", "");
@@ -22,18 +21,14 @@ describe("proxy local sqlite refuge bypass", () => {
 
         const response = proxy(request("/admin"));
 
-        expect(response.headers.get("x-middleware-next")).toBe("1");
+        expect(response.headers.get("location")).toContain("/admin/login");
     });
 
-    it("keeps production local start bypass closed without explicit opt-in", () => {
-        vi.stubEnv("SQLITE_REFUGE_ADMIN_BYPASS", "local-dev-only");
-        vi.stubEnv("SQLITE_REFUGE_ALLOW_LOCAL_START", "");
-        vi.stubEnv("NODE_ENV", "production");
-        vi.stubEnv("VERCEL", "");
-        vi.stubEnv("VERCEL_ENV", "");
+    it("keeps refuge API routes closed without a real auth session cookie", () => {
+        vi.stubEnv("SQLITE_REFUGE_ALLOW_LOCAL_START", "local-dev-only");
 
-        const response = proxy(request("/admin"));
+        const response = proxy(request("/api/upload-image"));
 
-        expect(response.headers.get("location")).toContain("/admin/login");
+        expect(response.status).toBe(401);
     });
 });

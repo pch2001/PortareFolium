@@ -11,12 +11,16 @@ export const REFUGE_SUPPORTED_TABLES = [
     "editor_states",
     "gantt_chart_archives",
     "database_snapshots",
-] as const;
-
-export const REFUGE_EXCLUDED_TABLES = [
-    "ai_agent_tokens",
     "admin_login_attempts",
 ] as const;
+
+export const REFUGE_LOCAL_ONLY_TABLES = ["admin_login_attempts"] as const;
+
+export const REFUGE_EXCLUDED_TABLES = ["ai_agent_tokens"] as const;
+
+export const REFUGE_REPLAY_TABLES = REFUGE_SUPPORTED_TABLES.filter(
+    (table) => !REFUGE_LOCAL_ONLY_TABLES.includes(table as never)
+);
 
 export type RefugeSupportedTable = (typeof REFUGE_SUPPORTED_TABLES)[number];
 export type RefugeMode = "supabase-primary" | "sqlite-refuge";
@@ -29,7 +33,6 @@ export type RefugeModeState = {
     dbPath: string;
     manifestPath: string;
     journalPath: string;
-    localAuthSecret?: string;
 };
 
 export type RefugeManifest = {

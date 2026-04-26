@@ -13,13 +13,15 @@ import {
     readRefugeJournal,
 } from "../src/lib/refuge/store";
 import {
+    REFUGE_REPLAY_TABLES,
     REFUGE_SUPPORTED_TABLES,
     type RefugeJournalEntry,
     type RefugeManifest,
     type RefugeRow,
 } from "../src/lib/refuge/schema";
 
-const DELETE_REPLAY_TABLES = new Set<string>(REFUGE_SUPPORTED_TABLES);
+const REPLAY_TABLES = new Set<string>(REFUGE_REPLAY_TABLES);
+const DELETE_REPLAY_TABLES = new Set<string>(REFUGE_REPLAY_TABLES);
 
 function hasArg(name: string): boolean {
     return process.argv.includes(name);
@@ -57,7 +59,7 @@ function getClient(): SupabaseClient {
 
 async function snapshotSupabase(client: SupabaseClient): Promise<string> {
     const tables: Record<string, RefugeRow[]> = {};
-    for (const table of REFUGE_SUPPORTED_TABLES) {
+    for (const table of REFUGE_REPLAY_TABLES) {
         const { data, error } = await client.from(table).select("*");
         if (error) throw new Error(`${table}: ${error.message}`);
         tables[table] = (data ?? []) as RefugeRow[];
@@ -102,6 +104,11 @@ async function buildReplayPlan(
         identity: string;
         operation: RefugeJournalEntry["operation"];
     }[] = [];
+    const skippedLocalOnly: {
+        table: string;
+        identity: string;
+        operation: RefugeJournalEntry["operation"];
+    }[] = [];
 
     for (const entry of journal) {
         if (!REFUGE_SUPPORTED_TABLES.includes(entry.table as never)) {
@@ -109,6 +116,14 @@ async function buildReplayPlan(
                 table: entry.table,
                 identity: entry.identity,
                 reason: "unsupported table",
+            });
+            continue;
+        }
+        if (!REPLAY_TABLES.has(entry.table)) {
+            skippedLocalOnly.push({
+                table: entry.table,
+                identity: entry.identity,
+                operation: entry.operation,
             });
             continue;
         }
@@ -156,6 +171,7 @@ async function buildReplayPlan(
         operationCount: operations.length,
         touchedTables: [...new Set(operations.map((entry) => entry.table))],
         operations,
+        skippedLocalOnly,
         conflicts,
     };
 }
@@ -182,6 +198,7 @@ async function applyJournal(
     journal: RefugeJournalEntry[]
 ): Promise<void> {
     for (const entry of journal) {
+        if (!REPLAY_TABLES.has(entry.table)) continue;
         const identity =
             getIdentityValue(entry.table, entry.after) ??
             getIdentityValue(entry.table, entry.before) ??
@@ -238,12 +255,15 @@ async function main(): Promise<void> {
         touchedTables: replay.touchedTables,
         operationCount: replay.operationCount,
         conflicts: replay.conflicts,
+        skippedLocalOnly: replay.skippedLocalOnly,
         policy: {
             order: apply
                 ? "snapshot -> conflict-detect -> apply"
                 : "dry-run replay-plan only",
             defaultConflict: "reject",
             deletes: "journal-only for refuge supported tables",
+            localOnlyTables:
+                "admin_login_attempts stays local and is not replayed",
             storage: "excluded",
         },
     };

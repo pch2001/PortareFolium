@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { assertSafeAdminMutationRequest } from "@/lib/admin-mutation-origin";
 import { isSqliteRefugeMode } from "@/lib/refuge/mode";
 import {
     applySqliteRefugeMigration,
@@ -12,13 +11,8 @@ import type { NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
     try {
-        assertSafeAdminMutationRequest(req);
         await requireAdminSession();
-    } catch (error) {
-        const message = error instanceof Error ? error.message : "";
-        if (message.includes("mutation")) {
-            return NextResponse.json({ error: message }, { status: 403 });
-        }
+    } catch {
         return NextResponse.json({ error: "인증 필요" }, { status: 401 });
     }
 

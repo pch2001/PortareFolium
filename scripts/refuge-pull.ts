@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import {
     DEFAULT_REFUGE_BACKUP_PATH,
@@ -132,7 +131,7 @@ async function main(): Promise<void> {
                     "MCP token authentication",
                 ],
                 degradedSurfaces: [
-                    "Auth.js credentials login is bypassed only for explicit localhost refuge admin",
+                    "MCP token authentication remains unavailable in local SQLite refuge",
                     "refuge:push defaults to replay-plan dry-run unless --apply is supplied",
                 ],
             },
@@ -149,7 +148,6 @@ async function main(): Promise<void> {
             dbPath: REFUGE_DB_PATH,
             manifestPath: REFUGE_MANIFEST_PATH,
             journalPath: REFUGE_JOURNAL_PATH,
-            localAuthSecret: randomBytes(32).toString("hex"),
         };
         fs.writeFileSync(
             REFUGE_MODE_PATH,

@@ -6,7 +6,7 @@ feature/credentials-admin-auth → main: credentials admin auth + 보안 hardeni
 
 ## Summary
 
-이 branch 는 NextAuth credentials 관리자 로그인 도입 + 24+ 항목 보안 hardening + multi-AI 공유 directive 폴더 도입 + docs/repo 구조 전반 정비를 묶는다 (v0.12.78 → v0.12.101).
+이 branch 는 NextAuth credentials 관리자 로그인 도입 + 24+ 항목 보안 hardening + multi-AI 공유 directive 폴더 도입 + docs/repo 구조 전반 정비를 묶는다 (v0.12.78 → v0.12.116).
 
 ### 1. NextAuth credentials admin auth 전환
 
@@ -86,10 +86,17 @@ feature/credentials-admin-auth → main: credentials admin auth + 보안 hardeni
 - Posts/Portfolio 목록과 metadata sheet에서 job field id/value 중복을 렌더링 전에 정규화
 - tag badge key 충돌을 index 포함 key로 방어
 - SiteConfigPanel이 원시 문자열 `job_field = game`을 `JSON.parse`하지 않도록 parsing guard 추가
+
+### 11. SQLite refuge credentials-only auth 정리 (v0.12.116)
+
+- SQLite refuge에서 자동 admin session과 mode-local auth secret 경로 제거
+- `/admin/login` credentials 로그인만 허용하고, proxy/API/server action은 기존 session cookie + `requireAdminSession()` 경계를 유지
+- `admin_login_attempts`를 SQLite refuge local-only table로 지원해 rate limit fail-closed 정책을 유지하되 Supabase replay에서는 제외
+- refuge 운영 가이드와 security/architecture directive를 credentials-only 원칙으로 갱신
 ## Test Plan
 
 - [x] `pnpm exec tsc --noEmit`
-- [x] `pnpm exec vitest run` — 30 files / 228 tests pass
+- [x] `pnpm exec vitest run` — 28 files / 225 tests pass
 - [x] `pnpm build` — clean (Proxy registered)
 - [x] `BASE_URL=http://127.0.0.1:3100 E2E_SERVER_MODE=start pnpm exec playwright test --project=chromium --project=authenticated-chromium` — 54 tests pass (33.9s, push-time gate)
 - [x] Security review (security-reviewer agent, Opus) — 0 high-confidence vulnerabilities introduced

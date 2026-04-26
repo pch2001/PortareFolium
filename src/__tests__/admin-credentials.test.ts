@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import {
     getAdminCredentialSetup,
+    getAuthSecret,
     verifyAdminCredentials,
 } from "@/lib/admin-credentials";
 import { randomBytes, scryptSync } from "node:crypto";
@@ -26,6 +27,17 @@ describe("admin credentials helpers", () => {
             "AUTH_ADMIN_PASSWORD_HASH",
             "AUTH_SECRET",
         ]);
+    });
+
+    it("SQLite refuge local secret fallback 없이 명시적 auth secret만 사용", () => {
+        vi.stubEnv("AUTH_SECRET", "");
+        vi.stubEnv("NEXTAUTH_SECRET", "");
+        vi.stubEnv("SQLITE_REFUGE_ALLOW_LOCAL_START", "local-dev-only");
+
+        expect(getAuthSecret()).toBe("");
+        expect(getAdminCredentialSetup().missingEnvKeys).toContain(
+            "AUTH_SECRET"
+        );
     });
 
     it("email과 password hash가 일치할 때만 검증 통과", () => {

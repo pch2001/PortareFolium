@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { createHash, randomBytes } from "node:crypto";
+import { createHash } from "node:crypto";
 import { REFUGE_MODE_PATH } from "@/lib/refuge/paths";
 import type { RefugeModeState } from "@/lib/refuge/schema";
 
@@ -38,25 +38,6 @@ export function isSqliteRefugeMode(): boolean {
         isSqliteRefugeRuntimeAllowed() &&
         readRefugeModeState()?.mode === "sqlite-refuge"
     );
-}
-
-// 기존 mode.json에 local-only secret이 없으면 local/dev에서만 보강한다.
-export function ensureRefugeModeLocalSecret(): string {
-    if (!isSqliteRefugeRuntimeAllowed()) return "";
-    const state = readRefugeModeState();
-    if (state?.mode !== "sqlite-refuge") return "";
-    if (state.localAuthSecret) return state.localAuthSecret;
-
-    const localAuthSecret = randomBytes(32).toString("hex");
-    const nextState: RefugeModeState = {
-        ...state,
-        localAuthSecret,
-    };
-    fs.writeFileSync(REFUGE_MODE_PATH, JSON.stringify(nextState, null, 2), {
-        encoding: "utf8",
-        mode: 0o600,
-    });
-    return localAuthSecret;
 }
 
 export function stableJson(value: unknown): string {

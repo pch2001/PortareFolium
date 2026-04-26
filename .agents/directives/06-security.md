@@ -12,7 +12,7 @@
 - `getAdminAuthVersion()` (env email + password hash 기반 fingerprint) 가 변경되면 기존 JWT 즉시 무효화
 - 로그인 시도 rate limit: account 단위 + ip+account 단위 — 10회/10분 초과 시 10분 차단
 - DB store(`admin_login_attempts`) 부재 또는 에러 시 fail-closed (로그인 거부)
-- SQLite refuge admin bypass 는 로컬 복구 전용이다. `SQLITE_REFUGE_ADMIN_BYPASS=local-dev-only` + localhost + active `.local/refuge/mode.json` + non-Vercel 환경에서만 허용하며, Vercel Preview/Production 에서는 항상 금지한다. local `next start`에서 refuge data-plane이 필요하면 `SQLITE_REFUGE_ALLOW_LOCAL_START=local-dev-only`를 현재 shell에만 둔다.
+- SQLite refuge에서도 admin은 NextAuth credentials 로그인만 사용한다. 자동 admin session, mode-local secret, proxy 우회, localhost shortcut 금지. local `next start`에서 refuge data-plane이 필요하면 `SQLITE_REFUGE_ALLOW_LOCAL_START=local-dev-only`를 현재 shell에만 둔다.
 
 ### MCP agent
 
@@ -94,7 +94,7 @@
 ### Dependencies
 
 24. **`pnpm audit --prod` 정기 실행** — production dependency 취약점 발견 시 `pnpm overrides` 로 즉시 패치. transitive dependency 도 추적.
-25. **로컬 복구 bypass 는 배포 환경에서 무조건 금지** — SQLite refuge admin bypass 같은 운영 shortcut 은 explicit opt-in, localhost host, active local marker, `VERCEL !== "1"` 조건을 모두 요구. production-like local start opt-in도 Vercel 환경변수 등록 금지. Preview 를 production 과 동일하게 취급해 backdoor 가능성을 차단.
+25. **로컬 복구 모드도 인증 shortcut 금지** — SQLite refuge는 data-plane만 local SQLite로 전환한다. admin 권한은 credentials 로그인 + `requireAdminSession()` 경로만 허용하고, production-like local start opt-in도 Vercel 환경변수 등록 금지.
 
 ## Known limitations
 

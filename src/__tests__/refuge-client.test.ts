@@ -118,6 +118,35 @@ describe("sqlite refuge server client", () => {
         expect(configResult.error).toBeNull();
     });
 
+    it("allows local admin login attempts without Supabase replay", async () => {
+        await seedRefuge([]);
+
+        const schema = await import("@/lib/refuge/schema");
+        expect(schema.isRefugeQueryableTable("admin_login_attempts")).toBe(
+            true
+        );
+        expect(schema.REFUGE_REPLAY_TABLES).not.toContain(
+            "admin_login_attempts"
+        );
+
+        const { serverClient } = await import("@/lib/supabase");
+        const result = await serverClient!
+            .from("admin_login_attempts")
+            .upsert(
+                {
+                    key_hash: "login-key",
+                    attempts: 1,
+                    blocked_until: null,
+                },
+                { onConflict: "key_hash" }
+            )
+            .select("key_hash, attempts")
+            .single();
+
+        expect(result.error).toBeNull();
+        expect(result.data).toEqual({ key_hash: "login-key", attempts: 1 });
+    });
+
     it("allows tag mutations and post category mass updates in refuge mode", async () => {
         await seedRefuge([
             { id: "1", slug: "one", title: "One", category: "Old" },

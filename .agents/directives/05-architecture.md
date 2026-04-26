@@ -28,7 +28,7 @@
 - **Server Component**: 데이터 fetch + 정적 렌더링.
 - **Client Component** (`"use client"`): 인터랙션 필요한 컴포넌트 (모든 admin 패널).
 - `serverClient`: service_role 키 — API route / Server Component 전용. 절대 클라이언트 번들 포함 금지. `.local/refuge/mode.json` 이 `sqlite-refuge` 이고 local/dev runtime gate가 열릴 때는 supported table read/write 를 로컬 SQLite refuge client 로 라우팅. local `next start`에서는 `SQLITE_REFUGE_ALLOW_LOCAL_START=local-dev-only` opt-in이 필요.
-- **SQLite refuge admin bypass**: 로컬 복구 전용. `.env.local` 의 `SQLITE_REFUGE_ADMIN_BYPASS=local-dev-only` + localhost + active refuge mode 에서만 admin session 을 자동 활성화하며 Vercel 배포 환경에서는 금지. `SQLITE_REFUGE_ALLOW_LOCAL_START`도 Vercel에 등록 금지.
+- **SQLite refuge admin auth**: 로컬 복구 모드에서도 NextAuth credentials 로그인만 사용. 자동 admin session, mode-local secret, proxy 우회 금지. `admin_login_attempts`는 local-only SQLite table로 처리하고 Supabase replay에서 제외.
 - `browserClient`: anon 키 + RLS — Client Component 전용.
 - **DB 마이그레이션**: `src/lib/migrations.ts`의 `MIGRATIONS` 배열로 관리. 서버 시작 시 자동 실행.
 - **컬러 스킴**: 21개 런타임 전환 가능. `data-color-scheme` attribute 기반, DB 저장 (localStorage 미사용).
