@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { auth } from "@/auth";
-import { isAdminSession } from "@/lib/admin-auth";
+import { requireAdminSession } from "@/lib/server-admin";
 import { r2Client, R2_BUCKET, R2_PUBLIC_URL } from "@/lib/r2";
 import {
     MAX_UPLOAD_BYTES,
@@ -11,8 +10,9 @@ import {
 } from "@/lib/r2-path-policy";
 
 export async function POST(req: NextRequest) {
-    const session = await auth();
-    if (!isAdminSession(session)) {
+    try {
+        await requireAdminSession();
+    } catch {
         return NextResponse.json({ error: "인증 필요" }, { status: 401 });
     }
 

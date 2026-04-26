@@ -15,6 +15,12 @@ vi.mock("@/lib/admin-auth", () => ({
     isAdminSession: vi.fn(() => true),
 }));
 
+vi.mock("@/lib/server-admin", () => ({
+    requireAdminSession: vi.fn(async () => ({
+        user: { id: "admin", isAdmin: true },
+    })),
+}));
+
 vi.mock("@/lib/r2", () => ({
     r2Client: { send: sendMock },
     R2_BUCKET: "test-bucket",

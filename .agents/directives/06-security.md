@@ -12,6 +12,7 @@
 - `getAdminAuthVersion()` (env email + password hash 기반 fingerprint) 가 변경되면 기존 JWT 즉시 무효화
 - 로그인 시도 rate limit: account 단위 + ip+account 단위 — 10회/10분 초과 시 10분 차단
 - DB store(`admin_login_attempts`) 부재 또는 에러 시 fail-closed (로그인 거부)
+- SQLite refuge admin bypass 는 로컬 복구 전용이다. `SQLITE_REFUGE_ADMIN_BYPASS=local-dev-only` + localhost + active `.local/refuge/mode.json` + non-Vercel 환경에서만 허용하며, Vercel Preview/Production 에서는 항상 금지한다.
 
 ### MCP agent
 
@@ -93,6 +94,7 @@
 ### Dependencies
 
 24. **`pnpm audit --prod` 정기 실행** — production dependency 취약점 발견 시 `pnpm overrides` 로 즉시 패치. transitive dependency 도 추적.
+25. **로컬 복구 bypass 는 배포 환경에서 무조건 금지** — SQLite refuge admin bypass 같은 운영 shortcut 은 explicit opt-in, localhost host, active local marker, `VERCEL !== "1"` 조건을 모두 요구. Preview 를 production 과 동일하게 취급해 backdoor 가능성을 차단.
 
 ## Known limitations
 

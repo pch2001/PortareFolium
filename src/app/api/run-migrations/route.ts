@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
-import { isAdminSession } from "@/lib/admin-auth";
+import { requireAdminSession } from "@/lib/server-admin";
 import { serverClient } from "@/lib/supabase";
 import { getPendingMigrations } from "@/lib/migrations";
 
 export async function POST() {
-    const session = await auth();
-    if (!isAdminSession(session)) {
+    try {
+        await requireAdminSession();
+    } catch {
         return NextResponse.json({ error: "인증 필요" }, { status: 401 });
     }
 
