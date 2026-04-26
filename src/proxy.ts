@@ -16,11 +16,17 @@ function isLocalhostRequestHost(host: string | null): boolean {
 }
 
 function isExplicitLocalRefugeBypass(req: NextRequest): boolean {
+    const vercelRuntime =
+        process.env.VERCEL === "1" ||
+        process.env.VERCEL_ENV === "production" ||
+        process.env.VERCEL_ENV === "preview";
+    const localRuntime =
+        process.env.NODE_ENV !== "production" ||
+        process.env.SQLITE_REFUGE_ALLOW_LOCAL_START === "local-dev-only";
     return (
         process.env.SQLITE_REFUGE_ADMIN_BYPASS === "local-dev-only" &&
-        process.env.NODE_ENV !== "production" &&
-        process.env.VERCEL !== "1" &&
-        process.env.VERCEL_ENV !== "production" &&
+        !vercelRuntime &&
+        localRuntime &&
         isLocalhostRequestHost(req.headers.get("host"))
     );
 }
