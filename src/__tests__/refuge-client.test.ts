@@ -143,6 +143,7 @@ describe("sqlite refuge server client", () => {
 
         const { serverClient } = await import("@/lib/supabase");
         const paths = await import("@/lib/refuge/paths");
+        const store = await import("@/lib/refuge/store");
         const update = await serverClient!
             .from("posts")
             .update({ title: "Updated" })
@@ -159,11 +160,48 @@ describe("sqlite refuge server client", () => {
             .split("\n")
             .map(
                 (line) =>
-                    JSON.parse(line) as { operation: string; table: string }
+                    JSON.parse(line) as {
+                        operation: string;
+                        table: string;
+                        prevHash: string;
+                        hash: string;
+                    }
             );
         expect(journal).toMatchObject([
-            { operation: "update", table: "posts" },
+            {
+                operation: "update",
+                table: "posts",
+                prevHash: store.REFUGE_JOURNAL_GENESIS_HASH,
+            },
         ]);
+        expect(journal[0]?.hash).toMatch(/^[a-f0-9]{64}$/);
+        expect(store.readRefugeJournal()).toHaveLength(1);
+    });
+
+    it("rejects tampered refuge journal entries", async () => {
+        await seedRefuge([
+            { id: "1", slug: "live", title: "Live", published: true },
+        ]);
+
+        const { serverClient } = await import("@/lib/supabase");
+        const paths = await import("@/lib/refuge/paths");
+        const store = await import("@/lib/refuge/store");
+        await serverClient!
+            .from("posts")
+            .update({ title: "Updated" })
+            .eq("slug", "live");
+
+        const entry = JSON.parse(
+            fs.readFileSync(paths.REFUGE_JOURNAL_PATH, "utf8").trim()
+        ) as { after: { title: string } };
+        entry.after.title = "Tampered";
+        fs.writeFileSync(
+            paths.REFUGE_JOURNAL_PATH,
+            `${JSON.stringify(entry)}\n`,
+            "utf8"
+        );
+
+        expect(() => store.readRefugeJournal()).toThrow(/hash mismatch/);
     });
 
     it("applies SQLite-only migrations by updating local schema version without journal replay", async () => {

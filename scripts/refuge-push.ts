@@ -8,7 +8,10 @@ import {
     REFUGE_MODE_PATH,
 } from "../src/lib/refuge/paths";
 import { stableJson } from "../src/lib/refuge/mode";
-import { readRefugeJournal } from "../src/lib/refuge/store";
+import {
+    getRefugeJournalHeadHash,
+    readRefugeJournal,
+} from "../src/lib/refuge/store";
 import {
     REFUGE_SUPPORTED_TABLES,
     type RefugeJournalEntry,
@@ -231,6 +234,7 @@ async function main(): Promise<void> {
         apply,
         manifestCreatedAt: manifest.createdAt,
         journalEntries: journal.length,
+        journalHeadHash: getRefugeJournalHeadHash(journal),
         touchedTables: replay.touchedTables,
         operationCount: replay.operationCount,
         conflicts: replay.conflicts,

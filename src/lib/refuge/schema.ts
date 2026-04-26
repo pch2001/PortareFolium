@@ -52,6 +52,8 @@ export type RefugeJournalEntry = {
     identity: string;
     before?: RefugeRow | null;
     after?: RefugeRow | null;
+    prevHash?: string;
+    hash?: string;
 };
 
 const TABLE_IDENTITY_KEYS: Record<string, string[]> = {
