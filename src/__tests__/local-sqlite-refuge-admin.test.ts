@@ -28,7 +28,22 @@ describe("local sqlite refuge admin bypass gate", () => {
             })
         ).toBe(false);
         expect(
+            isLocalSqliteRefugeRuntimeAllowed({
+                ...localEnv,
+                NODE_ENV: "production",
+                SQLITE_REFUGE_ALLOW_LOCAL_START: "local-dev-only",
+            })
+        ).toBe(true);
+        expect(
             isLocalSqliteRefugeRuntimeAllowed({ ...localEnv, VERCEL: "1" })
+        ).toBe(false);
+        expect(
+            isLocalSqliteRefugeRuntimeAllowed({
+                ...localEnv,
+                NODE_ENV: "production",
+                SQLITE_REFUGE_ALLOW_LOCAL_START: "local-dev-only",
+                VERCEL: "1",
+            })
         ).toBe(false);
         expect(
             isLocalSqliteRefugeRuntimeAllowed({

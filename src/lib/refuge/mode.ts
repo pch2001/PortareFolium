@@ -5,16 +5,18 @@ import type { RefugeModeState } from "@/lib/refuge/schema";
 
 type EnvLike = Partial<Record<string, string | undefined>>;
 
+const LOCAL_REFUGE_OPT_IN_VALUE = "local-dev-only";
+
 // SQLite refuge data-plane은 local/dev runtime에서만 활성화한다.
 export function isSqliteRefugeRuntimeAllowed(
     env: EnvLike = process.env
 ): boolean {
-    return (
-        env.NODE_ENV !== "production" &&
-        env.VERCEL !== "1" &&
-        env.VERCEL_ENV !== "production" &&
-        env.VERCEL_ENV !== "preview"
-    );
+    if (env.VERCEL === "1") return false;
+    if (env.VERCEL_ENV === "production" || env.VERCEL_ENV === "preview") {
+        return false;
+    }
+    if (env.NODE_ENV !== "production") return true;
+    return env.SQLITE_REFUGE_ALLOW_LOCAL_START === LOCAL_REFUGE_OPT_IN_VALUE;
 }
 
 export function readRefugeModeState(): RefugeModeState | null {
