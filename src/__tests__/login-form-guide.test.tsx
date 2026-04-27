@@ -55,6 +55,59 @@ describe("login form env guide", () => {
         expect(
             screen.getByText(/`AUTH_SECRET` 생성 명령/i)
         ).toBeInTheDocument();
+        expect(
+            screen.getByText(/원하는 로그인 비밀번호 설정 방법/i)
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(/비밀번호 입력칸에 원하는 비밀번호를 입력하면/i)
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(/env에는 원래 비밀번호를 저장하지 않습니다/i)
+        ).toBeInTheDocument();
+
+        const passwordInput = screen.getByLabelText("비밀번호");
+        expect(passwordInput).toHaveAttribute("type", "text");
+        fireEvent.change(passwordInput, { target: { value: "password123" } });
+        expect(
+            screen.getByText(
+                /비밀번호 규칙을 모두 만족해야 이 명령을 복사할 수 있습니다/i
+            )
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(/Buffer\.from\('cGFzc3dvcmQxMjM='/i)
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole("button", { name: "비밀번호 규칙 확인 필요" })
+        ).toBeDisabled();
+
+        fireEvent.change(passwordInput, { target: { value: "Password123!" } });
+        expect(screen.getByText("12자 이상")).toBeInTheDocument();
+        expect(screen.getByText("영문 소문자 1개 이상")).toBeInTheDocument();
+        expect(screen.getByText("영문 대문자 1개 이상")).toBeInTheDocument();
+        expect(screen.getByText("숫자 1개 이상")).toBeInTheDocument();
+        expect(screen.getByText("특수문자 1개 이상")).toBeInTheDocument();
+        expect(
+            screen.getByText("영문, 숫자, ASCII 특수문자만 사용")
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                /현재 명령은 유효한 비밀번호 입력값으로 생성됩니다/i
+            )
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(/Buffer\.from\('UGFzc3dvcmQxMjMh'/i)
+        ).toBeInTheDocument();
+
+        const passwordCommand = screen.getByTestId("password-hash-command");
+        const authSecretCommand = screen.getByTestId("auth-secret-command");
+        expect(passwordCommand.className).toContain("select-none");
+        expect(authSecretCommand.className).toContain("select-none");
+        expect(passwordCommand).toHaveAttribute("draggable", "false");
+        expect(authSecretCommand).toHaveAttribute("draggable", "false");
+        expect(fireEvent.copy(passwordCommand)).toBe(false);
+        expect(fireEvent.copy(authSecretCommand)).toBe(false);
+        expect(fireEvent.mouseDown(passwordCommand)).toBe(false);
+        expect(fireEvent.mouseDown(authSecretCommand)).toBe(false);
 
         const copyButtons = screen.getAllByRole("button", { name: "복사" });
         expect(copyButtons).toHaveLength(2);
@@ -66,6 +119,9 @@ describe("login form env guide", () => {
         fireEvent.click(copyButtons[0]);
 
         await waitFor(() => {
+            expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+                expect.stringContaining("Buffer.from('UGFzc3dvcmQxMjMh'")
+            );
             expect(
                 screen.getByRole("button", { name: /복사됨/i })
             ).toBeDisabled();

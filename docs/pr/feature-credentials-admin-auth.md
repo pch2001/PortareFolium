@@ -21,7 +21,7 @@ Credentials admin auth와 관리자 보안 hardening
 - `src/auth.ts`, `src/lib/admin-credentials.ts`, `src/lib/admin-auth.ts`, `src/lib/admin-auth-version.ts`:
   NextAuth credentials provider, single admin email/password, scrypt hash 검증, auth version fingerprint 도입
 - `src/app/admin/login/page.tsx`, `src/components/admin/LoginForm.tsx`:
-  admin login page, setup 상태 안내, invalid env 진단, first-run command copy guide 추가
+  admin login page, setup 상태 안내, invalid env 진단, desired password 기반 first-run hash command guide 추가
 - `src/proxy.ts`, `src/lib/server-admin.ts`:
   admin page/API unauthenticated request filter와 server-side admin session 검증 경계 정리
 
@@ -57,7 +57,7 @@ Credentials admin auth와 관리자 보안 hardening
 ### test
 
 - `src/__tests__/admin-*.test.ts*`, `src/__tests__/login-form-guide.test.tsx`, `src/__tests__/job-field.test.ts`, `src/__tests__/r2-path-policy.test.ts`:
-  auth setup, rate limit, route gate, returnUrl, storage policy, job field, first-run guide 회귀 테스트 추가/보강
+  auth setup, rate limit, route gate, returnUrl, storage policy, job field, first-run password guide 회귀 테스트 추가/보강
 - `e2e/*`:
   credentials login 기반 authenticated Playwright setup 정렬
 

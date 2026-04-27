@@ -12,7 +12,7 @@ const ENV_DESCRIPTIONS: Record<string, { purpose: string; setup: string }> = {
     },
     AUTH_ADMIN_PASSWORD_HASH: {
         purpose: "관리자 비밀번호를 평문 대신 저장하는 scrypt hash",
-        setup: "아래 예시 명령으로 hash 생성 후 그대로 env에 입력",
+        setup: "아래쪽 비밀번호 입력칸에 원하는 비밀번호를 입력한 뒤 갱신된 명령 출력값을 env에 입력",
     },
     AUTH_SECRET: {
         purpose: "로그인 세션과 쿠키 암호화에 쓰는 secret",
@@ -20,12 +20,75 @@ const ENV_DESCRIPTIONS: Record<string, { purpose: string; setup: string }> = {
     },
 };
 
+const PASSWORD_PLACEHOLDER = "YOUR_PASSWORD";
+
 const COMMANDS = {
-    AUTH_ADMIN_PASSWORD_HASH:
-        "node -e \"const { randomBytes, scryptSync } = require('crypto'); const salt = randomBytes(16).toString('hex'); const hash = scryptSync('YOUR_PASSWORD', salt, 64).toString('hex'); console.log('scrypt$' + salt + '$' + hash)\"",
     AUTH_SECRET:
         "node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
 } as const;
+
+type PasswordRequirement = {
+    id: string;
+    label: string;
+    isMet: (value: string) => boolean;
+};
+
+const PASSWORD_REQUIREMENTS: PasswordRequirement[] = [
+    {
+        id: "length",
+        label: "12자 이상",
+        isMet: (value) => value.length >= 12,
+    },
+    {
+        id: "lowercase",
+        label: "영문 소문자 1개 이상",
+        isMet: (value) => /[a-z]/.test(value),
+    },
+    {
+        id: "uppercase",
+        label: "영문 대문자 1개 이상",
+        isMet: (value) => /[A-Z]/.test(value),
+    },
+    {
+        id: "number",
+        label: "숫자 1개 이상",
+        isMet: (value) => /[0-9]/.test(value),
+    },
+    {
+        id: "special",
+        label: "특수문자 1개 이상",
+        isMet: (value) => /[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/.test(value),
+    },
+    {
+        id: "ascii",
+        label: "영문, 숫자, ASCII 특수문자만 사용",
+        isMet: (value) =>
+            value.length > 0 &&
+            /^[A-Za-z0-9!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]+$/.test(value),
+    },
+];
+
+function blockManualCommandCopy(event: React.SyntheticEvent): void {
+    event.preventDefault();
+}
+
+function encodeBase64Utf8(value: string): string {
+    const bytes = new TextEncoder().encode(value);
+    let binary = "";
+    for (const byte of bytes) {
+        binary += String.fromCharCode(byte);
+    }
+    return btoa(binary);
+}
+
+function getPasswordHashCommand(password: string): string {
+    if (!password) {
+        return `node -e "const { randomBytes, scryptSync } = require('crypto'); const password = '${PASSWORD_PLACEHOLDER}'; const salt = randomBytes(16).toString('hex'); const hash = scryptSync(password, salt, 64).toString('hex'); console.log(['scrypt', salt, hash].join(String.fromCharCode(36)))"`;
+    }
+
+    const encodedPassword = encodeBase64Utf8(password);
+    return `node -e "const { randomBytes, scryptSync } = require('crypto'); const password = Buffer.from('${encodedPassword}', 'base64').toString('utf8'); const salt = randomBytes(16).toString('hex'); const hash = scryptSync(password, salt, 64).toString('hex'); console.log(['scrypt', salt, hash].join(String.fromCharCode(36)))"`;
+}
 
 export default function LoginForm({
     siteName = "",
@@ -48,6 +111,16 @@ export default function LoginForm({
     const setupReady =
         setupState.missingEnvKeys.length === 0 && invalidEnvKeys.length === 0;
     const safeReturnUrl = getSafeAdminReturnUrl(returnUrl);
+    const passwordHashCommand = getPasswordHashCommand(password);
+    const passwordRequirementStates = PASSWORD_REQUIREMENTS.map(
+        (requirement) => ({
+            ...requirement,
+            met: requirement.isMet(password),
+        })
+    );
+    const setupPasswordReady =
+        password.length > 0 &&
+        passwordRequirementStates.every((requirement) => requirement.met);
     const setupIssues = [
         ...setupState.missingEnvKeys.map((key) => ({
             key,
@@ -92,12 +165,25 @@ export default function LoginForm({
     };
 
     // 명령 clipboard 복사
-    const handleCopyCommand = async (key: keyof typeof COMMANDS) => {
+    const handleCopyCommand = async (
+        key: keyof typeof COMMANDS | "AUTH_ADMIN_PASSWORD_HASH"
+    ) => {
         try {
-            await navigator.clipboard.writeText(COMMANDS[key]);
+            await navigator.clipboard.writeText(
+                key === "AUTH_ADMIN_PASSWORD_HASH"
+                    ? passwordHashCommand
+                    : COMMANDS[key]
+            );
             setCopiedCommand(key);
         } catch {
             setError("명령 복사에 실패했습니다.");
+        }
+    };
+
+    const handlePasswordChange = (value: string) => {
+        setPassword(value);
+        if (copiedCommand === "AUTH_ADMIN_PASSWORD_HASH") {
+            setCopiedCommand(null);
         }
     };
 
@@ -185,17 +271,124 @@ export default function LoginForm({
                                 </ul>
                                 {showDetailedSetupGuide && (
                                     <>
+                                        <div className="space-y-2 rounded-lg border border-amber-200 bg-white/70 px-3 py-3 text-xs dark:border-amber-800 dark:bg-black/10">
+                                            <p className="font-semibold">
+                                                원하는 로그인 비밀번호 설정 방법
+                                            </p>
+                                            <ol className="list-decimal space-y-1 pl-4 text-amber-800/90 dark:text-amber-200/90">
+                                                <li>
+                                                    먼저 실제로 로그인할
+                                                    비밀번호를 정합니다.
+                                                </li>
+                                                <li>
+                                                    아래쪽 비밀번호 입력칸에
+                                                    원하는 비밀번호를 입력하면{" "}
+                                                    <span className="font-mono font-semibold">
+                                                        AUTH_ADMIN_PASSWORD_HASH
+                                                    </span>{" "}
+                                                    명령이 자동으로 바뀝니다.
+                                                </li>
+                                                <li>
+                                                    출력된{" "}
+                                                    <span className="font-mono font-semibold">
+                                                        scrypt$...
+                                                    </span>{" "}
+                                                    전체 문자열을 Vercel의{" "}
+                                                    <span className="font-mono font-semibold">
+                                                        AUTH_ADMIN_PASSWORD_HASH
+                                                    </span>
+                                                    에 저장합니다.
+                                                </li>
+                                            </ol>
+                                            <p className="text-amber-900 dark:text-amber-100">
+                                                예: 비밀번호를{" "}
+                                                <span className="font-mono font-semibold">
+                                                    password123
+                                                </span>
+                                                으로 정했다면 비밀번호 입력칸에
+                                                그대로 입력하세요. 단, 실제
+                                                운영에는 더 길고 추측하기 어려운
+                                                비밀번호를 사용하세요.
+                                            </p>
+                                            <p className="text-amber-900 dark:text-amber-100">
+                                                env에는 원래 비밀번호를 저장하지
+                                                않습니다. 로그인할 때만 원래
+                                                비밀번호를 입력합니다.
+                                            </p>
+                                        </div>
                                         <div className="space-y-1 text-xs">
                                             <p className="font-semibold">
                                                 `AUTH_ADMIN_PASSWORD_HASH` 생성
                                                 명령
                                             </p>
                                             <div className="space-y-2">
-                                                <code className="block overflow-x-auto rounded-lg bg-black/80 px-3 py-2 text-[11px] text-white">
-                                                    {
-                                                        COMMANDS.AUTH_ADMIN_PASSWORD_HASH
+                                                <div className="grid gap-1 rounded-lg border border-amber-200 bg-white/70 px-3 py-2 text-[11px] dark:border-amber-800 dark:bg-black/10">
+                                                    <p className="font-semibold text-amber-900 dark:text-amber-100">
+                                                        비밀번호 규칙
+                                                    </p>
+                                                    <ul className="grid gap-1">
+                                                        {passwordRequirementStates.map(
+                                                            (requirement) => (
+                                                                <li
+                                                                    key={
+                                                                        requirement.id
+                                                                    }
+                                                                    className="flex items-center gap-2"
+                                                                >
+                                                                    <span
+                                                                        aria-hidden="true"
+                                                                        className={
+                                                                            requirement.met
+                                                                                ? "text-green-700 dark:text-green-300"
+                                                                                : "text-amber-700 dark:text-amber-300"
+                                                                        }
+                                                                    >
+                                                                        {requirement.met
+                                                                            ? "✓"
+                                                                            : "•"}
+                                                                    </span>
+                                                                    <span
+                                                                        className={
+                                                                            requirement.met
+                                                                                ? "text-green-800 dark:text-green-200"
+                                                                                : "text-amber-800/90 dark:text-amber-200/90"
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            requirement.label
+                                                                        }
+                                                                    </span>
+                                                                </li>
+                                                            )
+                                                        )}
+                                                    </ul>
+                                                </div>
+                                                <code
+                                                    data-testid="password-hash-command"
+                                                    draggable={false}
+                                                    onCopy={
+                                                        blockManualCommandCopy
                                                     }
+                                                    onCut={
+                                                        blockManualCommandCopy
+                                                    }
+                                                    onDragStart={
+                                                        blockManualCommandCopy
+                                                    }
+                                                    onMouseDown={
+                                                        blockManualCommandCopy
+                                                    }
+                                                    className="block overflow-x-auto rounded-lg bg-black/80 px-3 py-2 text-[11px] text-white select-none"
+                                                >
+                                                    {passwordHashCommand}
                                                 </code>
+                                                <p className="text-[11px] text-amber-800/90 dark:text-amber-200/90">
+                                                    {setupPasswordReady
+                                                        ? "현재 명령은 유효한 비밀번호 입력값으로 생성됩니다."
+                                                        : password
+                                                          ? "비밀번호 규칙을 모두 만족해야 이 명령을 복사할 수 있습니다."
+                                                          : `비밀번호 입력칸이 비어 있으면 명령에는 ${PASSWORD_PLACEHOLDER} 예시값이 표시됩니다.`}
+                                                </p>
                                                 <button
                                                     type="button"
                                                     onClick={() =>
@@ -204,10 +397,11 @@ export default function LoginForm({
                                                         )
                                                     }
                                                     disabled={
+                                                        !setupPasswordReady ||
                                                         copiedCommand ===
-                                                        "AUTH_ADMIN_PASSWORD_HASH"
+                                                            "AUTH_ADMIN_PASSWORD_HASH"
                                                     }
-                                                    className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-(--color-accent) px-3 py-2 text-[11px] font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-100"
+                                                    className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-(--color-accent) px-3 py-2 text-[11px] font-semibold whitespace-nowrap text-(--color-on-accent) transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                                                 >
                                                     {copiedCommand ===
                                                     "AUTH_ADMIN_PASSWORD_HASH" ? (
@@ -227,6 +421,8 @@ export default function LoginForm({
                                                             </svg>
                                                             복사됨
                                                         </>
+                                                    ) : !setupPasswordReady ? (
+                                                        "비밀번호 규칙 확인 필요"
                                                     ) : (
                                                         "복사"
                                                     )}
@@ -238,7 +434,23 @@ export default function LoginForm({
                                                 `AUTH_SECRET` 생성 명령
                                             </p>
                                             <div className="space-y-2">
-                                                <code className="block overflow-x-auto rounded-lg bg-black/80 px-3 py-2 text-[11px] text-white">
+                                                <code
+                                                    data-testid="auth-secret-command"
+                                                    draggable={false}
+                                                    onCopy={
+                                                        blockManualCommandCopy
+                                                    }
+                                                    onCut={
+                                                        blockManualCommandCopy
+                                                    }
+                                                    onDragStart={
+                                                        blockManualCommandCopy
+                                                    }
+                                                    onMouseDown={
+                                                        blockManualCommandCopy
+                                                    }
+                                                    className="block overflow-x-auto rounded-lg bg-black/80 px-3 py-2 text-[11px] text-white select-none"
+                                                >
                                                     {COMMANDS.AUTH_SECRET}
                                                 </code>
                                                 <button
@@ -316,11 +528,21 @@ export default function LoginForm({
                             </label>
                             <input
                                 id="admin-password"
-                                type="password"
+                                type={setupReady ? "password" : "text"}
                                 value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="••••••••"
-                                autoComplete="current-password"
+                                onChange={(e) =>
+                                    handlePasswordChange(e.target.value)
+                                }
+                                placeholder={
+                                    setupReady
+                                        ? "••••••••"
+                                        : "원하는 관리자 비밀번호 입력"
+                                }
+                                autoComplete={
+                                    setupReady
+                                        ? "current-password"
+                                        : "new-password"
+                                }
                                 className="w-full rounded-xl border border-(--color-border) bg-(--color-surface) px-4 py-3 text-sm text-(--color-foreground) transition-colors focus:border-(--color-accent) focus:ring-2 focus:ring-(--color-accent)/30 focus:outline-none"
                             />
                             <button
