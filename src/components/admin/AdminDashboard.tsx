@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { browserClient } from "@/lib/supabase";
+import { signOut } from "next-auth/react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import CommandPalette from "@/components/admin/CommandPalette";
+import MainPanel from "@/components/admin/panels/MainPanel";
 import PostsPanel from "@/components/admin/panels/PostsPanel";
 import PortfolioPanel from "@/components/admin/panels/PortfolioPanel";
 import TagsPanel from "@/components/admin/panels/TagsPanel";
@@ -17,16 +18,35 @@ import AgentTokensPanel from "@/components/admin/panels/AgentTokensPanel";
 import SnapshotsPanel from "@/components/admin/panels/SnapshotsPanel";
 import PromptLibraryPanel from "@/components/admin/panels/PromptLibraryPanel";
 import DebugPanel from "@/components/admin/panels/DebugPanel";
-import type { TabId } from "@/components/admin/AdminSidebar";
+import { REFUGE_ADMIN_TABS, type TabId } from "@/components/admin/AdminSidebar";
 
 // 비활동 제한 시간 (1시간)
 const INACTIVITY_LIMIT_MS = 60 * 60 * 1000;
 
+// 자동 로그아웃 경고 시점 (1분 전)
+const WARN_BEFORE_MS = 60 * 1000;
+
+// 자체 높이를 관리하는 패널 목록
+const PANELS_OWN_HEIGHT = new Set<TabId>([
+    "posts",
+    "portfolio",
+    "gantt-chart",
+    "resume",
+    "migrations",
+    "snapshots",
+    "agent-tokens",
+    "prompts",
+    "debug",
+    "config",
+]);
+
 // 활동 감지 이벤트 목록
 const ACTIVITY_EVENTS = ["mousemove", "keydown", "click", "scroll"] as const;
+const DEFAULT_TAB: TabId = "main";
 
 // 유효한 탭 ID 목록
 const VALID_TABS: TabId[] = [
+    "main",
     "posts",
     "portfolio",
     "tags",
@@ -42,63 +62,63 @@ const VALID_TABS: TabId[] = [
 ];
 
 // hash에서 tab + editPath 추출 (예: "posts/edit/my-slug" → { tab: "posts", editPath: "edit/my-slug" })
-function parseHash(raw: string): { tab: TabId; editPath: string } {
+function parseHash(
+    raw: string,
+    allowedTabs: readonly TabId[] = VALID_TABS
+): { tab: TabId; editPath: string } {
     const hash = raw.replace("#", "");
     const slashIdx = hash.indexOf("/");
     const tabPart = slashIdx === -1 ? hash : hash.slice(0, slashIdx);
     const editPath = slashIdx === -1 ? "" : hash.slice(slashIdx + 1);
-    const tab = VALID_TABS.includes(tabPart as TabId)
+    const tab = allowedTabs.includes(tabPart as TabId)
         ? (tabPart as TabId)
-        : "posts";
+        : DEFAULT_TAB;
     return { tab, editPath };
 }
 
-export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState<TabId>(() => {
-        if (typeof window !== "undefined") {
-            return parseHash(window.location.hash).tab;
-        }
-        return "posts";
-    });
+type AdminDashboardProps = {
+    refugeMode?: boolean;
+};
+
+export default function AdminDashboard({
+    refugeMode = false,
+}: AdminDashboardProps) {
+    const allowedTabs: readonly TabId[] = refugeMode
+        ? REFUGE_ADMIN_TABS
+        : VALID_TABS;
+    const [activeTab, setActiveTab] = useState<TabId>(DEFAULT_TAB);
 
     // 초기 editPath (새로고침 시 편집 상태 복원용)
-    const [editPath, setEditPath] = useState(() => {
-        if (typeof window !== "undefined") {
-            return parseHash(window.location.hash).editPath;
-        }
-        return "";
-    });
+    const [editPath, setEditPath] = useState("");
 
     const [tabKey, setTabKey] = useState(0);
+    const [hashReady, setHashReady] = useState(false);
     const [commandOpen, setCommandOpen] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [sidebarVisible, setSidebarVisible] = useState(true);
     const [remainingMs, setRemainingMs] = useState(INACTIVITY_LIMIT_MS);
     const lastActivityRef = useRef(Date.now());
-    const panelOwnsHeight =
-        activeTab === "posts" ||
-        activeTab === "portfolio" ||
-        activeTab === "gantt-chart" ||
-        activeTab === "resume" ||
-        activeTab === "migrations" ||
-        activeTab === "snapshots" ||
-        activeTab === "agent-tokens" ||
-        activeTab === "prompts" ||
-        activeTab === "debug" ||
-        activeTab === "config";
+    const warnedRef = useRef(false);
+    const panelOwnsHeight = PANELS_OWN_HEIGHT.has(activeTab);
 
     useEffect(() => {
-        const suffix = editPath ? `/${editPath}` : "";
-        window.history.replaceState(null, "", `#${activeTab}${suffix}`);
-
         const handleHashChange = () => {
-            const parsed = parseHash(window.location.hash);
+            const parsed = parseHash(window.location.hash, allowedTabs);
             setActiveTab(parsed.tab);
             setEditPath(parsed.editPath);
         };
+
+        handleHashChange();
+        setHashReady(true);
         window.addEventListener("hashchange", handleHashChange);
         return () => window.removeEventListener("hashchange", handleHashChange);
-    }, [activeTab, editPath]);
+    }, [allowedTabs]);
+
+    useEffect(() => {
+        if (!hashReady) return;
+        const suffix = editPath ? `/${editPath}` : "";
+        window.history.replaceState(null, "", `#${activeTab}${suffix}`);
+    }, [activeTab, editPath, hashReady]);
 
     // 비활동 타이머: 1초마다 남은 시간 갱신, 만료 시 자동 로그아웃
     useEffect(() => {
@@ -109,16 +129,37 @@ export default function AdminDashboard() {
             window.addEventListener(e, refreshActivity, { passive: true })
         );
 
+        // 탭이 보일 때 활동 시간 리셋 (숨겨진 동안 타이머 누적 방지)
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                lastActivityRef.current = Date.now();
+                warnedRef.current = false;
+            }
+        };
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
         const tick = setInterval(async () => {
+            // 탭이 숨겨진 상태면 자동 로그아웃 보류
+            if (document.visibilityState === "hidden") return;
+
             const elapsed = Date.now() - lastActivityRef.current;
             const remaining = INACTIVITY_LIMIT_MS - elapsed;
             if (remaining <= 0) {
                 clearInterval(tick);
-                if (browserClient)
-                    await browserClient.auth.signOut({ scope: "global" });
-                window.location.href = "/admin/login";
+                await signOut({ callbackUrl: "/admin/login" });
             } else {
                 setRemainingMs(remaining);
+                // 만료 1분 전 경고 (1회)
+                if (remaining <= WARN_BEFORE_MS && !warnedRef.current) {
+                    warnedRef.current = true;
+                    const extend = window.confirm(
+                        "1분 후 비활동으로 자동 로그아웃됩니다. 세션을 연장하시겠습니까?"
+                    );
+                    if (extend) {
+                        lastActivityRef.current = Date.now();
+                        warnedRef.current = false;
+                    }
+                }
             }
         }, 1000);
 
@@ -126,6 +167,10 @@ export default function AdminDashboard() {
             clearInterval(tick);
             ACTIVITY_EVENTS.forEach((e) =>
                 window.removeEventListener(e, refreshActivity)
+            );
+            document.removeEventListener(
+                "visibilitychange",
+                handleVisibilityChange
             );
         };
     }, []);
@@ -137,6 +182,7 @@ export default function AdminDashboard() {
 
     // 탭 클릭 핸들러
     const handleTabClick = (tabId: TabId) => {
+        if (!allowedTabs.includes(tabId)) return;
         if (activeTab === tabId) {
             setTabKey((prev) => prev + 1);
         } else {
@@ -148,9 +194,7 @@ export default function AdminDashboard() {
 
     // 모든 기기에서 로그아웃
     const handleLogout = async () => {
-        if (!browserClient) return;
-        await browserClient.auth.signOut({ scope: "global" });
-        window.location.href = "/admin/login";
+        await signOut({ callbackUrl: "/admin/login" });
     };
 
     return (
@@ -176,20 +220,13 @@ export default function AdminDashboard() {
                     open={sidebarOpen}
                     onClose={() => setSidebarOpen(false)}
                     visible={sidebarVisible}
+                    refugeMode={refugeMode}
                 />
 
                 <div className="flex flex-1 flex-col overflow-hidden">
                     <main
                         className={`tablet:p-4 laptop:p-6 flex-1 p-2 ${
-                            activeTab === "posts" ||
-                            activeTab === "gantt-chart" ||
-                            activeTab === "resume" ||
-                            activeTab === "migrations" ||
-                            activeTab === "snapshots" ||
-                            activeTab === "agent-tokens" ||
-                            activeTab === "prompts" ||
-                            activeTab === "debug" ||
-                            activeTab === "config"
+                            PANELS_OWN_HEIGHT.has(activeTab)
                                 ? "overflow-hidden"
                                 : "overflow-y-auto"
                         }`}
@@ -202,6 +239,13 @@ export default function AdminDashboard() {
                                     : ""
                             }`}
                         >
+                            {activeTab === "main" && (
+                                <MainPanel
+                                    key={`main-${tabKey}`}
+                                    refugeMode={refugeMode}
+                                    onNavigate={handleTabClick}
+                                />
+                            )}
                             {activeTab === "posts" && (
                                 <PostsPanel
                                     key={`posts-${tabKey}`}
@@ -231,7 +275,10 @@ export default function AdminDashboard() {
                                 <ResumePanel key={`resume-${tabKey}`} />
                             )}
                             {activeTab === "migrations" && (
-                                <MigrationsPanel key={`migrations-${tabKey}`} />
+                                <MigrationsPanel
+                                    key={`migrations-${tabKey}`}
+                                    refugeMode={refugeMode}
+                                />
                             )}
                             {activeTab === "snapshots" && (
                                 <SnapshotsPanel key={`snapshots-${tabKey}`} />
@@ -261,6 +308,7 @@ export default function AdminDashboard() {
                 open={commandOpen}
                 onOpenChange={setCommandOpen}
                 onNavigate={handleTabClick}
+                refugeMode={refugeMode}
             />
         </div>
     );

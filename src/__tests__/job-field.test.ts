@@ -2,10 +2,16 @@ import { describe, it, expect } from "vitest";
 import {
     filterByJobField,
     matchesJobField,
+    dedupeJobFieldsById,
     normalizeJobFieldValue,
     normalizeJobFieldList,
+    normalizeUniqueJobFieldList,
     getInitialJobFieldSelection,
 } from "@/lib/job-field";
+import {
+    inheritResumeJobField,
+    removeResumeJobField,
+} from "@/lib/resume-job-field";
 
 // ─────────────────────────────────────────────
 // filterByJobField
@@ -141,6 +147,30 @@ describe("normalizeJobFieldList", () => {
     });
 });
 
+describe("normalizeUniqueJobFieldList", () => {
+    it("정규화 후 중복된 직무 분야 id를 제거", () => {
+        expect(normalizeUniqueJobFieldList(['"game"', "game", "web"])).toEqual([
+            "game",
+            "web",
+        ]);
+    });
+});
+
+describe("dedupeJobFieldsById", () => {
+    it("중복 id가 있는 job field 선택지를 첫 항목 기준으로 안정화", () => {
+        expect(
+            dedupeJobFieldsById([
+                { id: "game", name: "Game" },
+                { id: "game", name: "Game duplicate" },
+                { id: "web", name: "Web" },
+            ])
+        ).toEqual([
+            { id: "game", name: "Game" },
+            { id: "web", name: "Web" },
+        ]);
+    });
+});
+
 describe("getInitialJobFieldSelection", () => {
     it("이중 문자열화된 active 값도 ['game']으로 정규화", () => {
         expect(getInitialJobFieldSelection('"game"')).toEqual(["game"]);
@@ -154,5 +184,45 @@ describe("getInitialJobFieldSelection", () => {
         expect(getInitialJobFieldSelection(null)).toEqual([]);
         expect(getInitialJobFieldSelection(undefined)).toEqual([]);
         expect(getInitialJobFieldSelection("")).toEqual([]);
+    });
+});
+
+describe("resume job field cascade helpers", () => {
+    it("섹션 entries 구조에서 삭제 대상 jobField만 제거", () => {
+        const resume = {
+            projects: {
+                emoji: "🚀",
+                showEmoji: true,
+                entries: [
+                    { name: "A", jobField: ["web", "nexon"] },
+                    { name: "B", description: "Nexon API", jobField: "nexon" },
+                ],
+            },
+        };
+
+        expect(removeResumeJobField(resume, "nexon")).toEqual({
+            projects: {
+                emoji: "🚀",
+                showEmoji: true,
+                entries: [
+                    { name: "A", jobField: ["web"] },
+                    {
+                        name: "B",
+                        description: "Nexon API",
+                        jobField: undefined,
+                    },
+                ],
+            },
+        });
+    });
+
+    it("legacy 배열 구조에도 신규 jobField를 상속", () => {
+        const resume = {
+            projects: [{ name: "A", jobField: ["web", "game"] }],
+        };
+
+        expect(inheritResumeJobField(resume, "game", "nexon")).toEqual({
+            projects: [{ name: "A", jobField: ["web", "game", "nexon"] }],
+        });
     });
 });

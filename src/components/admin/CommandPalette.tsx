@@ -3,6 +3,7 @@
 
 import { useEffect } from "react";
 import {
+    LayoutDashboard,
     FileText,
     Briefcase,
     Tag,
@@ -14,7 +15,7 @@ import {
     Plus,
     MessageSquare,
 } from "lucide-react";
-import type { TabId } from "@/components/admin/AdminSidebar";
+import { REFUGE_ADMIN_TABS, type TabId } from "@/components/admin/AdminSidebar";
 import {
     CommandDialog,
     CommandInput,
@@ -28,10 +29,12 @@ type CommandPaletteProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onNavigate: (tab: TabId) => void;
+    refugeMode?: boolean;
 };
 
 // 패널 탐색 명령 목록
 const NAV_COMMANDS = [
+    { tab: "main", label: "Main으로 이동", icon: LayoutDashboard },
     { tab: "posts", label: "Posts로 이동", icon: FileText },
     { tab: "portfolio", label: "Portfolio로 이동", icon: Briefcase },
     { tab: "tags", label: "Tags로 이동", icon: Tag },
@@ -54,6 +57,7 @@ export default function CommandPalette({
     open,
     onOpenChange,
     onNavigate,
+    refugeMode = false,
 }: CommandPaletteProps) {
     // 키보드 단축키 등록
     useEffect(() => {
@@ -66,6 +70,14 @@ export default function CommandPalette({
         window.addEventListener("keydown", handler);
         return () => window.removeEventListener("keydown", handler);
     }, [onOpenChange]);
+
+    const navCommands = refugeMode
+        ? NAV_COMMANDS.filter((cmd) =>
+              REFUGE_ADMIN_TABS.includes(
+                  cmd.tab as (typeof REFUGE_ADMIN_TABS)[number]
+              )
+          )
+        : NAV_COMMANDS;
 
     // 명령 선택 핸들러
     const handleSelect = (tab: TabId) => {
@@ -86,7 +98,7 @@ export default function CommandPalette({
             <CommandList>
                 <CommandEmpty>결과 없음</CommandEmpty>
                 <CommandGroup heading="탐색">
-                    {NAV_COMMANDS.map((cmd) => {
+                    {navCommands.map((cmd) => {
                         const Icon = cmd.icon;
                         return (
                             <CommandItem
