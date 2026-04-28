@@ -2,9 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import LoginForm from "@/components/admin/LoginForm";
 
-vi.mock("next-auth/react", () => ({
+const nextAuthMock = vi.hoisted(() => ({
     signIn: vi.fn(),
-    useSession: () => ({ status: "unauthenticated", data: null }),
+    useSession: vi.fn(() => ({ status: "unauthenticated", data: null })),
+}));
+
+vi.mock("next-auth/react", () => ({
+    signIn: nextAuthMock.signIn,
+    useSession: nextAuthMock.useSession,
 }));
 
 describe("login form env guide", () => {
@@ -16,6 +21,8 @@ describe("login form env guide", () => {
                 },
             },
         });
+        nextAuthMock.signIn.mockClear();
+        nextAuthMock.useSession.mockClear();
     });
 
     it("누락 env 안내와 full width 복사 버튼을 표시", async () => {
@@ -64,6 +71,10 @@ describe("login form env guide", () => {
         expect(
             screen.getByText(/env에는 원래 비밀번호를 저장하지 않습니다/i)
         ).toBeInTheDocument();
+        expect(
+            screen.getByText(/변수 치환으로 해석되므로/i)
+        ).toBeInTheDocument();
+        expect(nextAuthMock.useSession).not.toHaveBeenCalled();
 
         const passwordInput = screen.getByLabelText("비밀번호");
         expect(passwordInput).toHaveAttribute("type", "text");
@@ -100,6 +111,12 @@ describe("login form env guide", () => {
 
         const passwordCommand = screen.getByTestId("password-hash-command");
         const authSecretCommand = screen.getByTestId("auth-secret-command");
+        expect(passwordCommand.textContent).toContain(
+            "String.fromCharCode(92, 36)"
+        );
+        expect(passwordCommand.textContent).not.toContain(
+            "String.fromCharCode(36)"
+        );
         expect(passwordCommand.className).toContain("select-none");
         expect(authSecretCommand.className).toContain("select-none");
         expect(passwordCommand).toHaveAttribute("draggable", "false");

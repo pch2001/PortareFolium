@@ -55,7 +55,7 @@ describe("admin credentials helpers", () => {
             },
             {
                 key: "AUTH_ADMIN_PASSWORD_HASH",
-                reason: "scrypt$<saltHex>$<hashHex> 형식이 아닙니다.",
+                reason: "scrypt$<saltHex>$<hashHex> 형식이 아닙니다. .env.local에는 scrypt\\$<saltHex>\\$<hashHex>처럼 $를 escape하세요.",
             },
             {
                 key: "AUTH_SECRET",
@@ -81,5 +81,19 @@ describe("admin credentials helpers", () => {
         expect(
             verifyAdminCredentials("user@example.com", "correct-password")
         ).toBe(false);
+    });
+
+    it(".env.local용 escaped password hash도 검증", () => {
+        vi.stubEnv("AUTH_ADMIN_EMAIL", "admin@portfolio.test");
+        vi.stubEnv("AUTH_SECRET", validAuthSecret);
+        vi.stubEnv(
+            "AUTH_ADMIN_PASSWORD_HASH",
+            createPasswordHash("correct-password").replace(/\$/g, "\\$")
+        );
+
+        expect(getAdminCredentialSetup().invalidEnvKeys).toEqual([]);
+        expect(
+            verifyAdminCredentials("admin@portfolio.test", "correct-password")
+        ).toBe(true);
     });
 });

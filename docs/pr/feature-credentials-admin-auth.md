@@ -8,7 +8,9 @@ Credentials admin auth와 관리자 보안 hardening
 
 - Google OAuth / legacy Supabase auth 흐름을 제거하고 단일 관리자 credentials 로그인으로 전환했습니다.
 - Admin server action, route, storage, MCP, search, rate-limit 경계를 보강해 관리자 기능의 인증/인가와 입력 검증을 정리했습니다.
-- Fork → Vercel 직행 사용자를 위해 `/admin/login` first-run setup guide와 `AUTH_SECRET` 단일 설정 흐름을 추가했습니다.
+- Fork → Vercel 직행 사용자를 위해 `/admin/login` first-run setup guide, desired password 기반 hash command, `AUTH_SECRET` 단일 설정 흐름을 추가했습니다.
+- 로컬 push gate에서 E2E 평문 비밀번호 env를 제거하고 runtime password/hash 생성 흐름으로 인증 E2E를 검증하도록 정리했습니다.
+- Next env loader가 raw `scrypt$...$...`의 `$`를 변수 치환해 hash를 깨뜨리는 문제를 `scrypt\$...\$...` 안내와 setup 중 session fetch 회피로 정리했습니다.
 
 ## Related PRs
 
@@ -21,9 +23,11 @@ Credentials admin auth와 관리자 보안 hardening
 - `src/auth.ts`, `src/lib/admin-credentials.ts`, `src/lib/admin-auth.ts`, `src/lib/admin-auth-version.ts`:
   NextAuth credentials provider, single admin email/password, scrypt hash 검증, auth version fingerprint 도입
 - `src/app/admin/login/page.tsx`, `src/components/admin/LoginForm.tsx`:
-  admin login page, setup 상태 안내, invalid env 진단, desired password 기반 first-run hash command guide 추가
+  admin login page, setup 상태 안내, invalid env 진단, desired password 기반 first-run hash command guide, env-safe hash command, setup 중 session fetch 회피 추가
 - `src/proxy.ts`, `src/lib/server-admin.ts`:
   admin page/API unauthenticated request filter와 server-side admin session 검증 경계 정리
+- `src/lib/runtime-env.ts`, `src/lib/admin-credentials.ts`, `src/lib/admin-auth-version.ts`:
+  build-time env 박제를 피하는 runtime auth env 조회, escaped scrypt hash 정규화, invalid hash 원인 안내 추가
 
 ### fix/security: admin hardening
 
@@ -57,27 +61,26 @@ Credentials admin auth와 관리자 보안 hardening
 ### test
 
 - `src/__tests__/admin-*.test.ts*`, `src/__tests__/login-form-guide.test.tsx`, `src/__tests__/job-field.test.ts`, `src/__tests__/r2-path-policy.test.ts`:
-  auth setup, rate limit, route gate, returnUrl, storage policy, job field, first-run password guide 회귀 테스트 추가/보강
+  auth setup, rate limit, route gate, returnUrl, storage policy, job field, first-run password guide, setup 중 session fetch 회피 회귀 테스트 추가/보강
 - `e2e/*`:
   credentials login 기반 authenticated Playwright setup 정렬
 - `playwright.config.ts`, `.env.example`, `README.md`:
   E2E plaintext password env 제거와 runtime password/hash 생성 흐름 추가
 - `scripts/run-e2e-gate.mjs`, `scripts/start-next-e2e.mjs`, `.husky/pre-push`:
   build와 Next start가 같은 runtime auth env를 쓰는 push gate 추가
-- `src/lib/runtime-env.ts`, `src/lib/admin-credentials.ts`, `src/lib/admin-auth-version.ts`:
-  build-time env 박제를 피하는 runtime auth env 조회 경계 추가
 
 ## Test Plan
 
 - [x] `pnpm exec tsc --noEmit`
 - [x] `pnpm exec vitest run` — 29 files / 227 tests pass
 - [x] `pnpm build` — clean (Proxy registered)
-- [ ] `BASE_URL=http://127.0.0.1:3100 E2E_SERVER_MODE=start pnpm exec playwright test --project=chromium --project=authenticated-chromium` — push 전 재실행
+- [x] `node scripts/run-e2e-gate.mjs` — build + chromium/authenticated-chromium E2E 54 passed
+- [x] `git push` — pre-push E2E gate 통과 후 `feature/credentials-admin-auth` push 완료
 
 ## Manual deploy checklist
 
 - [ ] Vercel env: `AUTH_SECRET` 설정
-- [ ] Vercel env: `AUTH_ADMIN_EMAIL` + `AUTH_ADMIN_PASSWORD_HASH` 설정 (`scrypt$<salt>$<hash>` 형식)
+- [ ] Vercel env: `AUTH_ADMIN_EMAIL` + `AUTH_ADMIN_PASSWORD_HASH` 설정 (`scrypt\$<salt>\$<hash>` 형식)
 - [ ] Supabase 운영 DB에 `admin_login_attempts` migration 적용 확인
 - [ ] 배포 후 `/admin/login` setup guide, 정상 로그인, 외부 returnUrl 차단 smoke check
 - [ ] 기존 Google OAuth / legacy Supabase auth 관련 env 제거

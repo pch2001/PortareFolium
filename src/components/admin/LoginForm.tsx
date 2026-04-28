@@ -21,6 +21,7 @@ const ENV_DESCRIPTIONS: Record<string, { purpose: string; setup: string }> = {
 };
 
 const PASSWORD_PLACEHOLDER = "YOUR_PASSWORD";
+const ENV_SAFE_HASH_SEPARATOR_COMMAND = "String.fromCharCode(92, 36)";
 
 const COMMANDS = {
     AUTH_SECRET:
@@ -83,11 +84,27 @@ function encodeBase64Utf8(value: string): string {
 
 function getPasswordHashCommand(password: string): string {
     if (!password) {
-        return `node -e "const { randomBytes, scryptSync } = require('crypto'); const password = '${PASSWORD_PLACEHOLDER}'; const salt = randomBytes(16).toString('hex'); const hash = scryptSync(password, salt, 64).toString('hex'); console.log(['scrypt', salt, hash].join(String.fromCharCode(36)))"`;
+        return `node -e "const { randomBytes, scryptSync } = require('crypto'); const password = '${PASSWORD_PLACEHOLDER}'; const salt = randomBytes(16).toString('hex'); const hash = scryptSync(password, salt, 64).toString('hex'); console.log(['scrypt', salt, hash].join(${ENV_SAFE_HASH_SEPARATOR_COMMAND}))"`;
     }
 
     const encodedPassword = encodeBase64Utf8(password);
-    return `node -e "const { randomBytes, scryptSync } = require('crypto'); const password = Buffer.from('${encodedPassword}', 'base64').toString('utf8'); const salt = randomBytes(16).toString('hex'); const hash = scryptSync(password, salt, 64).toString('hex'); console.log(['scrypt', salt, hash].join(String.fromCharCode(36)))"`;
+    return `node -e "const { randomBytes, scryptSync } = require('crypto'); const password = Buffer.from('${encodedPassword}', 'base64').toString('utf8'); const salt = randomBytes(16).toString('hex'); const hash = scryptSync(password, salt, 64).toString('hex'); console.log(['scrypt', salt, hash].join(${ENV_SAFE_HASH_SEPARATOR_COMMAND}))"`;
+}
+
+function AuthenticatedAdminRedirect({
+    safeReturnUrl,
+}: {
+    safeReturnUrl: string;
+}) {
+    const { data: session, status } = useSession();
+
+    // 이미 로그인된 유저 → 랜딩 페이지로 리다이렉트
+    useEffect(() => {
+        if (status !== "authenticated" || !session?.user?.isAdmin) return;
+        window.location.href = safeReturnUrl;
+    }, [safeReturnUrl, session, status]);
+
+    return null;
 }
 
 export default function LoginForm({
@@ -106,7 +123,6 @@ export default function LoginForm({
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
-    const { data: session, status } = useSession();
     const invalidEnvKeys = setupState.invalidEnvKeys ?? [];
     const setupReady =
         setupState.missingEnvKeys.length === 0 && invalidEnvKeys.length === 0;
@@ -133,12 +149,6 @@ export default function LoginForm({
             reason: issue.reason,
         })),
     ];
-
-    // 이미 로그인된 유저 → 랜딩 페이지로 리다이렉트
-    useEffect(() => {
-        if (status !== "authenticated" || !session?.user?.isAdmin) return;
-        window.location.href = safeReturnUrl;
-    }, [safeReturnUrl, session, status]);
 
     // admin credentials 로그인
     const handleAdminSubmit = async (e: React.FormEvent) => {
@@ -189,6 +199,9 @@ export default function LoginForm({
 
     return (
         <div className="tablet:items-center tablet:py-12 relative flex min-h-screen items-start justify-center bg-(--color-surface) px-4 py-8">
+            {setupReady && (
+                <AuthenticatedAdminRedirect safeReturnUrl={safeReturnUrl} />
+            )}
             {/* 배경 글로우 */}
             <div
                 aria-hidden="true"
@@ -291,7 +304,7 @@ export default function LoginForm({
                                                 <li>
                                                     출력된{" "}
                                                     <span className="font-mono font-semibold">
-                                                        scrypt$...
+                                                        scrypt\$...\$...
                                                     </span>{" "}
                                                     전체 문자열을 Vercel의{" "}
                                                     <span className="font-mono font-semibold">
@@ -314,6 +327,22 @@ export default function LoginForm({
                                                 env에는 원래 비밀번호를 저장하지
                                                 않습니다. 로그인할 때만 원래
                                                 비밀번호를 입력합니다.
+                                            </p>
+                                            <p className="text-amber-900 dark:text-amber-100">
+                                                로컬{" "}
+                                                <span className="font-mono font-semibold">
+                                                    .env.local
+                                                </span>
+                                                에서는{" "}
+                                                <span className="font-mono font-semibold">
+                                                    $
+                                                </span>
+                                                가 변수 치환으로 해석되므로,
+                                                명령 출력의{" "}
+                                                <span className="font-mono font-semibold">
+                                                    \$
+                                                </span>{" "}
+                                                표기를 그대로 붙여넣으세요.
                                             </p>
                                         </div>
                                         <div className="space-y-1 text-xs">

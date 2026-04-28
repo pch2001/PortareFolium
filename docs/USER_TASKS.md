@@ -11,10 +11,12 @@
 - `AUTH_ADMIN_PASSWORD_HASH` 생성 예시
 
 ```bash
-node -e "const { randomBytes, scryptSync } = require('crypto'); const salt = randomBytes(16).toString('hex'); const hash = scryptSync('YOUR_PASSWORD', salt, 64).toString('hex'); console.log('scrypt$' + salt + '$' + hash)"
+node -e "const { randomBytes, scryptSync } = require('crypto'); const salt = randomBytes(16).toString('hex'); const hash = scryptSync('YOUR_PASSWORD', salt, 64).toString('hex'); console.log(['scrypt', salt, hash].join(String.fromCharCode(92, 36)))"
 ```
 
 - `AUTH_ADMIN_EMAIL`에는 실제 관리자 이메일 1개만 입력
+- `AUTH_ADMIN_PASSWORD_HASH`는 `.env.local`에서 `scrypt\$...\$...`처럼 `$`를 escape
+  - raw `scrypt$...$...`는 Next env loader가 `$...`를 변수 치환으로 처리해 hash를 깨뜨릴 수 있음
 - E2E 평문 비밀번호는 `.env.local`에 저장하지 않음
 - Google OAuth, legacy Supabase auth 관련 env는 제거 가능
 

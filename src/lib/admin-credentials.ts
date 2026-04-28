@@ -82,7 +82,7 @@ function validatePasswordHash(value: string): string | null {
     }
     const parsed = parseScryptHash(value);
     if (!parsed) {
-        return "scrypt$<saltHex>$<hashHex> 형식이 아닙니다.";
+        return "scrypt$<saltHex>$<hashHex> 형식이 아닙니다. .env.local에는 scrypt\\$<saltHex>\\$<hashHex>처럼 $를 escape하세요.";
     }
     if (parsed.saltHex.length < MIN_SCRYPT_SALT_HEX_LENGTH) {
         return `salt는 최소 ${MIN_SCRYPT_SALT_HEX_LENGTH}자 hex여야 합니다.`;
