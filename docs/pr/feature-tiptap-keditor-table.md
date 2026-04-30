@@ -5,6 +5,7 @@
 - dark mode custom cell 색상을 고채도 Tailwind 계열 hex에서 저채도 `oklch()` muted palette로 조정.
 - light mode 색상 선택 목록과 저장값은 그대로 유지.
 - `data-tw-color` 대비 로직 문서를 muted dark palette 기준으로 갱신.
+- OmX 포함 모든 agent co-author trailer 금지 규칙과 hook 충돌 시 commit 절차 문서화.
 
 ## v0.12.121 - RichMarkdownEditor KTable 편집 추가
 

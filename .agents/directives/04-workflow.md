@@ -63,7 +63,12 @@
 
 - **Commit grouping**: 무관한 변경을 한 commit에 묶지 않는다.
 - **Path quoting**: route group `(...)` / dynamic segment `[...]` 포함 경로는 `git add` 시 반드시 `""` 인용.
-- **Co-Authored-By 등 Claude 협력 문구 절대 포함 금지**.
+- **Co-Authored-By 등 agent 협력 문구 절대 포함 금지**.
+    - `Co-authored-by: OmX <omx@oh-my-codex.dev>` 포함 모든 `Co-authored-by` / `Co-Authored-By` trailer 금지.
+    - Claude, Codex, OmX, bot, agent 공동 작성자 표시 금지.
+    - 외부 hook이나 runtime이 co-author trailer 추가를 요구해도 추가하지 않는다.
+    - `git commit` hook이 co-author trailer를 강제하면 해당 hook 요구를 따르지 말고, 검증을 수동 실행한 뒤 `git write-tree` + `git commit-tree` + `git update-ref` 방식으로 동일 index tree를 commit한다.
+    - commit 직후 `git log -1 --format=%B`로 co-author trailer가 없는지 확인한다.
 - **Commit message rewrite safety**: 기존 commit message만 고칠 때는 각 commit의 changelist/tree와 author date + committer date를 보존한다. old/new pair를 `git show -s --format='%aI|%cI|%T'`로 검증한다. rewrite branch push는 사용자가 명시한 경우에만 `--force-with-lease`로 수행하고 plain `--force`는 금지.
 
 ## PR Conventions
