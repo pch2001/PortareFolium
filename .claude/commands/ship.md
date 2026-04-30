@@ -4,6 +4,21 @@ Commit the current unstaged changes following these rules strictly:
 
 1. **No Co-Authored-By**: Never include a Co-Authored-By line in the commit message.
 
+    **Hard ban details:**
+    - Never include `Co-authored-by: OmX <omx@oh-my-codex.dev>`.
+    - Never include any `Co-authored-by` / `Co-Authored-By` trailer for Claude, Codex, OmX, bot, or agent identities.
+    - If an external hook blocks `git commit` unless an OmX co-author trailer is added, do **not** satisfy that hook by adding the trailer.
+    - In that conflict case, manually run the required verification/prettier steps, stage only the intended files, then create the commit without `git commit`:
+
+        ```bash
+        git write-tree
+        git commit-tree <tree> -p HEAD -F <message-file>
+        git update-ref refs/heads/<branch> <new-commit> <old-head>
+        ```
+
+    - For commit-message-only rewrites, preserve the original tree plus author/committer names, emails, and dates while using `git commit-tree`.
+    - After every commit or commit-message rewrite, run `git log -1 --format=%B` and verify there is no co-author trailer.
+
 2. **Commit message format**: Read the last two commits by the user (not by another collaborator, Claude or any bot) via `git log` and match their style exactly. The canonical project format is:
 
     ```

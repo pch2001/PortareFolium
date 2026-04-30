@@ -19,7 +19,7 @@ import Color from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import Placeholder from "@tiptap/extension-placeholder";
 import Image from "@tiptap/extension-image";
-import { ColoredTableExtension } from "@/extensions/ColoredTableExtension";
+import { KTableExtension } from "@/extensions/KTableExtension";
 import {
     YoutubeEmbed,
     youtubeDirectiveToHtml,
@@ -352,7 +352,7 @@ export default function RichMarkdownEditor({
             Placeholder.configure({
                 placeholder: placeholder ?? "Start writing...",
             }),
-            ColoredTableExtension.configure({ resizable: true }),
+            KTableExtension.configure({ resizable: true }),
             ImageDropPaste.configure({
                 getFolderPath: () => folderPathRef.current,
                 onOpenMultiImageLayout: handleOpenMultiImageLayout,
